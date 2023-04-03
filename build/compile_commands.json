@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles/cpp-is-fun.dir/main.cpp.obj -c C:/Users/gbhko/Desktop/Prog/VSCode/playground/main.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/main.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/main.cpp.obj"
+},
+{
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj -c C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj"
+}
+]

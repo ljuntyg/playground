@@ -1,0 +1,1 @@
+ "C:/dev/vcpkg/installed/x64-windows/lib/manual-link/SDL2main.lib" "C:/dev/vcpkg/installed/x64-windows/lib/SDL2.lib" -lshell32 -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
