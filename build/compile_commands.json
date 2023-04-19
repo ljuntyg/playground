@@ -7,14 +7,14 @@
 },
 {
   "directory": "C:/Users/gbhko/Desktop/Filer/playground/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -g -o CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Filer\\playground\\renderer.cpp",
-  "file": "C:\\Users\\gbhko\\Desktop\\Filer\\playground\\renderer.cpp",
-  "output": "CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj"
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -g -o CMakeFiles\\cpp-is-fun.dir\\matrix.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Filer\\playground\\matrix.cpp",
+  "file": "C:\\Users\\gbhko\\Desktop\\Filer\\playground\\matrix.cpp",
+  "output": "CMakeFiles\\cpp-is-fun.dir\\matrix.cpp.obj"
 },
 {
   "directory": "C:/Users/gbhko/Desktop/Filer/playground/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -g -o CMakeFiles\\cpp-is-fun.dir\\matrix4.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Filer\\playground\\matrix4.cpp",
-  "file": "C:\\Users\\gbhko\\Desktop\\Filer\\playground\\matrix4.cpp",
-  "output": "CMakeFiles\\cpp-is-fun.dir\\matrix4.cpp.obj"
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -g -o CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Filer\\playground\\renderer.cpp",
+  "file": "C:\\Users\\gbhko\\Desktop\\Filer\\playground\\renderer.cpp",
+  "output": "CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj"
 }
 ]

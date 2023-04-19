@@ -1,47 +1,33 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <SDL2/SDL.h>
-#include <vector>  // added vector header
+#include <array>
 
 struct Vertex {
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
 
-    Vertex() : x(0), y(0), z(0) {}
-    Vertex(float x, float y, float z) {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
+    Vertex(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
 struct Triangle {
-    Vertex v1;
-    Vertex v2;
-    Vertex v3;
-    SDL_Color color;
+    Vertex a;
+    Vertex b;
+    Vertex c;
 
-    Triangle() {
-        color.r = 0;
-        color.g = 0;
-        color.b = 0;
-        color.a = 255;
-    }
-
-    Triangle(Vertex v1, Vertex v2, Vertex v3, SDL_Color color) {
-        this->v1 = v1;
-        this->v2 = v2;
-        this->v3 = v3;
-        this->color = color;
-    }
+    Triangle(Vertex a, Vertex b, Vertex c) : a(a), b(b), c(c) {}
 };
 
 class Renderer {
 public:
-    static void drawTriangle(SDL_Renderer &renderer);
-    static void drawPyramid(SDL_Renderer &renderer, const std::vector<Triangle>& triangles);
+    static const int WINDOW_WIDTH = 640;
+    static const int WINDOW_HEIGHT = 480;
+
+    static constexpr double FAR = 100;
+    static constexpr double NEAR = 0.1;
+
+    static void testDraw(SDL_Renderer& renderer, std::array<Triangle, 12> cube);
 };
 
 #endif // RENDERER_H

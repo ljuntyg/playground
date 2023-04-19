@@ -357,9 +357,6 @@ X_VCPKG_APPLOCAL_DEPS_SERIALIZED:BOOL=OFF
 Z_VCPKG_BUILTIN_POWERSHELL_PATH:FILEPATH=C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
 
 //Path to a program.
-Z_VCPKG_CL:FILEPATH=Z_VCPKG_CL-NOTFOUND
-
-//Path to a program.
 Z_VCPKG_PWSH_PATH:FILEPATH=Z_VCPKG_PWSH_PATH-NOTFOUND
 
 //The directory which contains the installed libraries for each
