@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <stdexcept>
+#include <iostream>
+
+class Vertex; // Forward declaration of Vertex
 
 class Matrix {
 public:
@@ -11,6 +14,7 @@ public:
     double& operator()(int row, int col);
     const double& operator()(int row, int col) const;
     Matrix operator*(const Matrix& other) const;
+    Vertex operator*(const Vertex& vertex) const;
 
     static Matrix createTranslation(double x, double y, double z);
     static Matrix createScale(double x, double y, double z);
@@ -21,6 +25,7 @@ public:
 
     int rows() const;
     int cols() const;
+    void print() const;
 
 private:
     int m_rows;

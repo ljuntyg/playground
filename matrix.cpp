@@ -1,5 +1,7 @@
-#include "matrix.h"
 #include <cmath>
+
+#include "matrix.h"
+#include "vertex.h"
 
 Matrix::Matrix(int rows, int cols) : m_rows(rows), m_cols(cols), m_data(rows * cols, 0) {}
 
@@ -24,7 +26,25 @@ Matrix Matrix::operator*(const Matrix& other) const {
             }
         }
     }
+
     return result;
+}
+
+Vertex Matrix::operator*(const Vertex& vertex) const {
+    if (m_cols != vertex.rows()) {
+        throw std::invalid_argument("Incompatible matrix and vertex for multiplication");
+    }
+
+    Matrix result(m_rows, 1);
+    for (int row = 0; row < m_rows; ++row) {
+        for (int col = 0; col < vertex.cols(); ++col) {
+            for (int k = 0; k < m_cols; ++k) {
+                result(row, col) += (*this)(row, k) * vertex(k, col);
+            }
+        }
+    }
+
+    return Vertex(result(0, 0), result(1, 0), result(2, 0), result(3, 0));
 }
 
 int Matrix::rows() const {
@@ -33,6 +53,16 @@ int Matrix::rows() const {
 
 int Matrix::cols() const {
     return m_cols;
+}
+
+void Matrix::print() const {
+    for (int i = 0; i < m_rows; i++) {
+        for (int j = 0; j < m_cols; j++) {
+            std::cout << (*this)(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "\n" << std::endl;
 }
 
 Matrix Matrix::createTranslation(double x, double y, double z) {
