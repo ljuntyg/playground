@@ -8,6 +8,15 @@ public:
     Vertex(double x, double y, double z, double w);
     Vertex operator*(double scalar) const;
     Vertex operator/(double scalar) const;
+    Vertex operator+(const Vertex& other) const;
+    Vertex operator-(const Vertex& other) const;
+    Vertex& operator+=(const Vertex& other);
+    Vertex& operator-=(const Vertex& other);
+
+    double dot(const Vertex& other) const;
+    Vertex cross(const Vertex& other) const;
+    double length() const;
+    Vertex normalize() const;
 
     double x() const;
     double y() const;

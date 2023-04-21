@@ -31,20 +31,24 @@ Matrix Matrix::operator*(const Matrix& other) const {
 }
 
 Vertex Matrix::operator*(const Vertex& vertex) const {
-    if (m_cols != vertex.rows()) {
+    if (m_cols != 4) {
         throw std::invalid_argument("Incompatible matrix and vertex for multiplication");
     }
 
-    Matrix result(m_rows, 1);
-    for (int row = 0; row < m_rows; ++row) {
-        for (int col = 0; col < vertex.cols(); ++col) {
-            for (int k = 0; k < m_cols; ++k) {
-                result(row, col) += (*this)(row, k) * vertex(k, col);
-            }
+    Vertex result(0, 0, 0, 0);
+    for (int row = 0; row < m_rows; row++) {
+        for (int col = 0; col < 4; col++) {
+            result(row, 0) += (*this)(row, col) * vertex(col, 0);
         }
     }
 
-    return Vertex(result(0, 0), result(1, 0), result(2, 0), result(3, 0));
+    if (result.w() != 0) {
+        result.setX(result.x() / result.w());
+        result.setY(result.y() / result.w());
+        result.setZ(result.z() / result.w());
+    }
+
+    return result;
 }
 
 int Matrix::rows() const {
@@ -128,13 +132,64 @@ Matrix Matrix::createRotationZ(double angle) {
 Matrix Matrix::createPerspectiveProjection(double fov, double aspectRatio, double near, double far) {
     Matrix projection(4, 4);
     double tan_half_fov = std::tan(fov / 2.0);
+    double range = far - near;
 
     projection(0, 0) = 1.0 / (aspectRatio * tan_half_fov);
     projection(1, 1) = 1.0 / tan_half_fov;
-    projection(2, 2) = -(far + near) / (far - near);
-    projection(2, 3) = -2.0 * far * near / (far - near);
-    projection(3, 2) = -1.0;
+    projection(2, 2) = -(far + near) / range;
+    projection(2, 3) = -2 * far * near / range;
+    projection(3, 2) = -1;
     projection(3, 3) = 0.0;
 
     return projection;
+}
+
+
+Matrix Matrix::createPointAt(const Vertex& position, const Vertex& target, const Vertex& up) {
+    Matrix pointAt(4, 4);
+    Vertex forward = (target - position).normalize();
+    Vertex left = up.cross(forward).normalize();
+    Vertex trueUp = forward.cross(left);
+
+    pointAt(0, 0) = left.x();
+    pointAt(0, 1) = left.y();
+    pointAt(0, 2) = left.z();
+    pointAt(0, 3) = 0;
+    pointAt(1, 0) = trueUp.x();
+    pointAt(1, 1) = trueUp.y();
+    pointAt(1, 2) = trueUp.z();
+    pointAt(1, 3) = 0;
+    pointAt(2, 0) = forward.x();
+    pointAt(2, 1) = forward.y();
+    pointAt(2, 2) = forward.z();
+    pointAt(2, 3) = 0;
+    pointAt(3, 0) = position.x();
+    pointAt(3, 1) = position.y();
+    pointAt(3, 2) = position.z();
+    pointAt(3, 3) = 1;
+
+    return pointAt;
+}
+
+Matrix Matrix::inversedPointAt(const Matrix& pointAt) {
+    Matrix inverse(4, 4);
+
+    inverse(0, 0) = pointAt(0, 0);
+    inverse(0, 1) = pointAt(1, 0);
+    inverse(0, 2) = pointAt(2, 0);
+    inverse(0, 3) = 0;
+    inverse(1, 0) = pointAt(0, 1);
+    inverse(1, 1) = pointAt(1, 1);
+    inverse(1, 2) = pointAt(2, 1);
+    inverse(1, 3) = 0;
+    inverse(2, 0) = pointAt(0, 2);
+    inverse(2, 1) = pointAt(1, 2);
+    inverse(2, 2) = pointAt(2, 2);
+    inverse(2, 3) = 0;
+    inverse(3, 0) = -(pointAt(3, 0) * inverse(0, 0) + pointAt(3, 1) * inverse(1, 0) + pointAt(3, 2) * inverse(2, 0));
+    inverse(3, 1) = -(pointAt(3, 0) * inverse(0, 1) + pointAt(3, 1) * inverse(1, 1) + pointAt(3, 2) * inverse(2, 1));
+    inverse(3, 2) = -(pointAt(3, 0) * inverse(0, 2) + pointAt(3, 1) * inverse(1, 2) + pointAt(3, 2) * inverse(2, 2));
+    inverse(3, 3) = 1;
+
+    return inverse;
 }

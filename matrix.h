@@ -22,6 +22,8 @@ public:
     static Matrix createRotationY(double angle);
     static Matrix createRotationZ(double angle);
     static Matrix createPerspectiveProjection(double fov, double aspectRatio, double near, double far);
+    static Matrix createPointAt(const Vertex& position, const Vertex& target, const Vertex& up);
+    static Matrix inversedPointAt(const Matrix& pointAt);
 
     int rows() const;
     int cols() const;

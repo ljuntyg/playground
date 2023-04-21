@@ -238,6 +238,20 @@ build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unsca
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
+build CMakeFiles/cpp-is-fun.dir/vertex.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/vertex.cpp || cmake_object_order_depends_target_cpp-is-fun
+  DEP_FILE = CMakeFiles\cpp-is-fun.dir\vertex.cpp.obj.d
+  FLAGS = -g
+  INCLUDES = -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
+  OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
+  OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
+
+build CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/triangle.cpp || cmake_object_order_depends_target_cpp-is-fun
+  DEP_FILE = CMakeFiles\cpp-is-fun.dir\triangle.cpp.obj.d
+  FLAGS = -g
+  INCLUDES = -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
+  OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
+  OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target cpp-is-fun
@@ -246,7 +260,7 @@ build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unsca
 #############################################
 # Link the executable cpp-is-fun.exe
 
-build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Debug CMakeFiles/cpp-is-fun.dir/main.cpp.obj CMakeFiles/cpp-is-fun.dir/matrix.cpp.obj CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj | C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2maind.a C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2d.a
+build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Debug CMakeFiles/cpp-is-fun.dir/main.cpp.obj CMakeFiles/cpp-is-fun.dir/matrix.cpp.obj CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj CMakeFiles/cpp-is-fun.dir/vertex.cpp.obj CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj | C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2maind.a C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2d.a
   FLAGS = -g
   LINK_LIBRARIES = C:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2maind.a  C:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2d.a  -Wl,--undefined=WinMain  -lm  -luser32  -lgdi32  -lwinmm  -limm32  -lole32  -loleaut32  -lversion  -luuid  -ladvapi32  -lsetupapi  -lshell32  -ldinput8  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
