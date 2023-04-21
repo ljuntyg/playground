@@ -1,24 +1,24 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 
-#include "vertex.h"
+#include <Eigen>
 
 class Triangle {
 public:
-    Triangle(const Vertex& v1, const Vertex& v2, const Vertex& v3);
+    Triangle(const Eigen::Vector4d& v1, const Eigen::Vector4d& v2, const Eigen::Vector4d& v3);
 
-    const Vertex& v1() const;
-    const Vertex& v2() const;
-    const Vertex& v3() const;
+    const Eigen::Vector4d& v1() const;
+    const Eigen::Vector4d& v2() const;
+    const Eigen::Vector4d& v3() const;
 
-    void setV1(const Vertex& v);
-    void setV2(const Vertex& v);
-    void setV3(const Vertex& v);
+    void setV1(const Eigen::Vector4d& v);
+    void setV2(const Eigen::Vector4d& v);
+    void setV3(const Eigen::Vector4d& v);
 
 private:
-    Vertex m_v1;
-    Vertex m_v2;
-    Vertex m_v3;
+    Eigen::Vector4d m_v1;
+    Eigen::Vector4d m_v2;
+    Eigen::Vector4d m_v3;
 };
 
 #endif // TRIANGLE_H

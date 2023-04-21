@@ -4,11 +4,13 @@ project(cpp-is-fun VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-add_executable(cpp-is-fun main.cpp matrix.cpp renderer.cpp vertex.cpp triangle.cpp)
+add_executable(cpp-is-fun main.cpp renderer.cpp triangle.cpp matrices.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+include_directories(${CMAKE_SOURCE_DIR}/Eigen)
 
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(cpp-is-fun

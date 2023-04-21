@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <iostream>
-#include <array>
+#include <Eigen>
 
 #include "renderer.h"
 #include "triangle.h"
@@ -11,54 +11,42 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("My Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
-    std::vector<Vertex> cube = {
+    std::vector<Eigen::Vector4d> cube = {
         // SOUTH
-        Vertex(0, 0, 0, 1), Vertex(0, 1, 0, 1), Vertex(1, 1, 0, 1),
-        Vertex(0, 0, 0, 1), Vertex(1, 1, 0, 1), Vertex(1, 0, 0, 1),
+        Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1),
+        Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
 
         // EAST
-        Vertex(1, 0, 0, 1), Vertex(1, 1, 0, 1), Vertex(1, 1, 1, 1),
-        Vertex(1, 0, 0, 1), Vertex(1, 1, 1, 1), Vertex(1, 0, 1, 1),
+        Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1),
+        Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 0, 1, 1),
 
         // NORTH
-        Vertex(1, 0, 1, 1), Vertex(1, 1, 1, 1), Vertex(0, 1, 1, 1),
-        Vertex(1, 0, 1, 1), Vertex(0, 1, 1, 1), Vertex(0, 0, 1, 1),
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(0, 1, 1, 1),
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 0, 1, 1),
 
         // WEST
-        Vertex(0, 0, 1, 1), Vertex(0, 1, 1, 1), Vertex(0, 1, 0, 1),
-        Vertex(0, 0, 1, 1), Vertex(0, 1, 0, 1), Vertex(0, 0, 0, 1),
+        Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 1, 0, 1),
+        Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 0, 0, 1),
 
         // TOP
-        Vertex(0, 1, 0, 1), Vertex(0, 1, 1, 1), Vertex(1, 1, 1, 1),
-        Vertex(0, 1, 0, 1), Vertex(1, 1, 1, 1), Vertex(1, 1, 0, 1),
+        Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(1, 1, 1, 1),
+        Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 1, 0, 1),
 
         // BOTTOM
-        Vertex(1, 0, 1, 1), Vertex(0, 0, 1, 1), Vertex(0, 0, 0, 1),
-        Vertex(1, 0, 1, 1), Vertex(0, 0, 0, 1), Vertex(1, 0, 0, 1),
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1),
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
     };
 
-    std::vector<Vertex> teapot = Renderer::loadObj("teapot.obj");
+    std::vector<Eigen::Vector4d> teapot = Renderer::loadObj("teapot.obj");
 
-    std::vector<Vertex> gourd = Renderer::loadObj("gourd.obj");
+    std::vector<Eigen::Vector4d> gourd = Renderer::loadObj("gourd.obj");
 
-    Matrix testMatrix(4, 4);
-    testMatrix(0, 0) = 2;
-    testMatrix(0, 1) = 3;
-    testMatrix(0, 2) = 4;
-    testMatrix(1, 1) = 1;
-    testMatrix(1, 2) = 4;
-    testMatrix(2, 0) = 3;
-    testMatrix(3, 0) = 1;
-    testMatrix(3, 2) = 1;
-
-    Vertex testVertex(3, 2, 1, 1);
-
-    (testMatrix * testVertex).print();
+    std::vector<Eigen::Vector4d> axis = Renderer::loadObj("axis.obj");
 
     double rotX = 0;
     double rotY = 0;
     double rotZ = 0;
-    double rotation_speed = 0.0001;
+    double rotation_speed = 0;
 
     SDL_Event e;
     bool quit = false;
@@ -73,33 +61,35 @@ int main(int argc, char* argv[]) {
             
         // Move camera up
         if (key_state[SDL_SCANCODE_LSHIFT]) {
-            std::cout << "implement";
+            Renderer::cameraPos.y() += Renderer::cameraSpeed;
         }
         
         // Move camera down
         if (key_state[SDL_SCANCODE_LCTRL]) {
-            std::cout << "implement";
+            Renderer::cameraPos.y() -= Renderer::cameraSpeed;
         }
 
         // Move camera left
-        if (key_state[SDL_SCANCODE_A]) {
-            std::cout << "implement";
+        if (key_state[SDL_SCANCODE_D]) {
+            Renderer::cameraPos.x() += Renderer::cameraSpeed;
         }
 
         // Move camera right
-        if (key_state[SDL_SCANCODE_D]) {
-            std::cout << "implement";
+        if (key_state[SDL_SCANCODE_A]) {
+            Renderer::cameraPos.x() -= Renderer::cameraSpeed;
         }
 
         // Move camera forward
         if (key_state[SDL_SCANCODE_W]) {
-            std::cout << "implement";
+           Renderer::cameraPos.z() += Renderer::cameraSpeed;
         }
 
         // Move camera backward
         if (key_state[SDL_SCANCODE_S]) {
-            std::cout << "implement";
+            Renderer::cameraPos.z() -= Renderer::cameraSpeed;
         }
+
+        std::cout << Renderer::cameraPos << "\n";
 
         // Set color to black, clear the renderer
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -111,7 +101,7 @@ int main(int argc, char* argv[]) {
         rotZ += rotation_speed;
 
         // Make calls to renderer here
-        Renderer::drawObject(renderer, cube, rotX, rotY, rotZ, 1);
+        Renderer::drawObject(renderer, axis, rotX, rotY, rotZ);
 
         // Update the screen
         SDL_RenderPresent(renderer);
