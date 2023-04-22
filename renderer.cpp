@@ -7,11 +7,59 @@
 #include "triangle.h"
 #include "matrices.h"
 
+double Renderer::cameraYaw = 0;
+
+double Renderer::cameraPitch = 0;
+
+Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
+
 Eigen::Vector4d Renderer::cameraPos(0, 0, -50, 1);
 
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 
-Eigen::Vector4d Renderer::upVector(0, 1, 0, 1);
+void Renderer::onKeys(const std::string& key) {
+
+    Eigen::Vector4d Up(0, 1, 0, 1);
+    Eigen::Vector4d Forward = lookDir;
+    Eigen::Vector3d Right3D = Up.head<3>().cross(Forward.head<3>());
+    Eigen::Vector4d Right(Right3D.x(), Right3D.y(), Right3D.z(), 1);
+
+    Up *= cameraSpeed;
+    Right *= cameraSpeed;
+    Forward *= cameraSpeed;
+
+    if (key == "UP") {
+        cameraPos += Up;
+        targetPos += Up;
+    }
+    if (key == "DOWN") {
+        cameraPos -= Up;
+        targetPos -= Up;
+    }
+    if (key == "RIGHT") {
+        cameraPos += Right;
+        targetPos += Right;
+    }
+    if (key == "LEFT") {
+        cameraPos -= Right;
+        targetPos -= Right;
+    }
+    if (key == "FORWARD") {
+        cameraPos += Forward;
+        targetPos += Forward;
+    }
+    if (key == "BACK") {
+        cameraPos -= Forward;
+        targetPos -= Forward;
+    }
+}
+
+void Renderer::onYaw() {
+    Eigen::Matrix4d rotationMatrix = Matrices::createRotationY(-cameraYaw);
+    lookDir = rotationMatrix * Eigen::Vector4d(0, 0, 1, 1);
+    targetPos = cameraPos + lookDir;
+    lookDir.normalize();
+}
 
 void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Eigen::Vector4d>& object, double rotX, double rotY, double rotZ, double scale) {
     // Create transformation matrices
@@ -22,14 +70,10 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Eigen::Vector4d>& 
     Eigen::Matrix4d translationMatrix = Matrices::createTranslation(0, 0, 0);
 
     // Create view matrix
-    Eigen::Matrix4d viewMatrix = Matrices::createViewMatrix(Renderer::cameraPos, Renderer::targetPos, Renderer::upVector);
+    Eigen::Matrix4d viewMatrix = Matrices::createViewMatrix(cameraPos, targetPos, Eigen::Vector4d(0, 1, 0, 1));
 
     // Create projection matrix
-    double fov = M_PI / 3.0; // 60 degree fov
-    double aspectRatio = Renderer::WINDOW_WIDTH / Renderer::WINDOW_HEIGHT;
-    double near = Renderer::NEAR;
-    double far = Renderer::FAR;
-    Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(fov, aspectRatio, near, far);
+    Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR, FAR);
 
     // Combine model (rotate, scale, translate), view and projection into transform matrix;
     Eigen::Matrix4d transformMatrix = projectionMatrix * viewMatrix * translationMatrix * scaleMatrix * rotXMatrix * rotYMatrix * rotZMatrix;
@@ -47,18 +91,18 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Eigen::Vector4d>& 
         // Convert to screen coordinates
         projectedV1.x() /= projectedV1.w();
         projectedV1.y() /= projectedV1.w();
-        projectedV1.x() = (projectedV1.x() + 1.0) * Renderer::WINDOW_WIDTH / 2.0;
-        projectedV1.y() = (1.0 - projectedV1.y()) * Renderer::WINDOW_HEIGHT / 2.0;
+        projectedV1.x() = (projectedV1.x() + 1.0) * WINDOW_WIDTH / 2.0;
+        projectedV1.y() = (1.0 - projectedV1.y()) * WINDOW_HEIGHT / 2.0;
 
         projectedV2.x() /= projectedV2.w();
         projectedV2.y() /= projectedV2.w();
-        projectedV2.x() = (projectedV2.x() + 1.0) * Renderer::WINDOW_WIDTH / 2.0;
-        projectedV2.y() = (1.0 - projectedV2.y()) * Renderer::WINDOW_HEIGHT / 2.0;
+        projectedV2.x() = (projectedV2.x() + 1.0) * WINDOW_WIDTH / 2.0;
+        projectedV2.y() = (1.0 - projectedV2.y()) * WINDOW_HEIGHT / 2.0;
 
         projectedV3.x() /= projectedV3.w();
         projectedV3.y() /= projectedV3.w();
-        projectedV3.x() = (projectedV3.x() + 1.0) * Renderer::WINDOW_WIDTH / 2.0;
-        projectedV3.y() = (1.0 - projectedV3.y()) * Renderer::WINDOW_HEIGHT / 2.0;
+        projectedV3.x() = (projectedV3.x() + 1.0) * WINDOW_WIDTH / 2.0;
+        projectedV3.y() = (1.0 - projectedV3.y()) * WINDOW_HEIGHT / 2.0;
 
         drawTriangle(renderer, Triangle(projectedV1, projectedV2, projectedV3));
     }

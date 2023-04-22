@@ -115,7 +115,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g"
+					"fragment" : "-O3 -DNDEBUG"
 				}
 			],
 			"includes" : 
@@ -151,7 +151,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-g",
+				"fragment" : "-O3 -DNDEBUG",
 				"role" : "flags"
 			},
 			{
@@ -160,12 +160,12 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "C:\\dev\\vcpkg\\installed\\x64-mingw-static\\debug\\lib\\libSDL2maind.a",
+				"fragment" : "C:\\dev\\vcpkg\\installed\\x64-mingw-static\\lib\\libSDL2main.a",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "C:\\dev\\vcpkg\\installed\\x64-mingw-static\\debug\\lib\\libSDL2d.a",
+				"fragment" : "C:\\dev\\vcpkg\\installed\\x64-mingw-static\\lib\\libSDL2.a",
 				"role" : "libraries"
 			},
 			{

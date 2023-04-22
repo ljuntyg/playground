@@ -1,4 +1,5 @@
-#include "Matrices.h"
+#include "matrices.h"
+#include "renderer.h"
 
 Eigen::Matrix4d Matrices::createScale(double scaleX, double scaleY, double scaleZ) {
     Eigen::Matrix4d scaleMatrix = Eigen::Matrix4d::Identity();
@@ -49,34 +50,36 @@ Eigen::Matrix4d Matrices::createTranslation(double x, double y, double z) {
     return translationMatrix;
 }
 
-Eigen::Matrix4d Matrices::createViewMatrix(const Eigen::Vector4d &cameraPos, const Eigen::Vector4d &targetPos, const Eigen::Vector4d &upVector) {
-    Eigen::Vector3d zAxis = (cameraPos.head<3>() - targetPos.head<3>()).normalized();
-    Eigen::Vector3d xAxis = upVector.head<3>().cross(zAxis).normalized();
-    Eigen::Vector3d yAxis = zAxis.cross(xAxis);
+Eigen::Matrix4d Matrices::createViewMatrix(const Eigen::Vector4d& eye, const Eigen::Vector4d& target, const Eigen::Vector4d& up) {
+    Eigen::Vector4d forward = (eye - target).normalized();
+    Eigen::Vector3d right3D = up.head<3>().cross(forward.head<3>()).normalized();
+    Eigen::Vector4d right(right3D.x(), right3D.y(), right3D.z(), 1);
+    Eigen::Vector3d newUp3D = forward.head<3>().cross(right.head<3>()).normalized();
+    Eigen::Vector4d newUp(newUp3D.x(), newUp3D.y(), newUp3D.z(), 1);
 
-    Eigen::Matrix4d viewMatrix = Eigen::Matrix4d::Identity();
-    viewMatrix(0, 0) = xAxis.x();
-    viewMatrix(0, 1) = yAxis.x();
-    viewMatrix(0, 2) = zAxis.x();
-    viewMatrix(1, 0) = xAxis.y();
-    viewMatrix(1, 1) = yAxis.y();
-    viewMatrix(1, 2) = zAxis.y();
-    viewMatrix(2, 0) = xAxis.z();
-    viewMatrix(2, 1) = yAxis.z();
-    viewMatrix(2, 2) = zAxis.z();
-    viewMatrix(0, 3) = -xAxis.dot(cameraPos.head<3>());
-    viewMatrix(1, 3) = -yAxis.dot(cameraPos.head<3>());
-    viewMatrix(2, 3) = -zAxis.dot(cameraPos.head<3>());
-    return viewMatrix;
+    Eigen::Matrix4d orientation;
+    orientation << right.x(), right.y(), right.z(), 0,
+                   newUp.x(), newUp.y(), newUp.z(), 0,
+                   forward.x(), forward.y(), forward.z(), 0,
+                   0, 0, 0, 1;
+
+    Eigen::Matrix4d translation;
+    translation << 1, 0, 0, -eye.x(),
+                   0, 1, 0, -eye.y(),
+                   0, 0, 1, -eye.z(),
+                   0, 0, 0, 1;
+
+    return orientation * translation;
 }
 
 Eigen::Matrix4d Matrices::createPerspectiveProjection(double fov, double aspectRatio, double near, double far) {
-    double tanHalfFov = std::tan(fov / 2.0);
+    double tanHalfFov = std::tan(fov / 2);
     Eigen::Matrix4d perspectiveMatrix = Eigen::Matrix4d::Zero();
-    perspectiveMatrix(0, 0) = 1.0 / (aspectRatio * tanHalfFov);
-    perspectiveMatrix(1, 1) = 1.0 / tanHalfFov;
+    perspectiveMatrix(0, 0) = 1 / (aspectRatio * tanHalfFov);
+    perspectiveMatrix(1, 1) = 1 / tanHalfFov;
     perspectiveMatrix(2, 2) = -(far + near) / (far - near);
-    perspectiveMatrix(3, 2) = -2.0 * far * near / (far - near);
-    perspectiveMatrix(2, 3) = -1.0;
+    perspectiveMatrix(3, 2) = -2 * far * near / (far - near);
+    perspectiveMatrix(2, 3) = -1;
+    perspectiveMatrix(3, 3) = 0;
     return perspectiveMatrix;
 }

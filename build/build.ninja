@@ -12,7 +12,7 @@
 
 # =============================================================================
 # Project: cpp-is-fun
-# Configurations: Debug
+# Configurations: Release
 # =============================================================================
 
 #############################################
@@ -24,7 +24,7 @@ ninja_required_version = 1.5
 #############################################
 # Set configuration variable for custom commands.
 
-CONFIGURATION = Debug
+CONFIGURATION = Release
 # =============================================================================
 # Include auxiliary files.
 
@@ -217,30 +217,30 @@ build ContinuousSubmit: phony CMakeFiles/ContinuousSubmit
 
 build cmake_object_order_depends_target_cpp-is-fun: phony || CMakeFiles/cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/main.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/main.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/main.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Filer/playground/main.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\main.cpp.obj.d
-  FLAGS = -g
+  FLAGS = -O3 -DNDEBUG
   INCLUDES = -IC:/Users/gbhko/Desktop/Filer/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/renderer.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Filer/playground/renderer.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\renderer.cpp.obj.d
-  FLAGS = -g
+  FLAGS = -O3 -DNDEBUG
   INCLUDES = -IC:/Users/gbhko/Desktop/Filer/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/triangle.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Filer/playground/triangle.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\triangle.cpp.obj.d
-  FLAGS = -g
+  FLAGS = -O3 -DNDEBUG
   INCLUDES = -IC:/Users/gbhko/Desktop/Filer/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Debug C$:/Users/gbhko/Desktop/Filer/playground/matrices.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Filer/playground/matrices.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\matrices.cpp.obj.d
-  FLAGS = -g
+  FLAGS = -O3 -DNDEBUG
   INCLUDES = -IC:/Users/gbhko/Desktop/Filer/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
@@ -253,11 +253,11 @@ build CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: CXX_COMPILER__cpp-is-fun_unsca
 #############################################
 # Link the executable cpp-is-fun.exe
 
-build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Debug CMakeFiles/cpp-is-fun.dir/main.cpp.obj CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj | C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2maind.a C$:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2d.a
-  FLAGS = -g
-  LINK_LIBRARIES = C:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2maind.a  C:/dev/vcpkg/installed/x64-mingw-static/debug/lib/libSDL2d.a  -Wl,--undefined=WinMain  -lm  -luser32  -lgdi32  -lwinmm  -limm32  -lole32  -loleaut32  -lversion  -luuid  -ladvapi32  -lsetupapi  -lshell32  -ldinput8  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Release CMakeFiles/cpp-is-fun.dir/main.cpp.obj CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj CMakeFiles/cpp-is-fun.dir/triangle.cpp.obj CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj | C$:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2main.a C$:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2.a
+  FLAGS = -O3 -DNDEBUG
+  LINK_LIBRARIES = C:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2main.a  C:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2.a  -Wl,--undefined=WinMain  -lm  -luser32  -lgdi32  -lwinmm  -limm32  -lole32  -loleaut32  -lversion  -luuid  -ladvapi32  -lsetupapi  -lshell32  -ldinput8  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
-  POST_BUILD = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Filer\playground\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Filer/playground/build/cpp-is-fun.exe -installedDir C:/dev/vcpkg/installed/x64-mingw-static/debug/bin -OutVariable out"
+  POST_BUILD = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Filer\playground\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Filer/playground/build/cpp-is-fun.exe -installedDir C:/dev/vcpkg/installed/x64-mingw-static/bin -OutVariable out"
   PRE_LINK = cd .
   TARGET_FILE = cpp-is-fun.exe
   TARGET_IMPLIB = libcpp-is-fun.dll.a
