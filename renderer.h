@@ -28,8 +28,7 @@ public:
     static Eigen::Vector4d cameraPos;
     static Eigen::Vector4d targetPos;
     static void onKeys(const std::string& key);
-    static void onYaw();
-    static void onPitch();
+    static void onYawPitch();
     static void onMouse();
 
     // Drawing/object related methods

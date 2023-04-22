@@ -42,6 +42,31 @@ Eigen::Matrix4d Matrices::createRotationZ(double angle) {
     return rotationMatrix;
 }
 
+Eigen::Matrix4d Matrices::createRotationCustom(const Eigen::Vector3d& axis, double angle) {
+    Eigen::Matrix4d rotationMatrix = Eigen::Matrix4d::Identity();
+    double cosA = std::cos(angle);
+    double sinA = std::sin(angle);
+    double oneMinusCosA = 1 - cosA;
+
+    double x = axis.x();
+    double y = axis.y();
+    double z = axis.z();
+
+    rotationMatrix(0, 0) = cosA + x * x * oneMinusCosA;
+    rotationMatrix(0, 1) = x * y * oneMinusCosA - z * sinA;
+    rotationMatrix(0, 2) = x * z * oneMinusCosA + y * sinA;
+
+    rotationMatrix(1, 0) = y * x * oneMinusCosA + z * sinA;
+    rotationMatrix(1, 1) = cosA + y * y * oneMinusCosA;
+    rotationMatrix(1, 2) = y * z * oneMinusCosA - x * sinA;
+
+    rotationMatrix(2, 0) = z * x * oneMinusCosA - y * sinA;
+    rotationMatrix(2, 1) = z * y * oneMinusCosA + x * sinA;
+    rotationMatrix(2, 2) = cosA + z * z * oneMinusCosA;
+
+    return rotationMatrix;
+}
+
 Eigen::Matrix4d Matrices::createTranslation(double x, double y, double z) {
     Eigen::Matrix4d translationMatrix = Eigen::Matrix4d::Identity();
     translationMatrix(0, 3) = x;

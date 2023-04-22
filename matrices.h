@@ -9,6 +9,7 @@ public:
     static Eigen::Matrix4d createRotationX(double angle);
     static Eigen::Matrix4d createRotationY(double angle);
     static Eigen::Matrix4d createRotationZ(double angle);
+    static Eigen::Matrix4d createRotationCustom(const Eigen::Vector3d& axis, double angle);
     static Eigen::Matrix4d createTranslation(double x, double y, double z);
     static Eigen::Matrix4d createViewMatrix(const Eigen::Vector4d &cameraPos, const Eigen::Vector4d &targetPos, const Eigen::Vector4d &upVector);
     static Eigen::Matrix4d createPerspectiveProjection(double fov, double aspectRatio, double near, double far);

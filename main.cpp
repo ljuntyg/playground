@@ -12,8 +12,6 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("My Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
-    Renderer::onYaw();
-
     std::vector<Eigen::Vector4d> cube = {
         // SOUTH
         Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1),
@@ -63,10 +61,22 @@ int main(int argc, char* argv[]) {
                     int mouseX = e.motion.xrel;
                     int mouseY = e.motion.yrel;
 
-                    //Renderer::onMouse(mouseX, mouseY);
+                    Renderer::cameraYaw += mouseX * Renderer::mouseSensitivity;
+                    Renderer::cameraPitch -= mouseY * Renderer::mouseSensitivity;
+
+                    // Clamp pitch to avoid gimbal lock
+                    if (Renderer::cameraPitch > M_PI_2) {
+                        Renderer::cameraPitch = M_PI_2;
+                    } else if (Renderer::cameraPitch < -M_PI_2) {
+                        Renderer::cameraPitch = -M_PI_2;
+                    }
+
+                    Renderer::onYawPitch();
                 }
             }
         }
+
+        Renderer::onYawPitch(); // Idk, need to call or weird perspective snap
 
         const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
@@ -97,12 +107,38 @@ int main(int argc, char* argv[]) {
         // Yaw right
         if (key_state[SDL_SCANCODE_RIGHT]) {
             Renderer::cameraYaw += Renderer::rotationSpeed;
-            Renderer::onYaw();
+            Renderer::onYawPitch();
         }
         // Yaw left
         if (key_state[SDL_SCANCODE_LEFT]) {
             Renderer::cameraYaw -= Renderer::rotationSpeed;
-            Renderer::onYaw();
+            Renderer::onYawPitch();
+        }
+        // Pitch up
+        if (key_state[SDL_SCANCODE_UP]) {
+            Renderer::cameraPitch += Renderer::rotationSpeed;
+
+            // Clamp pitch to avoid gimbal lock
+            if (Renderer::cameraPitch > M_PI_2) {
+                Renderer::cameraPitch = M_PI_2;
+            } else if (Renderer::cameraPitch < -M_PI_2) {
+                Renderer::cameraPitch = -M_PI_2;
+            }
+
+            Renderer::onYawPitch();
+        }
+        // Pitch down
+        if (key_state[SDL_SCANCODE_DOWN]) {
+            Renderer::cameraPitch -= Renderer::rotationSpeed;
+
+            // Clamp pitch to avoid gimbal lock
+            if (Renderer::cameraPitch > M_PI_2) {
+                Renderer::cameraPitch = M_PI_2;
+            } else if (Renderer::cameraPitch < -M_PI_2) {
+                Renderer::cameraPitch = -M_PI_2;
+            }
+
+            Renderer::onYawPitch();
         }
 
         // Set color to black, clear the renderer

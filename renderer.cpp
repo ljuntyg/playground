@@ -54,12 +54,27 @@ void Renderer::onKeys(const std::string& key) {
     }
 }
 
-void Renderer::onYaw() {
-    Eigen::Matrix4d rotationMatrix = Matrices::createRotationY(-cameraYaw);
-    lookDir = rotationMatrix * Eigen::Vector4d(0, 0, 1, 1);
+void Renderer::onYawPitch() {
+    // Create the rotation matrix for yaw
+    Eigen::Matrix4d rotationMatrixYaw = Matrices::createRotationY(-cameraYaw);
+
+    // Calculate the horizontal direction vector of the camera
+    Eigen::Vector3d horizontalDir(lookDir.x(), 0, lookDir.z());
+    horizontalDir.normalize();
+
+    // Calculate the rotation axis by taking the cross product of the horizontal direction vector and the Up vector
+    Eigen::Vector3d rotationAxis = Eigen::Vector3d(0, 1, 0).cross(horizontalDir);
+
+    // Create the rotation matrix for pitch
+    Eigen::Matrix4d rotationMatrixPitch = Matrices::createRotationCustom(rotationAxis, -cameraPitch);
+
+    // Apply both yaw and pitch rotations to the initial look direction vector
+    lookDir = rotationMatrixYaw * rotationMatrixPitch * Eigen::Vector4d(0, 0, 1, 1);
+
     targetPos = cameraPos + lookDir;
     lookDir.normalize();
 }
+
 
 void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Eigen::Vector4d>& object, double rotX, double rotY, double rotZ, double scale) {
     // Create transformation matrices
