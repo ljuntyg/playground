@@ -4,7 +4,7 @@ project(cpp-is-fun VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-add_executable(cpp-is-fun main.cpp renderer.cpp triangle.cpp matrices.cpp)
+add_executable(cpp-is-fun main.cpp renderer.cpp matrices.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

@@ -4,7 +4,6 @@
 #include <cmath>
 
 #include "renderer.h"
-#include "triangle.h"
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -12,42 +11,44 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("My Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
-    std::vector<Eigen::Vector4d> cube = {
+    std::vector<Triangle> cube = {
         // SOUTH
-        Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1),
-        Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
+        Triangle(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1)),
+        Triangle(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
 
         // EAST
-        Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1),
-        Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 0, 1, 1),
+        Triangle(Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1)),
+        Triangle(Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 0, 1, 1)),
 
         // NORTH
-        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(0, 1, 1, 1),
-        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 0, 1, 1),
+        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(0, 1, 1, 1)),
+        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 0, 1, 1)),
 
         // WEST
-        Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 1, 0, 1),
-        Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 0, 0, 1),
+        Triangle(Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 1, 0, 1)),
+        Triangle(Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 0, 0, 1)),
 
         // TOP
-        Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(1, 1, 1, 1),
-        Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 1, 0, 1),
+        Triangle(Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(1, 1, 1, 1)),
+        Triangle(Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 1, 0, 1)),
 
         // BOTTOM
-        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1),
-        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
+        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1)),
+        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
     };
 
-    std::vector<Eigen::Vector4d> teapot = Renderer::loadObj("teapot.obj");
+    std::vector<Triangle> teapot = Renderer::loadObj("teapot.obj");
 
-    std::vector<Eigen::Vector4d> gourd = Renderer::loadObj("gourd.obj");
+    std::vector<Triangle> gourd = Renderer::loadObj("gourd.obj");
 
-    std::vector<Eigen::Vector4d> axis = Renderer::loadObj("axis.obj");
+    std::vector<Triangle> axis = Renderer::loadObj("axis.obj");
+
+    std::vector<Triangle> shuttle = Renderer::loadObj("shuttle.obj");
 
     double rotX = 0;
     double rotY = 0;
     double rotZ = 0;
-    double objectRotationSpeed = 0.001;
+    double objectRotationSpeed = 0.01;
 
     SDL_Event e;
     bool quit = false;
@@ -61,22 +62,18 @@ int main(int argc, char* argv[]) {
                     int mouseX = e.motion.xrel;
                     int mouseY = e.motion.yrel;
 
-                    Renderer::cameraYaw += mouseX * Renderer::mouseSensitivity;
-                    Renderer::cameraPitch -= mouseY * Renderer::mouseSensitivity;
+                    double dx = 0;
+                    double dy = 0;
 
-                    // Clamp pitch to avoid gimbal lock
-                    if (Renderer::cameraPitch > M_PI_2) {
-                        Renderer::cameraPitch = M_PI_2;
-                    } else if (Renderer::cameraPitch < -M_PI_2) {
-                        Renderer::cameraPitch = -M_PI_2;
-                    }
+                    dx += mouseX * Renderer::mouseSensitivity;
+                    dy -= mouseY * Renderer::mouseSensitivity;
 
-                    Renderer::onYawPitch();
+                    Renderer::onYawPitch(dx, dy);
                 }
             }
         }
 
-        Renderer::onYawPitch(); // Idk, need to call or weird perspective snap
+        Renderer::onYawPitch(0, 0); // Idk, need to call or weird perspective snap
 
         const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
@@ -106,39 +103,29 @@ int main(int argc, char* argv[]) {
         }
         // Yaw right
         if (key_state[SDL_SCANCODE_RIGHT]) {
-            Renderer::cameraYaw += Renderer::rotationSpeed;
-            Renderer::onYawPitch();
+            double dx = 0;
+            dx += Renderer::rotationSpeed;
+            Renderer::onYawPitch(dx, 0);
         }
         // Yaw left
         if (key_state[SDL_SCANCODE_LEFT]) {
-            Renderer::cameraYaw -= Renderer::rotationSpeed;
-            Renderer::onYawPitch();
+            double dx = 0;
+            dx -= Renderer::rotationSpeed;
+            Renderer::onYawPitch(dx, 0);
         }
         // Pitch up
         if (key_state[SDL_SCANCODE_UP]) {
-            Renderer::cameraPitch += Renderer::rotationSpeed;
+            double dy = 0;
+            dy += Renderer::rotationSpeed;
 
-            // Clamp pitch to avoid gimbal lock
-            if (Renderer::cameraPitch > M_PI_2) {
-                Renderer::cameraPitch = M_PI_2;
-            } else if (Renderer::cameraPitch < -M_PI_2) {
-                Renderer::cameraPitch = -M_PI_2;
-            }
-
-            Renderer::onYawPitch();
+            Renderer::onYawPitch(0, dy);
         }
         // Pitch down
         if (key_state[SDL_SCANCODE_DOWN]) {
-            Renderer::cameraPitch -= Renderer::rotationSpeed;
+            double dy = 0;
+            dy -= Renderer::rotationSpeed;
 
-            // Clamp pitch to avoid gimbal lock
-            if (Renderer::cameraPitch > M_PI_2) {
-                Renderer::cameraPitch = M_PI_2;
-            } else if (Renderer::cameraPitch < -M_PI_2) {
-                Renderer::cameraPitch = -M_PI_2;
-            }
-
-            Renderer::onYawPitch();
+            Renderer::onYawPitch(0, dy);
         }
 
         // Set color to black, clear the renderer
@@ -149,6 +136,9 @@ int main(int argc, char* argv[]) {
         rotX += objectRotationSpeed;
         rotY += objectRotationSpeed;
         rotZ += objectRotationSpeed;
+
+        // Clear depth buffer
+        std::fill(Renderer::depthBuffer.begin(), Renderer::depthBuffer.end(), std::numeric_limits<double>::max());
 
         // Make calls to renderer here
         Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ);

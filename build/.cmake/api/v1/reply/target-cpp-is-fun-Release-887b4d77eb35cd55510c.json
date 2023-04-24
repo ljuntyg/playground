@@ -140,8 +140,7 @@
 			[
 				0,
 				1,
-				2,
-				3
+				2
 			]
 		}
 	],
@@ -260,8 +259,7 @@
 			[
 				0,
 				1,
-				2,
-				3
+				2
 			]
 		}
 	],
@@ -277,12 +275,6 @@
 			"backtrace" : 2,
 			"compileGroupIndex" : 0,
 			"path" : "renderer.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 2,
-			"compileGroupIndex" : 0,
-			"path" : "triangle.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
