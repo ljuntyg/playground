@@ -11,6 +11,8 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("My Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
+    Uint32 nextFrameTicks = SDL_GetTicks();
+
     std::vector<Triangle> cube = {
         // SOUTH
         Triangle(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1)),
@@ -53,98 +55,105 @@ int main(int argc, char* argv[]) {
     SDL_Event e;
     bool quit = false;
     while (!quit) {
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                quit = true;
-            } else if (e.type == SDL_MOUSEMOTION) {
-                // Check if the left mouse button is pressed
-                if (e.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-                    int mouseX = e.motion.xrel;
-                    int mouseY = e.motion.yrel;
 
-                    double dx = 0;
-                    double dy = 0;
+        Uint32 currentTicks = SDL_GetTicks();
+        if (currentTicks >= nextFrameTicks) {
+            // Update the next frame ticks
+            nextFrameTicks = currentTicks + Renderer::TICKS_PER_FRAME;
 
-                    dx += mouseX * Renderer::mouseSensitivity;
-                    dy -= mouseY * Renderer::mouseSensitivity;
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                } else if (e.type == SDL_MOUSEMOTION) {
+                    // Check if the left mouse button is pressed
+                    if (e.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+                        int mouseX = e.motion.xrel;
+                        int mouseY = e.motion.yrel;
 
-                    Renderer::onYawPitch(dx, dy);
+                        double dx = 0;
+                        double dy = 0;
+
+                        dx += mouseX * Renderer::mouseSensitivity;
+                        dy -= mouseY * Renderer::mouseSensitivity;
+
+                        Renderer::onYawPitch(dx, dy);
+                    }
                 }
             }
-        }
 
-        Renderer::onYawPitch(0, 0); // Idk, need to call or weird perspective snap
+            Renderer::onYawPitch(0, 0); // Idk, need to call or weird perspective snap
 
-        const Uint8* key_state = SDL_GetKeyboardState(NULL);
+            const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
-        // Move camera up
-        if (key_state[SDL_SCANCODE_LSHIFT]) {
-            Renderer::onKeys("UP");
-        }
-        // Move camera down
-        if (key_state[SDL_SCANCODE_LCTRL]) {
-            Renderer::onKeys("DOWN");
-        }
-        // Move camera right
-        if (key_state[SDL_SCANCODE_A]) {
-            Renderer::onKeys("RIGHT");
-        }
-        // Move camera left
-        if (key_state[SDL_SCANCODE_D]) {
-            Renderer::onKeys("LEFT");
-        }
-        // Move camera forward
-        if (key_state[SDL_SCANCODE_W]) {
-            Renderer::onKeys("FORWARD");
-        }
-        // Move camera backward
-        if (key_state[SDL_SCANCODE_S]) {
-            Renderer::onKeys("BACK");
-        }
-        // Yaw right
-        if (key_state[SDL_SCANCODE_RIGHT]) {
-            double dx = 0;
-            dx += Renderer::rotationSpeed;
-            Renderer::onYawPitch(dx, 0);
-        }
-        // Yaw left
-        if (key_state[SDL_SCANCODE_LEFT]) {
-            double dx = 0;
-            dx -= Renderer::rotationSpeed;
-            Renderer::onYawPitch(dx, 0);
-        }
-        // Pitch up
-        if (key_state[SDL_SCANCODE_UP]) {
-            double dy = 0;
-            dy += Renderer::rotationSpeed;
+            // Move camera up
+            if (key_state[SDL_SCANCODE_LSHIFT]) {
+                Renderer::onKeys("UP");
+            }
+            // Move camera down
+            if (key_state[SDL_SCANCODE_LCTRL]) {
+                Renderer::onKeys("DOWN");
+            }
+            // Move camera right
+            if (key_state[SDL_SCANCODE_A]) {
+                Renderer::onKeys("RIGHT");
+            }
+            // Move camera left
+            if (key_state[SDL_SCANCODE_D]) {
+                Renderer::onKeys("LEFT");
+            }
+            // Move camera forward
+            if (key_state[SDL_SCANCODE_W]) {
+                Renderer::onKeys("FORWARD");
+            }
+            // Move camera backward
+            if (key_state[SDL_SCANCODE_S]) {
+                Renderer::onKeys("BACK");
+            }
+            // Yaw right
+            if (key_state[SDL_SCANCODE_RIGHT]) {
+                double dx = 0;
+                dx += Renderer::rotationSpeed;
+                Renderer::onYawPitch(dx, 0);
+            }
+            // Yaw left
+            if (key_state[SDL_SCANCODE_LEFT]) {
+                double dx = 0;
+                dx -= Renderer::rotationSpeed;
+                Renderer::onYawPitch(dx, 0);
+            }
+            // Pitch up
+            if (key_state[SDL_SCANCODE_UP]) {
+                double dy = 0;
+                dy += Renderer::rotationSpeed;
 
-            Renderer::onYawPitch(0, dy);
+                Renderer::onYawPitch(0, dy);
+            }
+            // Pitch down
+            if (key_state[SDL_SCANCODE_DOWN]) {
+                double dy = 0;
+                dy -= Renderer::rotationSpeed;
+
+                Renderer::onYawPitch(0, dy);
+            }
+
+            // Set color to black, clear the renderer
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+
+            // Update rotation angles
+            rotX += objectRotationSpeed;
+            rotY += objectRotationSpeed;
+            rotZ += objectRotationSpeed;
+
+            // Make calls to renderer here
+            Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ);
+
+            // Update the screen
+            SDL_RenderPresent(renderer);
+        } else {
+            // Sleep to prevent high CPU usage
+            SDL_Delay(nextFrameTicks - currentTicks);
         }
-        // Pitch down
-        if (key_state[SDL_SCANCODE_DOWN]) {
-            double dy = 0;
-            dy -= Renderer::rotationSpeed;
-
-            Renderer::onYawPitch(0, dy);
-        }
-
-        // Set color to black, clear the renderer
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-
-        // Update rotation angles
-        rotX += objectRotationSpeed;
-        rotY += objectRotationSpeed;
-        rotZ += objectRotationSpeed;
-
-        // Clear depth buffer
-        std::fill(Renderer::depthBuffer.begin(), Renderer::depthBuffer.end(), std::numeric_limits<double>::max());
-
-        // Make calls to renderer here
-        Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ);
-
-        // Update the screen
-        SDL_RenderPresent(renderer);
     }
 
     SDL_DestroyRenderer(renderer);

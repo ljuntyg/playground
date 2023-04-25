@@ -12,7 +12,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -20, 1);
+Eigen::Vector4d Renderer::cameraPos(0, 0, -15, 1);
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -120,6 +120,16 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     // Combine model (rotate, scale, translate) into transform matrix (without view and projection);
     Eigen::Matrix4d transformMatrixNoViewNoProjection = translationMatrix * scaleMatrix * rotXMatrix * rotYMatrix * rotZMatrix;
 
+    // Define the clip planes
+    std::vector<ClipPlane> clipPlanes = {
+        ClipPlane(Eigen::Vector4d(1, 0, WINDOW_WIDTH / WINDOW_HEIGHT / tan(FOV / 2), 0), 0), // Left
+        ClipPlane(Eigen::Vector4d(-1, 0, WINDOW_WIDTH / WINDOW_HEIGHT / tan(FOV / 2), 0), 0), // Right
+        ClipPlane(Eigen::Vector4d(0, 1, 1 / tan(FOV / 2), 0), 0), // Top
+        ClipPlane(Eigen::Vector4d(0, -1, 1 / tan(FOV / 2), 0), 0), // Bottom
+        ClipPlane(Eigen::Vector4d(0, 0, 1, -NEAR), NEAR), // Near
+        ClipPlane(Eigen::Vector4d(0, 0, -1, FAR), -FAR) // Far
+    };
+
     for (const Triangle& triangle : object) {
         Eigen::Vector4d v1 = triangle.v1;
         Eigen::Vector4d v2 = triangle.v2;
@@ -142,35 +152,60 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
         // Calculate the dot product of the normal and view direction vectors
         double dotProduct = normal.dot(viewDir);
 
-        // CULLING VALS END
-        if (dotProduct < 0) {
-            lightDir.normalize();
-            double normLightDotProd = normal.dot(lightDir.head<3>());
+        lightDir.normalize();
+        double normLightDotProd = normal.dot(lightDir.head<3>());
 
-            // Apply combined transform matrix
-            Eigen::Vector4d projectedV1 = projectionMatrix * viewMatrix * translatedV1;
-            Eigen::Vector4d projectedV2 = projectionMatrix * viewMatrix * translatedV2;
-            Eigen::Vector4d projectedV3 = projectionMatrix * viewMatrix * translatedV3;
+        // CULLING VALS END (SKIP IF BACK FACE)
+        if (dotProduct > 0) {
+            continue;
+        }
 
-            // Convert to screen coordinates
-            projectedV1.x() /= projectedV1.w();
-            projectedV1.y() /= projectedV1.w();
-            projectedV1.x() = (projectedV1.x() + 1.0) * scaleFactor;
-            projectedV1.y() = (1.0 - projectedV1.y()) * scaleFactor;
+        // Transform and project the triangle
+        Eigen::Vector4d projectedV1 = projectionMatrix * viewMatrix * transformMatrixNoViewNoProjection * v1;
+        Eigen::Vector4d projectedV2 = projectionMatrix * viewMatrix * transformMatrixNoViewNoProjection * v2;
+        Eigen::Vector4d projectedV3 = projectionMatrix * viewMatrix * transformMatrixNoViewNoProjection * v3;
 
-            projectedV2.x() /= projectedV2.w();
-            projectedV2.y() /= projectedV2.w();
-            projectedV2.x() = (projectedV2.x() + 1.0) * scaleFactor;
-            projectedV2.y() = (1.0 - projectedV2.y()) * scaleFactor;
+        Triangle projectedTriangle = Triangle(projectedV1, projectedV2, projectedV3, normLightDotProd);
 
-            projectedV3.x() /= projectedV3.w();
-            projectedV3.y() /= projectedV3.w();
-            projectedV3.x() = (projectedV3.x() + 1.0) * scaleFactor;
-            projectedV3.y() = (1.0 - projectedV3.y()) * scaleFactor;
+        // Clip the triangle against the view frustum (all planes)
+        std::vector<Triangle> clippedTriangles = {projectedTriangle};
+        for (const ClipPlane& clipPlane : clipPlanes) {
+            std::vector<Triangle> newTriangles;
+            for (const Triangle& clippedTriangle : clippedTriangles) {
+                std::vector<Triangle> clipped = clipTriangle(clippedTriangle, clipPlane);
+                newTriangles.insert(newTriangles.end(), clipped.begin(), clipped.end());
+            }
+            clippedTriangles = newTriangles;
+        }
 
-            drawTriangle(renderer, Triangle(projectedV1, projectedV2, projectedV3), getShadingColor(normLightDotProd));
+        // Draw the clipped triangles
+        for (const Triangle& clippedTriangle : clippedTriangles) {
+            Eigen::Vector4d screenV1 = clippedTriangle.v1;
+            Eigen::Vector4d screenV2 = clippedTriangle.v2;
+            Eigen::Vector4d screenV3 = clippedTriangle.v3;
+
+            // Convert to screen space coordinates
+            screenV1.x() /= screenV1.w();
+            screenV1.y() /= screenV1.w();
+            screenV1.x() = (screenV1.x() + 1.0) * scaleFactor;
+            screenV1.y() = (1.0 - screenV1.y()) * scaleFactor;
+
+            screenV2.x() /= screenV2.w();
+            screenV2.y() /= screenV2.w();
+            screenV2.x() = (screenV2.x() + 1.0) * scaleFactor;
+            screenV2.y() = (1.0 - screenV2.y()) * scaleFactor;
+
+            screenV3.x() /= screenV3.w();
+            screenV3.y() /= screenV3.w();
+            screenV3.x() = (screenV3.x() + 1.0) * scaleFactor;
+            screenV3.y() = (1.0 - screenV3.y()) * scaleFactor;
+
+            drawTriangle(renderer, Triangle(screenV1, screenV2, screenV3), getShadingColor(clippedTriangle.shadeVal));
         }
     }
+
+    // Clear depth buffer
+    std::fill(depthBuffer.begin(), depthBuffer.end(), std::numeric_limits<double>::max());
 }
 
 void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle) {
@@ -187,10 +222,6 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle) {
 }
 
 void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SDL_Color color) {
-    auto edgeFunction = [](const Eigen::Vector4d& a, const Eigen::Vector4d& b, const Eigen::Vector4d& c) {
-        return (c.x() - a.x()) * (b.y() - a.y()) - (c.y() - a.y()) * (b.x() - a.x());
-    };
-
     // Sort vertices by y-coordinate
     std::array<Eigen::Vector4d, 3> sortedTriangle = {triangle.v1, triangle.v2, triangle.v3};
     std::sort(sortedTriangle.begin(), sortedTriangle.end(),
@@ -202,10 +233,11 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
 
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
-    // Calculate the area of the triangle
-    double area = edgeFunction(v0, v1, v2);
-
     for (int y = static_cast<int>(std::ceil(v0.y())); y < static_cast<int>(std::ceil(v2.y())); y++) {
+        if (y < 0 || y >= WINDOW_HEIGHT) {
+            continue;
+        }
+
         bool topHalf = y < v1.y();
 
         // Calculate the x-coordinate of the intersection points of the scanline with the triangle edges
@@ -220,23 +252,86 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
         }
 
         for (int x = static_cast<int>(std::ceil(x0)); x < static_cast<int>(std::ceil(x1)); x++) {
-            // Calculate the barycentric coordinates of the pixel
-            double w0 = edgeFunction(v1, v2, Eigen::Vector4d(x, y, 0, 1)) / area;
-            double w1 = edgeFunction(v2, v0, Eigen::Vector4d(x, y, 0, 1)) / area;
-            double w2 = edgeFunction(v0, v1, Eigen::Vector4d(x, y, 0, 1)) / area;
+            if (x < 0 || x >= WINDOW_WIDTH) {
+                continue;
+            }
 
-            // Use the barycentric coordinates to interpolate the z (depth) value for the current pixel
-            double z = v0.z() * w0 + v1.z() * w1 + v2.z() * w2;
+            // Compute barycentric coordinates
+            double area = ((v1.y() - v2.y()) * (v0.x() - v2.x()) + (v2.x() - v1.x()) * (v0.y() - v2.y()));
+            double w0 = ((v1.y() - v2.y()) * (x - v2.x()) + (v2.x() - v1.x()) * (y - v2.y())) / area;
+            double w1 = ((v2.y() - v0.y()) * (x - v2.x()) + (v0.x() - v2.x()) * (y - v2.y())) / area;
+            double w2 = 1.0 - w0 - w1;
 
-            // Check if the current pixel is within the triangle and update the depth buffer
-            int index = x + y * WINDOW_WIDTH;
-            if (index >= 0 && index < WINDOW_WIDTH * WINDOW_HEIGHT && z < depthBuffer[index]) {
-                depthBuffer[index] = z;
-                // Draw the pixel since it passes the Z-buffer test
+            // Compute depth value at this pixel
+            double z = w0 * v0.z() + w1 * v1.z() + w2 * v2.z();
+
+            // Check if the current fragment is closer to the camera than the one in the depth buffer
+            int depthBufferIdx = y * WINDOW_WIDTH + x;
+            if (z < depthBuffer[depthBufferIdx]) {
+                // Update the depth buffer
+                depthBuffer[depthBufferIdx] = z;
+
+                // Draw the fragment
                 SDL_RenderDrawPoint(renderer, x, y);
             }
         }
     }
+}
+
+std::vector<Triangle> Renderer::clipTriangle(const Triangle& triangle, const ClipPlane& clipPlane) {
+    std::vector<Eigen::Vector4d> insideVertices;
+    std::vector<Eigen::Vector4d> outsideVertices;
+    std::vector<Triangle> clippedTriangles;
+
+    // Check which vertices are inside and outside the clip plane
+    for (const Eigen::Vector4d& vertex : {triangle.v1, triangle.v2, triangle.v3}) {
+        if (clipPlane.normal.dot(vertex) + clipPlane.distance >= 0) {
+            insideVertices.push_back(vertex);
+        } else {
+            outsideVertices.push_back(vertex);
+        }
+    }
+
+    if (insideVertices.size() == 0) {
+        // Completely outside the clip plane; discard the triangle
+        return clippedTriangles;
+    }
+
+    if (insideVertices.size() == 3) {
+        // Completely inside the clip plane; return the original triangle
+        clippedTriangles.push_back(triangle);
+        return clippedTriangles;
+    }
+
+    if (insideVertices.size() == 1) {
+        // One vertex inside the clip plane; create a new triangle
+        Eigen::Vector4d A = insideVertices[0];
+        Eigen::Vector4d B = outsideVertices[0];
+        Eigen::Vector4d C = outsideVertices[1];
+
+        Eigen::Vector4d AB_intersection = A + (B - A) * (-clipPlane.distance - clipPlane.normal.dot(A)) / clipPlane.normal.dot(B - A);
+        Eigen::Vector4d AC_intersection = A + (C - A) * (-clipPlane.distance - clipPlane.normal.dot(A)) / clipPlane.normal.dot(C - A);
+
+        clippedTriangles.push_back(Triangle(A, AB_intersection, AC_intersection, triangle.shadeVal));
+        return clippedTriangles;
+    }
+
+    if (insideVertices.size() == 2) {
+        // Two vertices inside the clip plane; create a new quad (two triangles)
+        Eigen::Vector4d A = insideVertices[0];
+        Eigen::Vector4d B = insideVertices[1];
+        Eigen::Vector4d C = outsideVertices[0];
+
+        Eigen::Vector4d BC_intersection = B + (C - B) * (-clipPlane.distance - clipPlane.normal.dot(B)) / clipPlane.normal.dot(C - B);
+        Eigen::Vector4d AC_intersection = A + (C - A) * (-clipPlane.distance - clipPlane.normal.dot(A)) / clipPlane.normal.dot(C - A);
+
+        clippedTriangles.push_back(Triangle(A, B, BC_intersection, triangle.shadeVal));
+        clippedTriangles.push_back(Triangle(A, BC_intersection, AC_intersection, triangle.shadeVal));
+        return clippedTriangles;
+    }
+
+    // Should never reach this point
+    return clippedTriangles;
 }
 
 SDL_Color Renderer::getShadingColor(double intensity) {
@@ -295,4 +390,25 @@ std::vector<Triangle> Renderer::loadObj(const std::string& filename) {
     }
 
     return triangles;
+}
+
+void Renderer::visualizeDepthBuffer(SDL_Renderer* renderer) {
+    for (int y = 0; y < WINDOW_HEIGHT; y++) {
+        for (int x = 0; x < WINDOW_WIDTH; x++) {
+            int index = x + y * WINDOW_WIDTH;
+            double depth = depthBuffer[index];
+
+            // Normalize the depth value to the range [0, 1]
+            double normalizedDepth = (depth - NEAR) / (FAR - NEAR);
+
+            // Clamp the normalized depth to the range [0, 1]
+            normalizedDepth = std::clamp(normalizedDepth, 0.0, 1.0);
+
+            // Convert the normalized depth to a grayscale color
+            uint8_t grayscaleValue = static_cast<uint8_t>(normalizedDepth * 255);
+
+            SDL_SetRenderDrawColor(renderer, grayscaleValue, grayscaleValue, grayscaleValue, 255);
+            SDL_RenderDrawPoint(renderer, x, y);
+        }
+    }
 }
