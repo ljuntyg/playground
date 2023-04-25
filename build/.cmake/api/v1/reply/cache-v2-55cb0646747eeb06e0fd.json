@@ -83,7 +83,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/gbhko/Desktop/Prog/playgroundREV/build"
+			"value" : "c:/Users/gbhko/Desktop/Prog/playground/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -603,7 +603,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/gbhko/Desktop/Prog/playgroundREV/build/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/gbhko/Desktop/Prog/playground/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -675,7 +675,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/gbhko/Desktop/Prog/playgroundREV"
+			"value" : "C:/Users/gbhko/Desktop/Prog/playground"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1983,7 +1983,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/gbhko/Desktop/Prog/playgroundREV/build"
+			"value" : "C:/Users/gbhko/Desktop/Prog/playground/build"
 		},
 		{
 			"name" : "cpp-is-fun_IS_TOP_LEVEL",
@@ -2007,7 +2007,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/gbhko/Desktop/Prog/playgroundREV"
+			"value" : "C:/Users/gbhko/Desktop/Prog/playground"
 		}
 	],
 	"kind" : "cache",

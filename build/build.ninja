@@ -39,7 +39,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = C$:/Users/gbhko/Desktop/Prog/playgroundREV/build/
+cmake_ninja_workdir = C$:/Users/gbhko/Desktop/Prog/playground/build/
 
 #############################################
 # Utility command for Experimental
@@ -217,24 +217,24 @@ build ContinuousSubmit: phony CMakeFiles/ContinuousSubmit
 
 build cmake_object_order_depends_target_cpp-is-fun: phony || CMakeFiles/cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/main.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playgroundREV/main.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/main.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playground/main.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\main.cpp.obj.d
   FLAGS = -O3 -DNDEBUG
-  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playgroundREV/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
+  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playgroundREV/renderer.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playground/renderer.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\renderer.cpp.obj.d
   FLAGS = -O3 -DNDEBUG
-  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playgroundREV/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
+  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
-build CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playgroundREV/matrices.cpp || cmake_object_order_depends_target_cpp-is-fun
+build CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: CXX_COMPILER__cpp-is-fun_unscanned_Release C$:/Users/gbhko/Desktop/Prog/playground/matrices.cpp || cmake_object_order_depends_target_cpp-is-fun
   DEP_FILE = CMakeFiles\cpp-is-fun.dir\matrices.cpp.obj.d
   FLAGS = -O3 -DNDEBUG
-  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playgroundREV/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
+  INCLUDES = -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp-is-fun.dir
 
@@ -250,7 +250,7 @@ build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Release CMakeFiles/cpp-i
   FLAGS = -O3 -DNDEBUG
   LINK_LIBRARIES = C:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2main.a  C:/dev/vcpkg/installed/x64-mingw-static/lib/libSDL2.a  -Wl,--undefined=WinMain  -lm  -luser32  -lgdi32  -lwinmm  -limm32  -lole32  -loleaut32  -lversion  -luuid  -ladvapi32  -lsetupapi  -lshell32  -ldinput8  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\cpp-is-fun.dir
-  POST_BUILD = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Prog/playgroundREV/build/cpp-is-fun.exe -installedDir C:/dev/vcpkg/installed/x64-mingw-static/bin -OutVariable out"
+  POST_BUILD = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Prog/playground/build/cpp-is-fun.exe -installedDir C:/dev/vcpkg/installed/x64-mingw-static/bin -OutVariable out"
   PRE_LINK = cd .
   TARGET_FILE = cpp-is-fun.exe
   TARGET_IMPLIB = libcpp-is-fun.dll.a
@@ -261,7 +261,7 @@ build cpp-is-fun.exe: CXX_EXECUTABLE_LINKER__cpp-is-fun_Release CMakeFiles/cpp-i
 # Utility command for package
 
 build CMakeFiles/package.util: CUSTOM_COMMAND all
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\cpack.exe --config ./CPackConfig.cmake"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\cpack.exe --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
@@ -273,7 +273,7 @@ build package: phony CMakeFiles/package.util
 # Utility command for package_source
 
 build CMakeFiles/package_source.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\cpack.exe --config ./CPackSourceConfig.cmake C:/Users/gbhko/Desktop/Prog/playgroundREV/build/CPackSourceConfig.cmake"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\cpack.exe --config ./CPackSourceConfig.cmake C:/Users/gbhko/Desktop/Prog/playground/build/CPackSourceConfig.cmake"
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
@@ -285,7 +285,7 @@ build package_source: phony CMakeFiles/package_source.util
 # Utility command for test
 
 build CMakeFiles/test.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe --force-new-ctest-process "
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe --force-new-ctest-process "
   DESC = Running tests...
   pool = console
   restat = 1
@@ -297,7 +297,7 @@ build test: phony CMakeFiles/test.util
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ccmake.exe -SC:\Users\gbhko\Desktop\Prog\playgroundREV -BC:\Users\gbhko\Desktop\Prog\playgroundREV\build"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ccmake.exe -SC:\Users\gbhko\Desktop\Prog\playground -BC:\Users\gbhko\Desktop\Prog\playground\build"
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -309,7 +309,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\cmake.exe --regenerate-during-build -SC:\Users\gbhko\Desktop\Prog\playgroundREV -BC:\Users\gbhko\Desktop\Prog\playgroundREV\build"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\cmake.exe --regenerate-during-build -SC:\Users\gbhko\Desktop\Prog\playground -BC:\Users\gbhko\Desktop\Prog\playground\build"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -321,7 +321,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # Custom command for CMakeFiles\Experimental
 
 build CMakeFiles/Experimental | ${cmake_ninja_workdir}CMakeFiles/Experimental: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D Experimental"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D Experimental"
   pool = console
 
 
@@ -329,7 +329,7 @@ build CMakeFiles/Experimental | ${cmake_ninja_workdir}CMakeFiles/Experimental: C
 # Custom command for CMakeFiles\Nightly
 
 build CMakeFiles/Nightly | ${cmake_ninja_workdir}CMakeFiles/Nightly: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D Nightly"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D Nightly"
   pool = console
 
 
@@ -337,7 +337,7 @@ build CMakeFiles/Nightly | ${cmake_ninja_workdir}CMakeFiles/Nightly: CUSTOM_COMM
 # Custom command for CMakeFiles\Continuous
 
 build CMakeFiles/Continuous | ${cmake_ninja_workdir}CMakeFiles/Continuous: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D Continuous"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D Continuous"
   pool = console
 
 
@@ -345,7 +345,7 @@ build CMakeFiles/Continuous | ${cmake_ninja_workdir}CMakeFiles/Continuous: CUSTO
 # Custom command for CMakeFiles\NightlyMemoryCheck
 
 build CMakeFiles/NightlyMemoryCheck | ${cmake_ninja_workdir}CMakeFiles/NightlyMemoryCheck: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyMemoryCheck"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyMemoryCheck"
   pool = console
 
 
@@ -353,7 +353,7 @@ build CMakeFiles/NightlyMemoryCheck | ${cmake_ninja_workdir}CMakeFiles/NightlyMe
 # Custom command for CMakeFiles\NightlyStart
 
 build CMakeFiles/NightlyStart | ${cmake_ninja_workdir}CMakeFiles/NightlyStart: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyStart"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyStart"
   pool = console
 
 
@@ -361,7 +361,7 @@ build CMakeFiles/NightlyStart | ${cmake_ninja_workdir}CMakeFiles/NightlyStart: C
 # Custom command for CMakeFiles\NightlyUpdate
 
 build CMakeFiles/NightlyUpdate | ${cmake_ninja_workdir}CMakeFiles/NightlyUpdate: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyUpdate"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyUpdate"
   pool = console
 
 
@@ -369,7 +369,7 @@ build CMakeFiles/NightlyUpdate | ${cmake_ninja_workdir}CMakeFiles/NightlyUpdate:
 # Custom command for CMakeFiles\NightlyConfigure
 
 build CMakeFiles/NightlyConfigure | ${cmake_ninja_workdir}CMakeFiles/NightlyConfigure: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyConfigure"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyConfigure"
   pool = console
 
 
@@ -377,7 +377,7 @@ build CMakeFiles/NightlyConfigure | ${cmake_ninja_workdir}CMakeFiles/NightlyConf
 # Custom command for CMakeFiles\NightlyBuild
 
 build CMakeFiles/NightlyBuild | ${cmake_ninja_workdir}CMakeFiles/NightlyBuild: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyBuild"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyBuild"
   pool = console
 
 
@@ -385,7 +385,7 @@ build CMakeFiles/NightlyBuild | ${cmake_ninja_workdir}CMakeFiles/NightlyBuild: C
 # Custom command for CMakeFiles\NightlyTest
 
 build CMakeFiles/NightlyTest | ${cmake_ninja_workdir}CMakeFiles/NightlyTest: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyTest"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyTest"
   pool = console
 
 
@@ -393,7 +393,7 @@ build CMakeFiles/NightlyTest | ${cmake_ninja_workdir}CMakeFiles/NightlyTest: CUS
 # Custom command for CMakeFiles\NightlyCoverage
 
 build CMakeFiles/NightlyCoverage | ${cmake_ninja_workdir}CMakeFiles/NightlyCoverage: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyCoverage"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyCoverage"
   pool = console
 
 
@@ -401,7 +401,7 @@ build CMakeFiles/NightlyCoverage | ${cmake_ninja_workdir}CMakeFiles/NightlyCover
 # Custom command for CMakeFiles\NightlyMemCheck
 
 build CMakeFiles/NightlyMemCheck | ${cmake_ninja_workdir}CMakeFiles/NightlyMemCheck: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyMemCheck"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlyMemCheck"
   pool = console
 
 
@@ -409,7 +409,7 @@ build CMakeFiles/NightlyMemCheck | ${cmake_ninja_workdir}CMakeFiles/NightlyMemCh
 # Custom command for CMakeFiles\NightlySubmit
 
 build CMakeFiles/NightlySubmit | ${cmake_ninja_workdir}CMakeFiles/NightlySubmit: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D NightlySubmit"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D NightlySubmit"
   pool = console
 
 
@@ -417,7 +417,7 @@ build CMakeFiles/NightlySubmit | ${cmake_ninja_workdir}CMakeFiles/NightlySubmit:
 # Custom command for CMakeFiles\ExperimentalStart
 
 build CMakeFiles/ExperimentalStart | ${cmake_ninja_workdir}CMakeFiles/ExperimentalStart: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalStart"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalStart"
   pool = console
 
 
@@ -425,7 +425,7 @@ build CMakeFiles/ExperimentalStart | ${cmake_ninja_workdir}CMakeFiles/Experiment
 # Custom command for CMakeFiles\ExperimentalUpdate
 
 build CMakeFiles/ExperimentalUpdate | ${cmake_ninja_workdir}CMakeFiles/ExperimentalUpdate: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalUpdate"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalUpdate"
   pool = console
 
 
@@ -433,7 +433,7 @@ build CMakeFiles/ExperimentalUpdate | ${cmake_ninja_workdir}CMakeFiles/Experimen
 # Custom command for CMakeFiles\ExperimentalConfigure
 
 build CMakeFiles/ExperimentalConfigure | ${cmake_ninja_workdir}CMakeFiles/ExperimentalConfigure: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalConfigure"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalConfigure"
   pool = console
 
 
@@ -441,7 +441,7 @@ build CMakeFiles/ExperimentalConfigure | ${cmake_ninja_workdir}CMakeFiles/Experi
 # Custom command for CMakeFiles\ExperimentalBuild
 
 build CMakeFiles/ExperimentalBuild | ${cmake_ninja_workdir}CMakeFiles/ExperimentalBuild: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalBuild"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalBuild"
   pool = console
 
 
@@ -449,7 +449,7 @@ build CMakeFiles/ExperimentalBuild | ${cmake_ninja_workdir}CMakeFiles/Experiment
 # Custom command for CMakeFiles\ExperimentalTest
 
 build CMakeFiles/ExperimentalTest | ${cmake_ninja_workdir}CMakeFiles/ExperimentalTest: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalTest"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalTest"
   pool = console
 
 
@@ -457,7 +457,7 @@ build CMakeFiles/ExperimentalTest | ${cmake_ninja_workdir}CMakeFiles/Experimenta
 # Custom command for CMakeFiles\ExperimentalCoverage
 
 build CMakeFiles/ExperimentalCoverage | ${cmake_ninja_workdir}CMakeFiles/ExperimentalCoverage: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalCoverage"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalCoverage"
   pool = console
 
 
@@ -465,7 +465,7 @@ build CMakeFiles/ExperimentalCoverage | ${cmake_ninja_workdir}CMakeFiles/Experim
 # Custom command for CMakeFiles\ExperimentalMemCheck
 
 build CMakeFiles/ExperimentalMemCheck | ${cmake_ninja_workdir}CMakeFiles/ExperimentalMemCheck: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalMemCheck"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalMemCheck"
   pool = console
 
 
@@ -473,7 +473,7 @@ build CMakeFiles/ExperimentalMemCheck | ${cmake_ninja_workdir}CMakeFiles/Experim
 # Custom command for CMakeFiles\ExperimentalSubmit
 
 build CMakeFiles/ExperimentalSubmit | ${cmake_ninja_workdir}CMakeFiles/ExperimentalSubmit: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalSubmit"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ExperimentalSubmit"
   pool = console
 
 
@@ -481,7 +481,7 @@ build CMakeFiles/ExperimentalSubmit | ${cmake_ninja_workdir}CMakeFiles/Experimen
 # Custom command for CMakeFiles\ContinuousStart
 
 build CMakeFiles/ContinuousStart | ${cmake_ninja_workdir}CMakeFiles/ContinuousStart: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousStart"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousStart"
   pool = console
 
 
@@ -489,7 +489,7 @@ build CMakeFiles/ContinuousStart | ${cmake_ninja_workdir}CMakeFiles/ContinuousSt
 # Custom command for CMakeFiles\ContinuousUpdate
 
 build CMakeFiles/ContinuousUpdate | ${cmake_ninja_workdir}CMakeFiles/ContinuousUpdate: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousUpdate"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousUpdate"
   pool = console
 
 
@@ -497,7 +497,7 @@ build CMakeFiles/ContinuousUpdate | ${cmake_ninja_workdir}CMakeFiles/ContinuousU
 # Custom command for CMakeFiles\ContinuousConfigure
 
 build CMakeFiles/ContinuousConfigure | ${cmake_ninja_workdir}CMakeFiles/ContinuousConfigure: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousConfigure"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousConfigure"
   pool = console
 
 
@@ -505,7 +505,7 @@ build CMakeFiles/ContinuousConfigure | ${cmake_ninja_workdir}CMakeFiles/Continuo
 # Custom command for CMakeFiles\ContinuousBuild
 
 build CMakeFiles/ContinuousBuild | ${cmake_ninja_workdir}CMakeFiles/ContinuousBuild: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousBuild"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousBuild"
   pool = console
 
 
@@ -513,7 +513,7 @@ build CMakeFiles/ContinuousBuild | ${cmake_ninja_workdir}CMakeFiles/ContinuousBu
 # Custom command for CMakeFiles\ContinuousTest
 
 build CMakeFiles/ContinuousTest | ${cmake_ninja_workdir}CMakeFiles/ContinuousTest: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousTest"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousTest"
   pool = console
 
 
@@ -521,7 +521,7 @@ build CMakeFiles/ContinuousTest | ${cmake_ninja_workdir}CMakeFiles/ContinuousTes
 # Custom command for CMakeFiles\ContinuousCoverage
 
 build CMakeFiles/ContinuousCoverage | ${cmake_ninja_workdir}CMakeFiles/ContinuousCoverage: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousCoverage"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousCoverage"
   pool = console
 
 
@@ -529,7 +529,7 @@ build CMakeFiles/ContinuousCoverage | ${cmake_ninja_workdir}CMakeFiles/Continuou
 # Custom command for CMakeFiles\ContinuousMemCheck
 
 build CMakeFiles/ContinuousMemCheck | ${cmake_ninja_workdir}CMakeFiles/ContinuousMemCheck: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousMemCheck"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousMemCheck"
   pool = console
 
 
@@ -537,7 +537,7 @@ build CMakeFiles/ContinuousMemCheck | ${cmake_ninja_workdir}CMakeFiles/Continuou
 # Custom command for CMakeFiles\ContinuousSubmit
 
 build CMakeFiles/ContinuousSubmit | ${cmake_ninja_workdir}CMakeFiles/ContinuousSubmit: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playgroundREV\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousSubmit"
+  COMMAND = cmd.exe /C "cd /D C:\Users\gbhko\Desktop\Prog\playground\build && C:\msys64\mingw64\bin\ctest.exe -D ContinuousSubmit"
   pool = console
 
 # =============================================================================
@@ -551,7 +551,7 @@ build cpp-is-fun: phony cpp-is-fun.exe
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/gbhko/Desktop/Prog/playgroundREV/build
+# Folder: C:/Users/gbhko/Desktop/Prog/playground/build
 
 build all: phony cpp-is-fun.exe
 
@@ -567,14 +567,14 @@ build all: phony cpp-is-fun.exe
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:/Users/gbhko/Desktop/Prog/playgroundREV/CMakeLists.txt C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2Config.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2ConfigVersion.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets.cmake C$:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCXXInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCommonLanguageInclude.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeDependentOption.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeGenericSystem.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeInitializeConfigs.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeLanguageInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeRCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake C$:/msys64/mingw64/share/cmake/Modules/CPack.cmake C$:/msys64/mingw64/share/cmake/Modules/CPackComponent.cmake C$:/msys64/mingw64/share/cmake/Modules/CTest.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestTargets.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestUseLaunchers.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/DartConfiguration.tcl.in C$:/msys64/mingw64/share/cmake/Modules/FeatureSummary.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-windres.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/WindowsPaths.cmake C$:/msys64/mingw64/share/cmake/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/3.26.2/CMakeCCompiler.cmake CMakeFiles/3.26.2/CMakeCXXCompiler.cmake CMakeFiles/3.26.2/CMakeRCCompiler.cmake CMakeFiles/3.26.2/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | C$:/Users/gbhko/Desktop/Prog/playground/CMakeLists.txt C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2Config.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2ConfigVersion.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets.cmake C$:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCXXInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCommonLanguageInclude.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeDependentOption.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeGenericSystem.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeInitializeConfigs.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeLanguageInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeRCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake C$:/msys64/mingw64/share/cmake/Modules/CPack.cmake C$:/msys64/mingw64/share/cmake/Modules/CPackComponent.cmake C$:/msys64/mingw64/share/cmake/Modules/CTest.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestTargets.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestUseLaunchers.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/DartConfiguration.tcl.in C$:/msys64/mingw64/share/cmake/Modules/FeatureSummary.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-windres.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/WindowsPaths.cmake C$:/msys64/mingw64/share/cmake/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/3.26.2/CMakeCCompiler.cmake CMakeFiles/3.26.2/CMakeCXXCompiler.cmake CMakeFiles/3.26.2/CMakeRCCompiler.cmake CMakeFiles/3.26.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Users/gbhko/Desktop/Prog/playgroundREV/CMakeLists.txt C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2Config.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2ConfigVersion.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets.cmake C$:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCXXInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCommonLanguageInclude.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeDependentOption.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeGenericSystem.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeInitializeConfigs.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeLanguageInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeRCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake C$:/msys64/mingw64/share/cmake/Modules/CPack.cmake C$:/msys64/mingw64/share/cmake/Modules/CPackComponent.cmake C$:/msys64/mingw64/share/cmake/Modules/CTest.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestTargets.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestUseLaunchers.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/DartConfiguration.tcl.in C$:/msys64/mingw64/share/cmake/Modules/FeatureSummary.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-windres.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/WindowsPaths.cmake C$:/msys64/mingw64/share/cmake/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/3.26.2/CMakeCCompiler.cmake CMakeFiles/3.26.2/CMakeCXXCompiler.cmake CMakeFiles/3.26.2/CMakeRCCompiler.cmake CMakeFiles/3.26.2/CMakeSystem.cmake: phony
+build C$:/Users/gbhko/Desktop/Prog/playground/CMakeLists.txt C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2Config.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2ConfigVersion.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2mainTargets.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-debug.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets-release.cmake C$:/dev/vcpkg/installed/x64-mingw-static/share/sdl2/SDL2staticTargets.cmake C$:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCXXInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeCommonLanguageInclude.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeDependentOption.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeGenericSystem.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeInitializeConfigs.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeLanguageInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeRCInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInformation.cmake C$:/msys64/mingw64/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake C$:/msys64/mingw64/share/cmake/Modules/CPack.cmake C$:/msys64/mingw64/share/cmake/Modules/CPackComponent.cmake C$:/msys64/mingw64/share/cmake/Modules/CTest.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestTargets.cmake C$:/msys64/mingw64/share/cmake/Modules/CTestUseLaunchers.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Compiler/GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/DartConfiguration.tcl.in C$:/msys64/mingw64/share/cmake/Modules/FeatureSummary.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-C.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU-CXX.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-GNU.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows-windres.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/Windows.cmake C$:/msys64/mingw64/share/cmake/Modules/Platform/WindowsPaths.cmake C$:/msys64/mingw64/share/cmake/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/3.26.2/CMakeCCompiler.cmake CMakeFiles/3.26.2/CMakeCXXCompiler.cmake CMakeFiles/3.26.2/CMakeRCCompiler.cmake CMakeFiles/3.26.2/CMakeSystem.cmake: phony
 
 
 #############################################

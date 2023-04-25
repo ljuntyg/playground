@@ -75,6 +75,8 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "chrono": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "codecvt": "cpp",
+        "iomanip": "cpp"
     }
 }
