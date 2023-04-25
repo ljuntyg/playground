@@ -1,6 +1,6 @@
 # CMake generated Testfile for 
-# Source directory: C:/Users/gbhko/Desktop/Prog/playground
-# Build directory: C:/Users/gbhko/Desktop/Prog/playground/build
+# Source directory: C:/Users/gbhko/Desktop/Prog/playgroundREV
+# Build directory: C:/Users/gbhko/Desktop/Prog/playgroundREV/build
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.

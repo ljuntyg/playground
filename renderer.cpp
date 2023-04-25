@@ -8,6 +8,10 @@
 
 std::vector<double> Renderer::depthBuffer(WINDOW_WIDTH * WINDOW_HEIGHT, std::numeric_limits<double>::max());
 
+Uint32 Renderer::frameCounter = 0;
+Uint32 Renderer::fpsUpdateTime = 0;
+int Renderer::fps = 0;
+
 double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
@@ -120,7 +124,7 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     // Combine model (rotate, scale, translate) into transform matrix (without view and projection);
     Eigen::Matrix4d transformMatrixNoViewNoProjection = translationMatrix * scaleMatrix * rotXMatrix * rotYMatrix * rotZMatrix;
 
-    // Define the clip planes
+    // Define the clip planes (Fix, only the near plane is kind of correct, no edge clipping now)
     std::vector<ClipPlane> clipPlanes = {
         ClipPlane(Eigen::Vector4d(1, 0, WINDOW_WIDTH / WINDOW_HEIGHT / tan(FOV / 2), 0), 0), // Left
         ClipPlane(Eigen::Vector4d(-1, 0, WINDOW_WIDTH / WINDOW_HEIGHT / tan(FOV / 2), 0), 0), // Right

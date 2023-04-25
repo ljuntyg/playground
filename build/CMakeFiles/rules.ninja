@@ -42,7 +42,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = C:\msys64\mingw64\bin\cmake.exe --regenerate-during-build -SC:\Users\gbhko\Desktop\Prog\playground -BC:\Users\gbhko\Desktop\Prog\playground\build
+  command = C:\msys64\mingw64\bin\cmake.exe --regenerate-during-build -SC:\Users\gbhko\Desktop\Prog\playgroundREV -BC:\Users\gbhko\Desktop\Prog\playgroundREV\build
   description = Re-running CMake...
   generator = 1
 

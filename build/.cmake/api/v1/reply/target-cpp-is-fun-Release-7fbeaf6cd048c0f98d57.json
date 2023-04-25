@@ -50,13 +50,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 16,
+				"line" : 18,
 				"parent" : 0
 			},
 			{
 				"command" : 6,
 				"file" : 1,
-				"line" : 15,
+				"line" : 17,
 				"parent" : 0
 			},
 			{
@@ -122,7 +122,7 @@
 			[
 				{
 					"backtrace" : 13,
-					"path" : "C:/Users/gbhko/Desktop/Prog/playground/Eigen"
+					"path" : "C:/Users/gbhko/Desktop/Prog/playgroundREV/Eigen"
 				},
 				{
 					"backtrace" : 3,

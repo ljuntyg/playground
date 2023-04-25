@@ -12,6 +12,8 @@ include(CPack)
 
 include_directories(${CMAKE_SOURCE_DIR}/Eigen)
 
+file(COPY ${CMAKE_SOURCE_DIR}/res DESTINATION ${CMAKE_BINARY_DIR})
+
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(cpp-is-fun
     PRIVATE

@@ -26,6 +26,9 @@ public:
     static constexpr double rotationSpeed = 0.01 * speedScalar;
 
     static std::vector<double> depthBuffer;
+    static Uint32 frameCounter;
+    static Uint32 fpsUpdateTime;
+    static int fps;
 
     // Movement related attributes/methods
     static double cameraYaw;

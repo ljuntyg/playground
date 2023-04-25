@@ -4,8 +4,8 @@
 
 
 # Configuration directories and files
-SourceDirectory: C:/Users/gbhko/Desktop/Prog/playground
-BuildDirectory: C:/Users/gbhko/Desktop/Prog/playground/build
+SourceDirectory: C:/Users/gbhko/Desktop/Prog/playgroundREV
+BuildDirectory: C:/Users/gbhko/Desktop/Prog/playgroundREV/build
 
 # Where to place the cost data store
 CostDataFile: 
@@ -27,7 +27,7 @@ SubmitInactivityTimeout:
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "C:/msys64/mingw64/bin/cmake.exe" "C:/Users/gbhko/Desktop/Prog/playground"
+ConfigureCommand: "C:/msys64/mingw64/bin/cmake.exe" "C:/Users/gbhko/Desktop/Prog/playgroundREV"
 MakeCommand: C:\msys64\mingw64\bin\cmake.exe --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 
