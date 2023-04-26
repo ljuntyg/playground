@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
     objl::Loader loader;
 
-    std::cout << "shop, success on 1, fail on 0: " << loader.LoadFile("res/butcher shop.obj") << std::endl;
+    /* std::cout << "shop, success on 1, fail on 0: " << loader.LoadFile("res/butcher shop.obj") << std::endl;
     std::vector<Triangle> shop =  meshesToTriangles(loader.LoadedMeshes);
 
     std::cout << "vatican, success on 1, fail on 0: " << loader.LoadFile("res/civitas vaticana tosell.obj") << std::endl;
@@ -108,15 +108,24 @@ int main(int argc, char* argv[]) {
     std::vector<Triangle> skycraper =  meshesToTriangles(loader.LoadedMeshes);
 
     std::cout << "cessna, success on 1, fail on 0: " << loader.LoadFile("res/cessna.obj") << std::endl;
-    std::vector<Triangle> cessna =  meshesToTriangles(loader.LoadedMeshes);
+    std::vector<Triangle> cessna =  meshesToTriangles(loader.LoadedMeshes); */
 
     std::cout << "mountains, success on 1, fail on 0: " << loader.LoadFile("res/mountains.obj") << std::endl;
     std::vector<Triangle> mountains =  meshesToTriangles(loader.LoadedMeshes);
 
+    /* std::cout << "jianshazui, success on 1, fail on 0: " << loader.LoadFile("res/jjianshazui.obj") << std::endl;
+    std::vector<Triangle> jianshazui =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "hongkongplace, success on 1, fail on 0: " << loader.LoadFile("res/hongkongplace.obj") << std::endl;
+    std::vector<Triangle> hongkongplace =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "jordansouth, success on 1, fail on 0: " << loader.LoadFile("res/jordansouth.obj") << std::endl;
+    std::vector<Triangle> jordansouth =  meshesToTriangles(loader.LoadedMeshes); */
+
     double rotX = 0;
     double rotY = 0;
     double rotZ = 0;
-    double objectRotationSpeed = 0.01;
+    double objectRotationSpeed = 0;
 
     SDL_Event e;
     bool quit = false;
@@ -213,7 +222,7 @@ int main(int argc, char* argv[]) {
             rotZ += objectRotationSpeed;
 
             // Make calls to renderer here
-            Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ, 1);
+            Renderer::drawObject(renderer, mountains, rotX, rotY, rotZ);
 
             // Update the screen
             SDL_RenderPresent(renderer);

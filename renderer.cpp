@@ -16,7 +16,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -50, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
+Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -124,7 +124,7 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     // Create projection matrix
     Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR, FAR);
 
-    // Define the clip planes (Fix, only the near plane is kind of correct, no edge clipping now)
+    // Define the clip planes
     std::vector<ClipPlane> clipPlanes = {
         ClipPlane({0, 0, 0, 1}, {0, 1, 0, 1}), // Top
 		ClipPlane({0, (double)WINDOW_HEIGHT - 1, 0, 1}, {0, -1, 0, 1}), // Bottom
@@ -231,9 +231,6 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
                     case 3:	nTrisToAdd = clipTriangleAgainstPlane(clipPlanes[p], test, clipped[0], clipped[1]); break;
                 }
 
-                // Clipping may yield a variable number of triangles, so
-                // add these new ones to the back of the queue for subsequent
-                // clipping against next planes
                 for (int w = 0; w < nTrisToAdd; w++)
                     listTriangles.push_back(clipped[w]);
             }
@@ -354,8 +351,8 @@ int Renderer::clipTriangleAgainstPlane(const ClipPlane& clipPlane, Triangle& tri
     }
 
     if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
-        // triOut1.color = triIn.color;
-        triOut1.color = {0, 0, 255, 255};
+        triOut1.color = triIn.color;
+        //triOut1.color = {0, 0, 255, 255};
 
         triOut1.v1 = *inside_points[0];
         triOut1.v2 = linePlaneIntersection(clipPlane, *inside_points[0], *outside_points[0]);
@@ -365,10 +362,10 @@ int Renderer::clipTriangleAgainstPlane(const ClipPlane& clipPlane, Triangle& tri
     }
 
     if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
-        // triOut1.color = triIn.color;
-        // triOut2.color = triIn.color;
-        triOut1.color = {255, 0, 0, 255};
-        triOut2.color = {0, 255, 0, 255};
+        triOut1.color = triIn.color;
+        triOut2.color = triIn.color;
+        /* triOut1.color = {255, 0, 0, 255};
+        triOut2.color = {0, 255, 0, 255}; */
 
         triOut1.v1 = *inside_points[0];
         triOut1.v2 = *inside_points[1];

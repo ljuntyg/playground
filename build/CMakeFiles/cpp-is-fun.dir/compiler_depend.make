@@ -643,7 +643,7 @@ CMakeFiles/cpp-is-fun.dir/main.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/playg
   C:/msys64/mingw64/include/c++/12.2.0/bits/fs_ops.h \
   C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.h \
   C:/Users/gbhko/Desktop/Prog/VSCode/playground/structs.h \
-  C:/Users/gbhko/Desktop/Prog/VSCode/playground/OBJ_Loader.h \
+  C:/Users/gbhko/Desktop/Prog/VSCode/playground/obj_loader.h \
   C:/msys64/mingw64/include/c++/12.2.0/fstream \
   C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h \
   C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/c++io.h \
@@ -1904,8 +1904,6 @@ C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/fstream:
 
-C:/Users/gbhko/Desktop/Prog/VSCode/playground/OBJ_Loader.h:
-
 C:/Users/gbhko/Desktop/Prog/VSCode/playground/structs.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/bits/shared_ptr.h:
@@ -2545,6 +2543,8 @@ C:/msys64/mingw64/include/c++/12.2.0/bits/uses_allocator.h:
 C:/Users/gbhko/Desktop/Prog/VSCode/playground/Eigen/src/Geometry/RotationBase.h:
 
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/avx512vp2intersectintrin.h:
+
+C:/Users/gbhko/Desktop/Prog/VSCode/playground/obj_loader.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/debug/debug.h:
 

@@ -11,8 +11,8 @@
 class Renderer {
 public:
     // Rendering constants, scalefactor for equal x,y-coordinate scaling in projection
-    static const int WINDOW_WIDTH = 1280;
-    static const int WINDOW_HEIGHT = 720;
+    static const int WINDOW_WIDTH = 680;
+    static const int WINDOW_HEIGHT = 480;
     static constexpr double scaleFactor = std::min(WINDOW_WIDTH, WINDOW_HEIGHT) / 2.0;
     static const int TICKS_PER_FRAME = 1000 / 60;
 
@@ -20,9 +20,9 @@ public:
     static constexpr double NEAR = 0.1;
     static constexpr double FOV = 2 * M_PI / 3;
 
-    static constexpr double speedScalar = 2;
+    static constexpr double speedScalar = 1;
     static constexpr double mouseSensitivity = 0.01 * speedScalar;
-    static constexpr double cameraSpeed = 0.1 * speedScalar;
+    static constexpr double cameraSpeed = 10 * speedScalar;
     static constexpr double rotationSpeed = 0.01 * speedScalar;
 
     static std::vector<double> depthBuffer;
