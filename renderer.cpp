@@ -16,7 +16,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -50, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
+Eigen::Vector4d Renderer::cameraPos(0, 0, -20, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -115,21 +115,21 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     Eigen::Matrix4d rotZMatrix = Matrices::createRotationZ(rotZ);
     Eigen::Matrix4d translationMatrix = Matrices::createTranslation(0, 0, 0);
 
+    // Model
+    Eigen::Matrix4d matWorld = translationMatrix * scaleMatrix * rotXMatrix * rotYMatrix * rotZMatrix;
+
     // Create view matrix
     Eigen::Matrix4d viewMatrix = Matrices::createViewMatrix(cameraPos, targetPos, Eigen::Vector4d(0, 1, 0, 1));
 
     // Create projection matrix
     Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR, FAR);
 
-    // Combine model (rotate, scale, translate) into transform matrix (without view and projection);
-    Eigen::Matrix4d transformMatrixNoViewNoProjection = translationMatrix * scaleMatrix * rotXMatrix * rotYMatrix * rotZMatrix;
-
     // Define the clip planes (Fix, only the near plane is kind of correct, no edge clipping now)
     std::vector<std::tuple<Eigen::Vector4d, Eigen::Vector4d>> clipPlanes = {
-        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1)),
-		std::tuple(Eigen::Vector4d(0, (double)WINDOW_HEIGHT - 1, 0, 1), Eigen::Vector4d(0, -1, 0, 1)),
-        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
-        std::tuple(Eigen::Vector4d((double)WINDOW_WIDTH - 1, 0, 0, 1), Eigen::Vector4d(-1, 0, 0, 1)),
+        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1)), // Top
+		std::tuple(Eigen::Vector4d(0, (double)WINDOW_HEIGHT - 1, 0, 1), Eigen::Vector4d(0, -1, 0, 1)), // Bottom
+        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)), // Left
+        std::tuple(Eigen::Vector4d((double)WINDOW_WIDTH - 1, 0, 0, 1), Eigen::Vector4d(-1, 0, 0, 1)), // Right
         std::tuple(Eigen::Vector4d(0, 0, -NEAR, 1), Eigen::Vector4d(0, 0, -1, 1)), // Near, FLIPPED Z TO NEG, HAVE TO FLIP NEAR AS WELL
         std::tuple(Eigen::Vector4d(0, 0, -FAR, 1), Eigen::Vector4d(0, 0, 1, 1)) // Far, FLIPPED Z AND FAR DUE TO ABOVE NEAR CHANGE, NO FAR CLIPPING IMPLEMENTED
     };
@@ -142,97 +142,106 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
         Eigen::Vector4d v2 = triangle.v2;
         Eigen::Vector4d v3 = triangle.v3;
 
-        // CULLING VALS START
+        // World Matrix Transform
+        Eigen::Vector4d triTransformed_v1 = matWorld * v1;
+        Eigen::Vector4d triTransformed_v2 = matWorld * v2;
+        Eigen::Vector4d triTransformed_v3 = matWorld * v3;
 
-        Eigen::Vector4d translatedV1 = transformMatrixNoViewNoProjection * v1;
-        Eigen::Vector4d translatedV2 = transformMatrixNoViewNoProjection * v2;
-        Eigen::Vector4d translatedV3 = transformMatrixNoViewNoProjection * v3;
-
-        Eigen::Vector3d line1 = (translatedV2 - translatedV1).head<3>();
-        Eigen::Vector3d line2 = (translatedV3 - translatedV1).head<3>();
+        // Calculate triangle Normal
+        Eigen::Vector3d line1 = (triTransformed_v2 - triTransformed_v1).head<3>();
+        Eigen::Vector3d line2 = (triTransformed_v3 - triTransformed_v1).head<3>();
         Eigen::Vector3d normal = line1.cross(line2);
         normal.normalize();
 
-        // Calculate the view direction vector from the camera position to any vertex of the triangle
-        Eigen::Vector3d viewDir = (translatedV1.head<3>() - cameraPos.head<3>()).normalized();
+        // Get Ray from triangle to camera
+        Eigen::Vector3d vCameraRay = (triTransformed_v1.head<3>() - cameraPos.head<3>()).normalized();
 
-        // Calculate the dot product of the normal and view direction vectors
-        double dotProduct = normal.dot(viewDir);
-
-        lightDir.normalize();
-        double normLightDotProd = normal.dot(lightDir.head<3>());
-
-        // CULLING VALS END (SKIP IF BACK FACE)
-        if (dotProduct > 0) {
+        // Skip triangle if back face
+        if (normal.dot(vCameraRay) > 0) {
             continue;
         }
 
-        Eigen::Vector4d viewedV1 = viewMatrix * translatedV1;
-        Eigen::Vector4d viewedV2 = viewMatrix * translatedV2;
-        Eigen::Vector4d viewedV3 = viewMatrix * translatedV3;
+        // Illumination
+        Eigen::Vector3d light_direction = {0, 1, -1};
+        light_direction.normalize();
 
-        //std::cout << "viewed tri v1, about to be near clipped:\n" << viewedV1 << std::endl;
+        // Dot product for shasing
+        double dp = std::max(0.1, normal.dot(light_direction.head<3>()));
+        SDL_Color shadingColor = getShadingColor(dp);
 
-        std::vector<Triangle> clippedNearTris = clipTriangleAgainstPlane(std::get<0>(clipPlanes[4]), std::get<1>(clipPlanes[4]), Triangle(viewedV1, viewedV2, viewedV3, normLightDotProd));
-        //std::cout << "clipped near size: " << clippedNearTris.size() << std::endl;
+        Eigen::Vector4d triViewedV1 = viewMatrix * triTransformed_v1;
+        Eigen::Vector4d triViewedV2 = viewMatrix * triTransformed_v2;
+        Eigen::Vector4d triViewedV3 = viewMatrix * triTransformed_v3;
 
-        for (const Triangle& clippedNearTri : clippedNearTris) {
-            // Transform and project the triangle
-            Eigen::Vector4d projectedV1 = projectionMatrix * clippedNearTri.v1;
-            Eigen::Vector4d projectedV2 = projectionMatrix * clippedNearTri.v2;
-            Eigen::Vector4d projectedV3 = projectionMatrix * clippedNearTri.v3;
+        // Clip Viewed Triangle against near plane
+        int nClippedTriangles = 0;
+        Triangle clipped[2];
+        Triangle triViewed(triViewedV1, triViewedV2, triViewedV3);
+        nClippedTriangles = clipTriangleAgainstPlane(std::get<0>(clipPlanes[4]), std::get<1>(clipPlanes[4]), triViewed, clipped[0], clipped[1]);
+
+        // Project triangles from 3D to 2D
+        for (int n = 0; n < nClippedTriangles; n++) {
+            Triangle triProjected(clipped[n].v1, clipped[n].v2, clipped[n].v3, shadingColor);
+
+            // Project vertices
+            triProjected.v1 = projectionMatrix * triProjected.v1;
+            triProjected.v2 = projectionMatrix * triProjected.v2;
+            triProjected.v3 = projectionMatrix * triProjected.v3;
+
+                // Convert to normalized device coordinates
+            triProjected.v1 /= triProjected.v1.w();
+            triProjected.v2 /= triProjected.v2.w();
+            triProjected.v3 /= triProjected.v3.w();
 
             // Convert to screen space coordinates
-            projectedV1.x() /= projectedV1.w();
-            projectedV1.y() /= projectedV1.w();
-            projectedV1.x() = (projectedV1.x() + 1.0) * scaleFactor;
-            projectedV1.y() = (1.0 - projectedV1.y()) * scaleFactor;
+            triProjected.v1.x() = (triProjected.v1.x() + 1.0) * scaleFactor;
+            triProjected.v1.y() = (1.0 - triProjected.v1.y()) * scaleFactor;
+            triProjected.v2.x() = (triProjected.v2.x() + 1.0) * scaleFactor;
+            triProjected.v2.y() = (1.0 - triProjected.v2.y()) * scaleFactor;
+            triProjected.v3.x() = (triProjected.v3.x() + 1.0) * scaleFactor;
+            triProjected.v3.y() = (1.0 - triProjected.v3.y()) * scaleFactor;
 
-            projectedV2.x() /= projectedV2.w();
-            projectedV2.y() /= projectedV2.w();
-            projectedV2.x() = (projectedV2.x() + 1.0) * scaleFactor;
-            projectedV2.y() = (1.0 - projectedV2.y()) * scaleFactor;
-
-            projectedV3.x() /= projectedV3.w();
-            projectedV3.y() /= projectedV3.w();
-            projectedV3.x() = (projectedV3.x() + 1.0) * scaleFactor;
-            projectedV3.y() = (1.0 - projectedV3.y()) * scaleFactor;
-
-            Triangle projectedTriangle = Triangle(projectedV1, projectedV2, projectedV3, normLightDotProd);
-
-            //std::cout << "proj triangle v1, screen space?\n" << projectedTriangle.v1 << "\n" << std::endl;
-
-            finalTriangles.emplace_back(projectedTriangle);
+            finalTriangles.push_back(triProjected);
         }
+        
     }
 
-    for (const Triangle& finalTriangle : finalTriangles) {
-        // All tris in finalTris are already clipped against near, ignore far for now, clip against edges
-        std::vector<Triangle> frustumClippedTris;
-        std::vector<Triangle> temp;
-        for (int i = 0; i < 4; i++) {
-            switch (i) {
-            case 0: temp = clipTriangleAgainstPlane(std::get<0>(clipPlanes[0]), std::get<1>(clipPlanes[0]), finalTriangle);
-                frustumClippedTris.insert(frustumClippedTris.end(), temp.begin(), temp.end());
-                break;
-            
-            case 1: temp = clipTriangleAgainstPlane(std::get<0>(clipPlanes[1]), std::get<1>(clipPlanes[1]), finalTriangle);
-                frustumClippedTris.insert(frustumClippedTris.end(), temp.begin(), temp.end());
-                break;
+    // Edge clip and draw triangles
+    for (const Triangle &triangle : finalTriangles) {
 
-            case 2: temp = clipTriangleAgainstPlane(std::get<0>(clipPlanes[2]), std::get<1>(clipPlanes[2]), finalTriangle);
-                frustumClippedTris.insert(frustumClippedTris.end(), temp.begin(), temp.end());
-                break;
+        Triangle clipped[2];
+        std::list<Triangle> listTriangles;
 
-            case 3: temp = clipTriangleAgainstPlane(std::get<0>(clipPlanes[3]), std::get<1>(clipPlanes[3]), finalTriangle);
-                frustumClippedTris.insert(frustumClippedTris.end(), temp.begin(), temp.end());
-                break;
+        // Add initial triangle
+        listTriangles.push_back(triangle);
+        int nNewTriangles = 1;
+
+        for (int p = 0; p < 4; p++) {
+            int nTrisToAdd = 0;
+            while (nNewTriangles > 0) {
+
+                Triangle test = listTriangles.front();
+                listTriangles.pop_front();
+                nNewTriangles--;
+
+                switch (p) {
+                    case 0:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
+                    case 1:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
+                    case 2:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
+                    case 3:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
+                }
+
+                // Clipping may yield a variable number of triangles, so
+                // add these new ones to the back of the queue for subsequent
+                // clipping against next planes
+                for (int w = 0; w < nTrisToAdd; w++)
+                    listTriangles.push_back(clipped[w]);
             }
+            nNewTriangles = listTriangles.size();
         }
-
-        for (const Triangle& frustumClippedTri : frustumClippedTris) {
-            //std::cout << "frustum clipped tri v1:\n" << frustumClippedTri.v1 << "\n" << std::endl;
-            drawTriangle(renderer, frustumClippedTri, getShadingColor(frustumClippedTri.shadeVal));
+        
+        for (auto &t : listTriangles) {
+            drawTriangle(renderer, t, t.color);
         }
     }
 
@@ -292,7 +301,7 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
             double area = ((v1.y() - v2.y()) * (v0.x() - v2.x()) + (v2.x() - v1.x()) * (v0.y() - v2.y()));
             double w0 = ((v1.y() - v2.y()) * (x - v2.x()) + (v2.x() - v1.x()) * (y - v2.y())) / area;
             double w1 = ((v2.y() - v0.y()) * (x - v2.x()) + (v0.x() - v2.x()) * (y - v2.y())) / area;
-            double w2 = 1.0 - w0 - w1;
+            double w2 = 1 - w0 - w1;
 
             // Compute depth value at this pixel
             double z = w0 * v0.z() + w1 * v1.z() + w2 * v2.z();
@@ -310,127 +319,66 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
     }
 }
 
-Eigen::Vector4d Renderer::linePlaneIntersection(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& linePoint1, const Eigen::Vector4d& linePoint2) {
-    // Convert points to 3D
-    Eigen::Vector3d planeNormal3D = planeNormal.head<3>();
-    Eigen::Vector3d planePoint3D = planePoint.head<3>() / planePoint.w();
-    Eigen::Vector3d linePoint3D1 = linePoint1.head<3>() / linePoint1.w();
-    Eigen::Vector3d linePoint3D2 = linePoint2.head<3>() / linePoint2.w();
-
-    // Compute the line direction vector
-    Eigen::Vector3d lineDirection = (linePoint3D2 - linePoint3D1).normalized();
-
-    // Compute the denominator of the intersection equation
-    double denom = planeNormal3D.dot(lineDirection);
-
-    /* // If the denominator is close to zero, the line is parallel to the plane and there's no intersection
-    if (std::abs(denom) < 1e-6) {
-        throw std::runtime_error("Line is parallel to the plane, no intersection found.");
-    } */
-
-    // Compute the numerator of the intersection equation
-    double numer = planeNormal3D.dot(planePoint3D - linePoint3D1);
-
-    // Compute the intersection distance along the line
-    double t = numer / denom;
-
-    // Compute the intersection point in 3D
-    Eigen::Vector3d intersectionPoint3D = linePoint3D1 + t * lineDirection;
-
-    // Convert the intersection point to homogeneous coordinates
-    Eigen::Vector4d intersectionPoint = Eigen::Vector4d(intersectionPoint3D.x(), intersectionPoint3D.y(), intersectionPoint3D.z(), 1.0);
-
-    return intersectionPoint;
+Eigen::Vector4d Renderer::linePlaneIntersection(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& lineStart, const Eigen::Vector4d& lineEnd) {
+    double t = planeNormal.dot(planePoint - lineStart) / planeNormal.dot(lineEnd - lineStart);
+    return lineStart + t * (lineEnd - lineStart);
 }
 
-double Renderer::pointPlaneDistance(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& point) {
-    Eigen::Vector3d point3D = point.head<3>() / point.w();
-    Eigen::Vector3d planeNormal3D = planeNormal.head<3>();
-    Eigen::Vector3d planePoint3D = planePoint.head<3>() / planePoint.w();
-    return planeNormal3D.dot(point3D - planePoint3D);
-}
+int Renderer::clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, Triangle& triIn, Triangle& triOut1, Triangle& triOut2) {
+    auto dist = [&](const Eigen::Vector4d& p) {
+        return planeNormal.dot(p) - planeNormal.dot(planePoint);
+    };
 
-std::vector<Triangle> Renderer::clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Triangle& triangle) {
-    // Compute the signed distances from each triangle vertex to the plane
-    double d1 = pointPlaneDistance(planePoint, planeNormal, triangle.v1);
-    double d2 = pointPlaneDistance(planePoint, planeNormal, triangle.v2);
-    double d3 = pointPlaneDistance(planePoint, planeNormal, triangle.v3);
+    Eigen::Vector4d* inside_points[3];
+    int nInsidePointCount = 0;
+    Eigen::Vector4d* outside_points[3];
+    int nOutsidePointCount = 0;
 
-    std::vector<Triangle> clippedTriangles;
+    double d0 = dist(triIn.v1);
+    double d1 = dist(triIn.v2);
+    double d2 = dist(triIn.v3);
 
-    // Case 1: No points inside the plane
-    if (d1 <= 0 && d2 <= 0 && d3 <= 0) {
-        return clippedTriangles; // Empty vector, the triangle is fully outside the plane
+    if (d0 >= 0) { inside_points[nInsidePointCount++] = &triIn.v1; } else { outside_points[nOutsidePointCount++] = &triIn.v1; }
+    if (d1 >= 0) { inside_points[nInsidePointCount++] = &triIn.v2; } else { outside_points[nOutsidePointCount++] = &triIn.v2; }
+    if (d2 >= 0) { inside_points[nInsidePointCount++] = &triIn.v3; } else { outside_points[nOutsidePointCount++] = &triIn.v3; }
+
+    if (nInsidePointCount == 0) {
+        return 0;
     }
 
-    // Case 2: All points inside the plane
-    if (d1 >= 0 && d2 >= 0 && d3 >= 0) {
-        clippedTriangles.push_back(triangle);
-        return clippedTriangles;
+    if (nInsidePointCount == 3) {
+        triOut1 = triIn;
+        return 1;
     }
 
-    // Case 3: Two points inside the plane
-    if ((d1 >= 0 && d2 >= 0) || (d1 >= 0 && d3 >= 0) || (d2 >= 0 && d3 >= 0)) {
-        Triangle newTriangle;
-        newTriangle.shadeVal = 1;
-        if (d1 >= 0 && d2 >= 0) {
-            newTriangle.v1 = triangle.v1;
-            newTriangle.v2 = triangle.v2;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v2, triangle.v3);
-            clippedTriangles.push_back(newTriangle);
+    if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
+        // triOut1.color = triIn.color;
+        triOut1.color = {0, 0, 255, 255};
 
-            newTriangle.v1 = triangle.v1;
-            newTriangle.v2 = newTriangle.v3;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v1, triangle.v3);
-            clippedTriangles.push_back(newTriangle);
-        } else if (d1 >= 0 && d3 >= 0) {
-            newTriangle.v1 = triangle.v1;
-            newTriangle.v2 = triangle.v3;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v1, triangle.v2);
-            clippedTriangles.push_back(newTriangle);
+        triOut1.v1 = *inside_points[0];
+        triOut1.v2 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[0]);
+        triOut1.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[1]);
 
-            newTriangle.v1 = triangle.v1;
-            newTriangle.v2 = newTriangle.v3;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v3, triangle.v2);
-            clippedTriangles.push_back(newTriangle);
-        } else { // d2 >= 0 && d3 >= 0
-            newTriangle.v1 = triangle.v2;
-            newTriangle.v2 = triangle.v3;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v3, triangle.v1);
-            clippedTriangles.push_back(newTriangle);
-
-            newTriangle.v1 = triangle.v2;
-            newTriangle.v2 = newTriangle.v3;
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v2, triangle.v1);
-            clippedTriangles.push_back(newTriangle);
-        }
-        return clippedTriangles;
+        return 1;
     }
 
-    // Case 4: Two points outside the plane
-    if ((d1 <= 0 && d2 <= 0) || (d1 <= 0 && d3 <= 0) || (d2 <= 0 && d3 <= 0)) {
-        Triangle newTriangle;
-        newTriangle.shadeVal = 1;
-        if (d1 >= 0) {
-            newTriangle.v1 = triangle.v1;
-            newTriangle.v2 = linePlaneIntersection(planePoint, planeNormal, triangle.v1, triangle.v2);
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v1, triangle.v3);
-            clippedTriangles.push_back(newTriangle);
-        } else if (d2 >= 0) {
-            newTriangle.v1 = triangle.v2;
-            newTriangle.v2 = linePlaneIntersection(planePoint, planeNormal, triangle.v2, triangle.v1);
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v2, triangle.v3);
-            clippedTriangles.push_back(newTriangle);
-        } else { // d3 >= 0
-            newTriangle.v1 = triangle.v3;
-            newTriangle.v2 = linePlaneIntersection(planePoint, planeNormal, triangle.v3, triangle.v1);
-            newTriangle.v3 = linePlaneIntersection(planePoint, planeNormal, triangle.v3, triangle.v2);
-            clippedTriangles.push_back(newTriangle);
-        }
-        return clippedTriangles;
+    if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
+        // triOut1.color = triIn.color;
+        // triOut2.color = triIn.color;
+        triOut1.color = {255, 0, 0, 255};
+        triOut2.color = {0, 255, 0, 255};
+
+        triOut1.v1 = *inside_points[0];
+        triOut1.v2 = *inside_points[1];
+        triOut1.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[0]);
+
+        triOut2.v1 = *inside_points[1];
+        triOut2.v2 = triOut1.v3;
+        triOut2.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[1], *outside_points[0]);
+
+        return 2;
     }
 
-    // This point should never be reached
     throw std::runtime_error("Unexpected case in clipTriangleAgainstPlane");
 }
 

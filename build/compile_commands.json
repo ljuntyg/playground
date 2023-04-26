@@ -1,20 +1,20 @@
 [
 {
-  "directory": "C:/Users/gbhko/Desktop/Prog/playground/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\main.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\playground\\main.cpp",
-  "file": "C:\\Users\\gbhko\\Desktop\\Prog\\playground\\main.cpp",
-  "output": "CMakeFiles\\cpp-is-fun.dir\\main.cpp.obj"
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\main.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\playground\\main.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/main.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/main.cpp.obj"
 },
 {
-  "directory": "C:/Users/gbhko/Desktop/Prog/playground/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\playground\\renderer.cpp",
-  "file": "C:\\Users\\gbhko\\Desktop\\Prog\\playground\\renderer.cpp",
-  "output": "CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj"
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\renderer.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\playground\\renderer.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj"
 },
 {
-  "directory": "C:/Users/gbhko/Desktop/Prog/playground/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/gbhko/Desktop/Prog/playground/Eigen -isystem C:/dev/vcpkg/installed/x64-mingw-static/include -isystem C:/dev/vcpkg/installed/x64-mingw-static/include/SDL2 -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\matrices.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\playground\\matrices.cpp",
-  "file": "C:\\Users\\gbhko\\Desktop\\Prog\\playground\\matrices.cpp",
-  "output": "CMakeFiles\\cpp-is-fun.dir\\matrices.cpp.obj"
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\matrices.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\playground\\matrices.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj"
 }
 ]

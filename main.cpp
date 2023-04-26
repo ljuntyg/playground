@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     double rotX = 0;
     double rotY = 0;
     double rotZ = 0;
-    double objectRotationSpeed = 0.01;
+    double objectRotationSpeed = 0.001;
 
     SDL_Event e;
     bool quit = false;

@@ -46,9 +46,8 @@ public:
     static void drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object, double rotX = 0, double rotY = 0, double rotZ = 0, double scale = 1);
     static void drawTriangle(SDL_Renderer* renderer, const Triangle& triangle);
     static void drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SDL_Color color);
-    static Eigen::Vector4d linePlaneIntersection(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& linePoint1, const Eigen::Vector4d& linePoint2);
-    static double pointPlaneDistance(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& point);
-    static std::vector<Triangle> clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Triangle& triangle);
+    static Eigen::Vector4d linePlaneIntersection(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& lineStart, const Eigen::Vector4d& lineEnd);
+    static int clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, Triangle& in_tri, Triangle& out_tri1, Triangle& out_tri2);
     static std::vector<Triangle> loadObj(const std::string& filename);
     static SDL_Color getShadingColor(double intensity);
     static void visualizeDepthBuffer(SDL_Renderer* renderer);

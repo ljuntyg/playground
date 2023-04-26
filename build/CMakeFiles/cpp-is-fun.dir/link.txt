@@ -1,0 +1,3 @@
+C:\msys64\mingw64\bin\cmake.exe -E rm -f CMakeFiles\cpp-is-fun.dir/objects.a
+C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\cpp-is-fun.dir/objects.a @CMakeFiles\cpp-is-fun.dir\objects1.rsp
+C:\msys64\mingw64\bin\g++.exe -O3 -DNDEBUG -Wl,--whole-archive CMakeFiles\cpp-is-fun.dir/objects.a -Wl,--no-whole-archive -o cpp-is-fun.exe -Wl,--out-implib,libcpp-is-fun.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\cpp-is-fun.dir\linkLibs.rsp

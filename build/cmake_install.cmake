@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/gbhko/Desktop/Prog/playground
+# Install script for directory: C:/Users/gbhko/Desktop/Prog/VSCode/playground
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/gbhko/Desktop/Prog/playground/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
