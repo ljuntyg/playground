@@ -77,6 +77,7 @@
         "chrono": "cpp",
         "core": "cpp",
         "codecvt": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "xtree": "cpp"
     }
 }

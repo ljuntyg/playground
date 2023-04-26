@@ -642,7 +642,12 @@ CMakeFiles/cpp-is-fun.dir/main.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/playg
   C:/msys64/mingw64/include/c++/12.2.0/bits/fs_dir.h \
   C:/msys64/mingw64/include/c++/12.2.0/bits/fs_ops.h \
   C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.h \
-  C:/Users/gbhko/Desktop/Prog/VSCode/playground/structs.h
+  C:/Users/gbhko/Desktop/Prog/VSCode/playground/structs.h \
+  C:/Users/gbhko/Desktop/Prog/VSCode/playground/OBJ_Loader.h \
+  C:/msys64/mingw64/include/c++/12.2.0/fstream \
+  C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h \
+  C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/c++io.h \
+  C:/msys64/mingw64/include/c++/12.2.0/bits/fstream.tcc
 
 CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.cpp \
   C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.h \
@@ -1891,13 +1896,15 @@ CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/p
   C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.h
 
 
+C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp:
+
+C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.h:
+
 C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/fstream:
 
-C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp:
-
-C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.h:
+C:/Users/gbhko/Desktop/Prog/VSCode/playground/OBJ_Loader.h:
 
 C:/Users/gbhko/Desktop/Prog/VSCode/playground/structs.h:
 

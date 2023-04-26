@@ -16,7 +16,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -20, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
+Eigen::Vector4d Renderer::cameraPos(0, 0, -50, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -125,13 +125,13 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR, FAR);
 
     // Define the clip planes (Fix, only the near plane is kind of correct, no edge clipping now)
-    std::vector<std::tuple<Eigen::Vector4d, Eigen::Vector4d>> clipPlanes = {
-        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1)), // Top
-		std::tuple(Eigen::Vector4d(0, (double)WINDOW_HEIGHT - 1, 0, 1), Eigen::Vector4d(0, -1, 0, 1)), // Bottom
-        std::tuple(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)), // Left
-        std::tuple(Eigen::Vector4d((double)WINDOW_WIDTH - 1, 0, 0, 1), Eigen::Vector4d(-1, 0, 0, 1)), // Right
-        std::tuple(Eigen::Vector4d(0, 0, -NEAR, 1), Eigen::Vector4d(0, 0, -1, 1)), // Near, FLIPPED Z TO NEG, HAVE TO FLIP NEAR AS WELL
-        std::tuple(Eigen::Vector4d(0, 0, -FAR, 1), Eigen::Vector4d(0, 0, 1, 1)) // Far, FLIPPED Z AND FAR DUE TO ABOVE NEAR CHANGE, NO FAR CLIPPING IMPLEMENTED
+    std::vector<ClipPlane> clipPlanes = {
+        ClipPlane({0, 0, 0, 1}, {0, 1, 0, 1}), // Top
+		ClipPlane({0, (double)WINDOW_HEIGHT - 1, 0, 1}, {0, -1, 0, 1}), // Bottom
+        ClipPlane({0, 0, 0, 1}, {1, 0, 0, 1}), // Left
+        ClipPlane({(double)WINDOW_WIDTH - 1, 0, 0, 1}, {-1, 0, 0, 1}), // Right
+        ClipPlane({0, 0, -NEAR, 1}, {0, 0, -1, 1}), // Near, FLIPPED Z TO NEG, HAVE TO FLIP NEAR AS WELL
+        ClipPlane({0, 0, -FAR, 1}, {0, 0, 1, 1}) // Far, FLIPPED Z AND FAR DUE TO ABOVE NEAR CHANGE, NO FAR CLIPPING IMPLEMENTED
     };
 
     // Common vector for all triangles to draw
@@ -177,7 +177,7 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
         int nClippedTriangles = 0;
         Triangle clipped[2];
         Triangle triViewed(triViewedV1, triViewedV2, triViewedV3);
-        nClippedTriangles = clipTriangleAgainstPlane(std::get<0>(clipPlanes[4]), std::get<1>(clipPlanes[4]), triViewed, clipped[0], clipped[1]);
+        nClippedTriangles = clipTriangleAgainstPlane(clipPlanes[4], triViewed, clipped[0], clipped[1]);
 
         // Project triangles from 3D to 2D
         for (int n = 0; n < nClippedTriangles; n++) {
@@ -225,10 +225,10 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
                 nNewTriangles--;
 
                 switch (p) {
-                    case 0:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
-                    case 1:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
-                    case 2:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
-                    case 3:	nTrisToAdd = clipTriangleAgainstPlane(std::get<0>(clipPlanes[p]), std::get<1>(clipPlanes[p]), test, clipped[0], clipped[1]); break;
+                    case 0:	nTrisToAdd = clipTriangleAgainstPlane(clipPlanes[p], test, clipped[0], clipped[1]); break;
+                    case 1:	nTrisToAdd = clipTriangleAgainstPlane(clipPlanes[p], test, clipped[0], clipped[1]); break;
+                    case 2:	nTrisToAdd = clipTriangleAgainstPlane(clipPlanes[p], test, clipped[0], clipped[1]); break;
+                    case 3:	nTrisToAdd = clipTriangleAgainstPlane(clipPlanes[p], test, clipped[0], clipped[1]); break;
                 }
 
                 // Clipping may yield a variable number of triangles, so
@@ -319,12 +319,14 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
     }
 }
 
-Eigen::Vector4d Renderer::linePlaneIntersection(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, const Eigen::Vector4d& lineStart, const Eigen::Vector4d& lineEnd) {
+Eigen::Vector4d Renderer::linePlaneIntersection(const ClipPlane& clipPlane, const Eigen::Vector4d& lineStart, const Eigen::Vector4d& lineEnd) {
+    Eigen::Vector4d planePoint {clipPlane.planePoint}, planeNormal {clipPlane.planeNormal};
     double t = planeNormal.dot(planePoint - lineStart) / planeNormal.dot(lineEnd - lineStart);
     return lineStart + t * (lineEnd - lineStart);
 }
 
-int Renderer::clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const Eigen::Vector4d& planeNormal, Triangle& triIn, Triangle& triOut1, Triangle& triOut2) {
+int Renderer::clipTriangleAgainstPlane(const ClipPlane& clipPlane, Triangle& triIn, Triangle& triOut1, Triangle& triOut2) {
+    Eigen::Vector4d planePoint {clipPlane.planePoint}, planeNormal {clipPlane.planeNormal};
     auto dist = [&](const Eigen::Vector4d& p) {
         return planeNormal.dot(p) - planeNormal.dot(planePoint);
     };
@@ -356,8 +358,8 @@ int Renderer::clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const 
         triOut1.color = {0, 0, 255, 255};
 
         triOut1.v1 = *inside_points[0];
-        triOut1.v2 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[0]);
-        triOut1.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[1]);
+        triOut1.v2 = linePlaneIntersection(clipPlane, *inside_points[0], *outside_points[0]);
+        triOut1.v3 = linePlaneIntersection(clipPlane, *inside_points[0], *outside_points[1]);
 
         return 1;
     }
@@ -370,11 +372,11 @@ int Renderer::clipTriangleAgainstPlane(const Eigen::Vector4d& planePoint, const 
 
         triOut1.v1 = *inside_points[0];
         triOut1.v2 = *inside_points[1];
-        triOut1.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[0], *outside_points[0]);
+        triOut1.v3 = linePlaneIntersection(clipPlane, *inside_points[0], *outside_points[0]);
 
         triOut2.v1 = *inside_points[1];
         triOut2.v2 = triOut1.v3;
-        triOut2.v3 = linePlaneIntersection(planePoint, planeNormal, *inside_points[1], *outside_points[0]);
+        triOut2.v3 = linePlaneIntersection(clipPlane, *inside_points[1], *outside_points[0]);
 
         return 2;
     }
@@ -393,51 +395,6 @@ SDL_Color Renderer::getShadingColor(double intensity) {
     color.a = 255;
 
     return color;
-}
-
-std::vector<Triangle> Renderer::loadObj(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open the .obj file: " + filename);
-    }
-
-    std::vector<Eigen::Vector4d> vertices;
-    std::vector<unsigned int> indices;
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string token;
-        iss >> token;
-
-        if (token == "v") {
-            double x, y, z;
-            if (!(iss >> x >> y >> z)) {
-                throw std::runtime_error("Invalid vertex format in .obj file: " + filename);
-            }
-            vertices.push_back(Eigen::Vector4d(x, y, z, 1));
-        } else if (token == "f") {
-            unsigned int i1, i2, i3;
-            if (!(iss >> i1 >> i2 >> i3)) {
-                throw std::runtime_error("Invalid face format in .obj file: " + filename);
-            }
-            indices.push_back(i1 - 1);
-            indices.push_back(i2 - 1);
-            indices.push_back(i3 - 1);
-        }
-    }
-
-    file.close();
-
-    if (indices.size() % 3 != 0) {
-        throw std::runtime_error("Invalid number of indices in .obj file: " + filename);
-    }
-
-    std::vector<Triangle> triangles;
-    for (size_t i = 0; i < indices.size(); i += 3) {
-        triangles.push_back(Triangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]));
-    }
-
-    return triangles;
 }
 
 void Renderer::visualizeDepthBuffer(SDL_Renderer* renderer) {

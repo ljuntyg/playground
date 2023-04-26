@@ -5,6 +5,44 @@
 #include <filesystem>
 
 #include "renderer.h"
+#include "OBJ_Loader.h"
+
+std::vector<Triangle> verticesToTriangles(const std::vector<objl::Vertex>& vertices) {
+    std::vector<Triangle> triangles;
+    size_t newSize = vertices.size() - (vertices.size() % 3); // Truncate the size to a multiple of 3
+
+    for (size_t i = 0; i < newSize; i += 3) {
+        Eigen::Vector4d v1(vertices[i].Position.X, vertices[i].Position.Y, vertices[i].Position.Z, 1.0);
+        Eigen::Vector4d v2(vertices[i + 1].Position.X, vertices[i + 1].Position.Y, vertices[i + 1].Position.Z, 1.0);
+        Eigen::Vector4d v3(vertices[i + 2].Position.X, vertices[i + 2].Position.Y, vertices[i + 2].Position.Z, 1.0);
+        triangles.emplace_back(v1, v2, v3);
+    }
+
+    return triangles;
+}
+
+std::vector<Triangle> meshesToTriangles(const std::vector<objl::Mesh>& meshes) {
+    std::vector<Triangle> triangles;
+
+    for (const objl::Mesh& mesh : meshes) {
+        for (size_t i = 0; i < mesh.Indices.size(); i += 3) {
+            const objl::Vertex& v1 = mesh.Vertices[mesh.Indices[i]];
+            const objl::Vertex& v2 = mesh.Vertices[mesh.Indices[i + 1]];
+            const objl::Vertex& v3 = mesh.Vertices[mesh.Indices[i + 2]];
+
+            Eigen::Vector4d ev1(v1.Position.X, v1.Position.Y, v1.Position.Z, 1.0);
+            Eigen::Vector4d ev2(v2.Position.X, v2.Position.Y, v2.Position.Z, 1.0);
+            Eigen::Vector4d ev3(v3.Position.X, v3.Position.Y, v3.Position.Z, 1.0);
+
+            // You can customize the color based on the material properties if desired
+            SDL_Color color = {100, 100, 100, 255};
+
+            triangles.emplace_back(ev1, ev2, ev3, color);
+        }
+    }
+
+    return triangles;
+}
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -40,18 +78,45 @@ int main(int argc, char* argv[]) {
         Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
     };
 
-    std::vector<Triangle> teapot = Renderer::loadObj("res/teapot.obj");
+    objl::Loader loader;
 
-    std::vector<Triangle> gourd = Renderer::loadObj("res/gourd.obj");
+    std::cout << "shop, success on 1, fail on 0: " << loader.LoadFile("res/butcher shop.obj") << std::endl;
+    std::vector<Triangle> shop =  meshesToTriangles(loader.LoadedMeshes);
 
-    std::vector<Triangle> axis = Renderer::loadObj("res/axis.obj");
+    std::cout << "vatican, success on 1, fail on 0: " << loader.LoadFile("res/civitas vaticana tosell.obj") << std::endl;
+    std::vector<Triangle> vatican =  meshesToTriangles(loader.LoadedMeshes);
 
-    std::vector<Triangle> shuttle = Renderer::loadObj("res/shuttle.obj");
+    std::cout << "kusatsu, success on 1, fail on 0: " << loader.LoadFile("res/kusatsu.obj") << std::endl;
+    std::vector<Triangle> kusatsu =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "teapot, success on 1, fail on 0: " << loader.LoadFile("res/teapot.obj") << std::endl;
+    std::vector<Triangle> teapot = meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "gourd, success on 1, fail on 0: " << loader.LoadFile("res/gourd.obj") << std::endl;
+    std::vector<Triangle> gourd =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "axis, success on 1, fail on 0: " << loader.LoadFile("res/axis.obj") << std::endl;
+    std::vector<Triangle> axis =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "shuttle, success on 1, fail on 0: " << loader.LoadFile("res/shuttle.obj") << std::endl;
+    std::vector<Triangle> shuttle =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "city, success on 1, fail on 0: " << loader.LoadFile("res/3d_city_sample_terrain.obj") << std::endl;
+    std::vector<Triangle> city =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "skycraper, success on 1, fail on 0: " << loader.LoadFile("res/skyscraper.obj") << std::endl;
+    std::vector<Triangle> skycraper =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "cessna, success on 1, fail on 0: " << loader.LoadFile("res/cessna.obj") << std::endl;
+    std::vector<Triangle> cessna =  meshesToTriangles(loader.LoadedMeshes);
+
+    std::cout << "mountains, success on 1, fail on 0: " << loader.LoadFile("res/mountains.obj") << std::endl;
+    std::vector<Triangle> mountains =  meshesToTriangles(loader.LoadedMeshes);
 
     double rotX = 0;
     double rotY = 0;
     double rotZ = 0;
-    double objectRotationSpeed = 0.001;
+    double objectRotationSpeed = 0.01;
 
     SDL_Event e;
     bool quit = false;
@@ -148,7 +213,7 @@ int main(int argc, char* argv[]) {
             rotZ += objectRotationSpeed;
 
             // Make calls to renderer here
-            Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ);
+            Renderer::drawObject(renderer, teapot, rotX, rotY, rotZ, 1);
 
             // Update the screen
             SDL_RenderPresent(renderer);
