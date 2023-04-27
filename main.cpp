@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
     double rotZ = 0;
     double objectRotationSpeed = 0;
 
+    bool tabKeyPressed = false;
+
     SDL_Event e;
     bool quit = false;
     while (!quit) {
@@ -172,6 +174,23 @@ int main(int argc, char* argv[]) {
 
                 Renderer::onYawPitch(0, dy);
             }
+            // Check TAB key for changing render mode
+            if (key_state[SDL_SCANCODE_TAB]) {
+                if (!tabKeyPressed) {
+                    tabKeyPressed = true;
+
+                    int currentMode = static_cast<int>(Renderer::RENDER_MODE);
+                    currentMode++;
+
+                    if (currentMode >= static_cast<int>(RenderModeCount)) {
+                        currentMode = 0;
+                    }
+
+                    Renderer::RENDER_MODE = static_cast<RenderMode>(currentMode);
+                }
+            } else {
+                tabKeyPressed = false;
+            }
 
             // Set color to black, clear the renderer
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -183,7 +202,7 @@ int main(int argc, char* argv[]) {
             rotZ += objectRotationSpeed;
 
             // Make calls to renderer here
-            Renderer::drawObject(renderer, Renderer::targetObj, rotX, rotY, rotZ);
+            Renderer::drawObject(renderer, Renderer::targetObj, -1.514, rotY, rotZ);
 
             // Update the screen
             SDL_RenderPresent(renderer);

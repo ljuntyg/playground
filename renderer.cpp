@@ -7,9 +7,11 @@
 #include "matrices.h"
 #include "main.h"
 
-std::string Renderer::objFolder = "res";
+RenderMode Renderer::RENDER_MODE = MODE_NORMAL;
+
+std::string Renderer::objFolder = "res"; // Must be in working directory
 std::vector<std::string> Renderer::allObjNames = Main::getObjFiles(objFolder);
-std::string Renderer::targetFile = "mountains.obj";
+std::string Renderer::targetFile = "3d_city_sample_terrain.obj"; // Don't forget .obj extension
 std::vector<Mesh> Renderer::targetObj = getTargetObj();
 std::vector<Mesh> Renderer::getTargetObj() {
     objl::Loader loader;
@@ -35,7 +37,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1);
+Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1); // Change to change camera start position
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -251,8 +253,12 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Mesh>& object, dou
         }
         
         for (auto &t : listTriangles) {
-            drawTriangle(renderer, t, t.color);
+            drawTriangle(renderer, t, RENDER_MODE);
         }
+    }
+
+    if (RENDER_MODE == MODE_SHOW_DEPTH) {
+        visualizeDepthBuffer(renderer);
     }
 
     // Clear depth buffer
@@ -322,10 +328,41 @@ void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, SD
                 // Update the depth buffer
                 depthBuffer[depthBufferIdx] = z;
 
-                // Draw the fragment
-                SDL_RenderDrawPoint(renderer, x, y);
+                // Draw the fragment, unless MODE_SHOW_DEPTH (it will cover any drawn triangles, so don't draw)
+                if (RENDER_MODE != MODE_SHOW_DEPTH) {
+                    SDL_RenderDrawPoint(renderer, x, y);
+                }
             }
         }
+    }
+}
+
+void Renderer::drawTriangle(SDL_Renderer* renderer, const Triangle& triangle, const RenderMode& mode) {
+    switch (mode) {
+    case MODE_NORMAL:
+        drawTriangle(renderer, triangle, triangle.color);
+        break;
+
+    case MODE_SHOW_CLIPPING:
+        // Draw with color, clip method will check mode
+        drawTriangle(renderer, triangle, triangle.color);
+        break;
+
+    case MODE_SHOW_DEPTH:
+        /* Call draw with color, but check in method if mode selected, 
+        if so skip drawing but add to buffer, then check at end of 
+        drawObject to decide whether to draw depth map or not */
+        drawTriangle(renderer, triangle, triangle.color);
+        break;
+
+    case MODE_SHOW_WIREFRAME:
+        // Call basic draw with just lines
+        drawTriangle(renderer, triangle);
+        break;
+    
+    default:
+        std::cerr << "Error: Invalid mode" << std::endl;
+        break;
     }
 }
 
@@ -364,8 +401,13 @@ int Renderer::clipTriangleAgainstPlane(const ClipPlane& clipPlane, Triangle& tri
     }
 
     if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
-        triOut1.color = triIn.color;
-        //triOut1.color = {0, 0, 255, 255};
+
+        // Check whether to visualize clipping
+        if (RENDER_MODE == MODE_SHOW_CLIPPING) {
+           triOut1.color = {0, 0, 255, 255}; 
+        } else {
+            triOut1.color = triIn.color;
+        }
 
         triOut1.v1 = *inside_points[0];
         triOut1.v2 = linePlaneIntersection(clipPlane, *inside_points[0], *outside_points[0]);
@@ -375,10 +417,15 @@ int Renderer::clipTriangleAgainstPlane(const ClipPlane& clipPlane, Triangle& tri
     }
 
     if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
-        triOut1.color = triIn.color;
-        triOut2.color = triIn.color;
-        /* triOut1.color = {255, 0, 0, 255};
-        triOut2.color = {0, 255, 0, 255}; */
+
+        // Check whether to visualize clipping
+        if (RENDER_MODE == MODE_SHOW_CLIPPING) {
+            triOut1.color = {255, 0, 0, 255};
+            triOut2.color = {0, 255, 0, 255};
+        } else {
+            triOut1.color = triIn.color;
+            triOut2.color = triIn.color;
+        }
 
         triOut1.v1 = *inside_points[0];
         triOut1.v2 = *inside_points[1];
@@ -413,17 +460,35 @@ void Renderer::visualizeDepthBuffer(SDL_Renderer* renderer) {
             int index = x + y * WINDOW_WIDTH;
             double depth = depthBuffer[index];
 
-            // Normalize the depth value to the range [0, 1]
-            double normalizedDepth = (depth - NEAR) / (FAR - NEAR);
+            depth = 1 - ((depth - NEAR) / (FAR - NEAR)); // 0.999999
+
+            depth = std::pow(depth, 9250) * ULLONG_MAX;
 
             // Clamp the normalized depth to the range [0, 1]
-            normalizedDepth = std::clamp(normalizedDepth, 0.0, 1.0);
+            depth = std::clamp(depth, 0.0, 1.0);
 
-            // Convert the normalized depth to a grayscale color
-            uint8_t grayscaleValue = static_cast<uint8_t>(normalizedDepth * 255);
+            // Map the normalized depth to a color using the jet colormap
+            SDL_Color color = jet(depth);
 
-            SDL_SetRenderDrawColor(renderer, grayscaleValue, grayscaleValue, grayscaleValue, 255);
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
+}
+
+SDL_Color Renderer::jet(double value) {
+    double a = (1 - value) / 0.175;
+    int x = static_cast<int>(std::floor(a));
+    int y = static_cast<int>(std::floor(255 * (a - x)));
+
+    SDL_Color color;
+    switch (x) {
+        case 0: color = {static_cast<uint8_t>(255), static_cast<uint8_t>(y), 0, 255}; break;
+        case 1: color = {static_cast<uint8_t>(255 - y), static_cast<uint8_t>(255), 0, 255}; break;
+        case 2: color = {0, static_cast<uint8_t>(255), static_cast<uint8_t>(y), 255}; break;
+        case 3: color = {0, static_cast<uint8_t>(255 - y), static_cast<uint8_t>(255), 255}; break;
+        default: color = {0, 0, 0, 255}; break;
+    }
+
+    return color;
 }
