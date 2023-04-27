@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/cpp-is-fun.dir/main.cpp.obj.d"
   "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj"
   "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj.d"
+  "CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj"
+  "CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj.d"
   "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj"
   "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj.d"
   "cpp-is-fun.exe"

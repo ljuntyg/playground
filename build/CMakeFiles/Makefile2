@@ -836,12 +836,12 @@ CMakeFiles/ContinuousSubmit.dir/clean:
 CMakeFiles/cpp-is-fun.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles --progress-num=1,2,3,4 "Built target cpp-is-fun"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles --progress-num=1,2,3,4,5 "Built target cpp-is-fun"
 .PHONY : CMakeFiles/cpp-is-fun.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/cpp-is-fun.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/cpp-is-fun.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles 0
 .PHONY : CMakeFiles/cpp-is-fun.dir/rule

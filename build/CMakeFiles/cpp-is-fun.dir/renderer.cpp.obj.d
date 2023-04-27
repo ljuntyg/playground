@@ -615,4 +615,6 @@ CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: \
  C:/msys64/mingw64/include/c++/12.2.0/bits/allocated_ptr.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/list.tcc \
  C:\Users\gbhko\Desktop\Prog\VSCode\playground\structs.h \
- C:\Users\gbhko\Desktop\Prog\VSCode\playground\matrices.h
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\matrices.h \
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\main.h \
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.h

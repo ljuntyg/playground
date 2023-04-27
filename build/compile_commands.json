@@ -16,5 +16,11 @@
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\matrices.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\playground\\matrices.cpp",
   "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.cpp",
   "output": "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj"
+},
+{
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp -O3 -DNDEBUG -o CMakeFiles\\cpp-is-fun.dir\\obj_loader.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\playground\\obj_loader.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/playground/obj_loader.cpp",
+  "output": "CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj"
 }
 ]

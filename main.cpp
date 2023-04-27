@@ -5,122 +5,83 @@
 #include <filesystem>
 
 #include "renderer.h"
-#include "OBJ_Loader.h"
+#include "main.h"
 
-std::vector<Triangle> verticesToTriangles(const std::vector<objl::Vertex>& vertices) {
-    std::vector<Triangle> triangles;
-    size_t newSize = vertices.size() - (vertices.size() % 3); // Truncate the size to a multiple of 3
+std::vector<Mesh> Main::objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes) {
+    std::vector<Mesh> retVec;
+    for (auto objlMesh : objlMeshes) {
+        std::vector<Eigen::Vector4d> vertices;
+        std::vector<size_t> indices;
 
-    for (size_t i = 0; i < newSize; i += 3) {
-        Eigen::Vector4d v1(vertices[i].Position.X, vertices[i].Position.Y, vertices[i].Position.Z, 1.0);
-        Eigen::Vector4d v2(vertices[i + 1].Position.X, vertices[i + 1].Position.Y, vertices[i + 1].Position.Z, 1.0);
-        Eigen::Vector4d v3(vertices[i + 2].Position.X, vertices[i + 2].Position.Y, vertices[i + 2].Position.Z, 1.0);
-        triangles.emplace_back(v1, v2, v3);
+        for (const auto& vertex : objlMesh.Vertices) {
+            vertices.emplace_back(vertex.Position.X, vertex.Position.Y, vertex.Position.Z, 1.0);
+        }
+
+        for (const auto& index : objlMesh.Indices) {
+            indices.push_back(index);
+        }
+
+        retVec.emplace_back(Mesh(vertices, indices));
     }
-
-    return triangles;
+    return retVec;
 }
 
-std::vector<Triangle> meshesToTriangles(const std::vector<objl::Mesh>& meshes) {
-    std::vector<Triangle> triangles;
+std::vector<std::string> Main::getObjFiles(const std::string& folderName) {
+    std::vector<std::string> objFiles;
 
-    for (const objl::Mesh& mesh : meshes) {
-        for (size_t i = 0; i < mesh.Indices.size(); i += 3) {
-            const objl::Vertex& v1 = mesh.Vertices[mesh.Indices[i]];
-            const objl::Vertex& v2 = mesh.Vertices[mesh.Indices[i + 1]];
-            const objl::Vertex& v3 = mesh.Vertices[mesh.Indices[i + 2]];
-
-            Eigen::Vector4d ev1(v1.Position.X, v1.Position.Y, v1.Position.Z, 1.0);
-            Eigen::Vector4d ev2(v2.Position.X, v2.Position.Y, v2.Position.Z, 1.0);
-            Eigen::Vector4d ev3(v3.Position.X, v3.Position.Y, v3.Position.Z, 1.0);
-
-            // You can customize the color based on the material properties if desired
-            SDL_Color color = {100, 100, 100, 255};
-
-            triangles.emplace_back(ev1, ev2, ev3, color);
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(folderName)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".obj") {
+                objFiles.push_back(entry.path().string());
+            }
         }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 
-    return triangles;
+    return objFiles;
 }
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window* window = SDL_CreateWindow("Playground - FPS: ", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+    SDL_Window* window = SDL_CreateWindow("Playground - Frame Time: ", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Renderer::WINDOW_WIDTH, Renderer::WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     Uint32 nextFrameTicks = SDL_GetTicks();
 
-    std::vector<Triangle> cube = {
+    std::vector<Eigen::Vector4d> cubeVertices = {
         // SOUTH
-        Triangle(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1)),
-        Triangle(Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
-
+        Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
         // EAST
-        Triangle(Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1)),
-        Triangle(Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 0, 1, 1)),
-
+        Eigen::Vector4d(1, 0, 0, 1), Eigen::Vector4d(1, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 0, 1, 1),
         // NORTH
-        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(0, 1, 1, 1)),
-        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 0, 1, 1)),
-
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 0, 1, 1),
         // WEST
-        Triangle(Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 1, 0, 1)),
-        Triangle(Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 0, 0, 1)),
-
+        Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 0, 0, 1),
         // TOP
-        Triangle(Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(1, 1, 1, 1)),
-        Triangle(Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 1, 0, 1)),
-
+        Eigen::Vector4d(0, 1, 0, 1), Eigen::Vector4d(0, 1, 1, 1), Eigen::Vector4d(1, 1, 1, 1), Eigen::Vector4d(1, 1, 0, 1),
         // BOTTOM
-        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1)),
-        Triangle(Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1)),
+        Eigen::Vector4d(1, 0, 1, 1), Eigen::Vector4d(0, 0, 1, 1), Eigen::Vector4d(0, 0, 0, 1), Eigen::Vector4d(1, 0, 0, 1),
     };
 
-    objl::Loader loader;
+    std::vector<size_t> cubeIndices = {
+        // SOUTH
+        0, 1, 2, 0, 2, 3,
+        // EAST
+        4, 5, 6, 4, 6, 7,
+        // NORTH
+        8, 9, 10, 8, 10, 11,
+        // WEST
+        12, 13, 14, 12, 14, 15,
+        // TOP
+        16, 17, 18, 16, 18, 19,
+        // BOTTOM
+        20, 21, 22, 20, 22, 23,
+    };
 
-    /* std::cout << "shop, success on 1, fail on 0: " << loader.LoadFile("res/butcher shop.obj") << std::endl;
-    std::vector<Triangle> shop =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "vatican, success on 1, fail on 0: " << loader.LoadFile("res/civitas vaticana tosell.obj") << std::endl;
-    std::vector<Triangle> vatican =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "kusatsu, success on 1, fail on 0: " << loader.LoadFile("res/kusatsu.obj") << std::endl;
-    std::vector<Triangle> kusatsu =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "teapot, success on 1, fail on 0: " << loader.LoadFile("res/teapot.obj") << std::endl;
-    std::vector<Triangle> teapot = meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "gourd, success on 1, fail on 0: " << loader.LoadFile("res/gourd.obj") << std::endl;
-    std::vector<Triangle> gourd =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "axis, success on 1, fail on 0: " << loader.LoadFile("res/axis.obj") << std::endl;
-    std::vector<Triangle> axis =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "shuttle, success on 1, fail on 0: " << loader.LoadFile("res/shuttle.obj") << std::endl;
-    std::vector<Triangle> shuttle =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "city, success on 1, fail on 0: " << loader.LoadFile("res/3d_city_sample_terrain.obj") << std::endl;
-    std::vector<Triangle> city =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "skycraper, success on 1, fail on 0: " << loader.LoadFile("res/skyscraper.obj") << std::endl;
-    std::vector<Triangle> skycraper =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "cessna, success on 1, fail on 0: " << loader.LoadFile("res/cessna.obj") << std::endl;
-    std::vector<Triangle> cessna =  meshesToTriangles(loader.LoadedMeshes); */
-
-    std::cout << "mountains, success on 1, fail on 0: " << loader.LoadFile("res/mountains.obj") << std::endl;
-    std::vector<Triangle> mountains =  meshesToTriangles(loader.LoadedMeshes);
-
-    /* std::cout << "jianshazui, success on 1, fail on 0: " << loader.LoadFile("res/jjianshazui.obj") << std::endl;
-    std::vector<Triangle> jianshazui =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "hongkongplace, success on 1, fail on 0: " << loader.LoadFile("res/hongkongplace.obj") << std::endl;
-    std::vector<Triangle> hongkongplace =  meshesToTriangles(loader.LoadedMeshes);
-
-    std::cout << "jordansouth, success on 1, fail on 0: " << loader.LoadFile("res/jordansouth.obj") << std::endl;
-    std::vector<Triangle> jordansouth =  meshesToTriangles(loader.LoadedMeshes); */
+    Mesh cubeMesh(cubeVertices, cubeIndices);
+    std::vector<Mesh> cube = {cubeMesh};
 
     double rotX = 0;
     double rotY = 0;
@@ -222,19 +183,19 @@ int main(int argc, char* argv[]) {
             rotZ += objectRotationSpeed;
 
             // Make calls to renderer here
-            Renderer::drawObject(renderer, mountains, rotX, rotY, rotZ);
+            Renderer::drawObject(renderer, Renderer::targetObj, rotX, rotY, rotZ);
 
             // Update the screen
             SDL_RenderPresent(renderer);
 
-            // Calculate and display FPS every second
-            if (currentTicks - Renderer::fpsUpdateTime >= 1000) {
-                Renderer::fps = Renderer::frameCounter;
+            // Calculate and display frame time every second
+            if (currentTicks - Renderer::frameTimeUpdateTime >= 1000) {
+                Renderer::frameTime = 1000.0f / Renderer::frameCounter;
                 Renderer::frameCounter = 0;
-                Renderer::fpsUpdateTime = currentTicks;
+                Renderer::frameTimeUpdateTime = currentTicks;
 
-                // Update the window title with the current FPS
-                std::string windowTitle = "Playground - FPS: " + std::to_string(Renderer::fps);
+                // Update the window title with the current frame time
+                std::string windowTitle = "Playground - Frame Time: " + std::to_string(Renderer::frameTime) + " ms";
                 SDL_SetWindowTitle(window, windowTitle.c_str());
             }
         } else {

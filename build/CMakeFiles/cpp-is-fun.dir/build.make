@@ -113,11 +113,27 @@ CMakeFiles/cpp-is-fun.dir/matrices.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cpp-is-fun.dir/matrices.cpp.s"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\playground\matrices.cpp -o CMakeFiles\cpp-is-fun.dir\matrices.cpp.s
 
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj: CMakeFiles/cpp-is-fun.dir/flags.make
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj: CMakeFiles/cpp-is-fun.dir/includes_CXX.rsp
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/playground/obj_loader.cpp
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj: CMakeFiles/cpp-is-fun.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj -MF CMakeFiles\cpp-is-fun.dir\obj_loader.cpp.obj.d -o CMakeFiles\cpp-is-fun.dir\obj_loader.cpp.obj -c C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.cpp
+
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.i"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.cpp > CMakeFiles\cpp-is-fun.dir\obj_loader.cpp.i
+
+CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.s"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.cpp -o CMakeFiles\cpp-is-fun.dir\obj_loader.cpp.s
+
 # Object files for target cpp-is-fun
 cpp__is__fun_OBJECTS = \
 "CMakeFiles/cpp-is-fun.dir/main.cpp.obj" \
 "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj" \
-"CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj"
+"CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj" \
+"CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj"
 
 # External object files for target cpp-is-fun
 cpp__is__fun_EXTERNAL_OBJECTS =
@@ -125,13 +141,14 @@ cpp__is__fun_EXTERNAL_OBJECTS =
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/main.cpp.obj
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj
+cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/build.make
 cpp-is-fun.exe: C:/msys64/mingw64/lib/libSDL2main.a
 cpp-is-fun.exe: C:/msys64/mingw64/lib/libSDL2.dll.a
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/linkLibs.rsp
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/objects1.rsp
 cpp-is-fun.exe: CMakeFiles/cpp-is-fun.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable cpp-is-fun.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\playground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable cpp-is-fun.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\cpp-is-fun.dir\link.txt --verbose=$(VERBOSE)
 	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Prog/VSCode/playground/build/cpp-is-fun.exe -installedDir C:/dev/vcpkg/installed/x64-windows/bin -OutVariable out
 

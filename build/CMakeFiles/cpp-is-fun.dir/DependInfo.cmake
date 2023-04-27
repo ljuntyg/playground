@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/gbhko/Desktop/Prog/VSCode/playground/main.cpp" "CMakeFiles/cpp-is-fun.dir/main.cpp.obj" "gcc" "CMakeFiles/cpp-is-fun.dir/main.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/playground/matrices.cpp" "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj" "gcc" "CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj.d"
+  "C:/Users/gbhko/Desktop/Prog/VSCode/playground/obj_loader.cpp" "CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj" "gcc" "CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/playground/renderer.cpp" "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj" "gcc" "CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj.d"
   )
 

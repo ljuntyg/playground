@@ -570,6 +570,30 @@ matrices.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/matrices.cpp.s
 .PHONY : matrices.cpp.s
 
+obj_loader.obj: obj_loader.cpp.obj
+.PHONY : obj_loader.obj
+
+# target to build an object file
+obj_loader.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.obj
+.PHONY : obj_loader.cpp.obj
+
+obj_loader.i: obj_loader.cpp.i
+.PHONY : obj_loader.i
+
+# target to preprocess a source file
+obj_loader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.i
+.PHONY : obj_loader.cpp.i
+
+obj_loader.s: obj_loader.cpp.s
+.PHONY : obj_loader.s
+
+# target to generate assembly for a file
+obj_loader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\cpp-is-fun.dir\build.make CMakeFiles/cpp-is-fun.dir/obj_loader.cpp.s
+.PHONY : obj_loader.cpp.s
+
 renderer.obj: renderer.cpp.obj
 .PHONY : renderer.obj
 
@@ -640,6 +664,9 @@ help:
 	@echo ... matrices.obj
 	@echo ... matrices.i
 	@echo ... matrices.s
+	@echo ... obj_loader.obj
+	@echo ... obj_loader.i
+	@echo ... obj_loader.s
 	@echo ... renderer.obj
 	@echo ... renderer.i
 	@echo ... renderer.s

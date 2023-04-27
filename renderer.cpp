@@ -5,18 +5,37 @@
 
 #include "renderer.h"
 #include "matrices.h"
+#include "main.h"
+
+std::string Renderer::objFolder = "res";
+std::vector<std::string> Renderer::allObjNames = Main::getObjFiles(objFolder);
+std::string Renderer::targetFile = "mountains.obj";
+std::vector<Mesh> Renderer::targetObj = getTargetObj();
+std::vector<Mesh> Renderer::getTargetObj() {
+    objl::Loader loader;
+    loader.LoadFile(objFolder + "/" + targetFile);
+    return Main::objlMeshToCustomMesh(loader.LoadedMeshes);
+}
 
 std::vector<double> Renderer::depthBuffer(WINDOW_WIDTH * WINDOW_HEIGHT, std::numeric_limits<double>::max());
+std::vector<ClipPlane> Renderer::clipPlanes = {
+    ClipPlane({0, 0, 0, 1}, {0, 1, 0, 1}), // Top
+    ClipPlane({0, (double)WINDOW_HEIGHT - 1, 0, 1}, {0, -1, 0, 1}), // Bottom
+    ClipPlane({0, 0, 0, 1}, {1, 0, 0, 1}), // Left
+    ClipPlane({(double)WINDOW_WIDTH - 1, 0, 0, 1}, {-1, 0, 0, 1}), // Right
+    ClipPlane({0, 0, -NEAR, 1}, {0, 0, -1, 1}), // Near, FLIPPED Z TO NEG, HAVE TO FLIP NEAR AS WELL
+    ClipPlane({0, 0, -FAR, 1}, {0, 0, 1, 1}) // Far, FLIPPED Z AND FAR DUE TO ABOVE NEAR CHANGE, NO FAR CLIPPING IMPLEMENTED
+};
 
 Uint32 Renderer::frameCounter = 0;
-Uint32 Renderer::fpsUpdateTime = 0;
-int Renderer::fps = 0;
+Uint32 Renderer::frameTimeUpdateTime = 0;
+double Renderer::frameTime = 0;
 
 double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1); // Changed from negative z to positive, positive z goes "out" of the screen?
+Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1);
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -107,7 +126,7 @@ void Renderer::onYawPitch(const double& dx, const double& dy) {
     lookDir.normalize();
 }
 
-void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object, double rotX, double rotY, double rotZ, double scale) {
+void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Mesh>& object, double rotX, double rotY, double rotZ, double scale) {
     // Create transformation matrices
     Eigen::Matrix4d scaleMatrix = Matrices::createScale(scale, scale, scale);
     Eigen::Matrix4d rotXMatrix = Matrices::createRotationX(rotX);
@@ -124,86 +143,80 @@ void Renderer::drawObject(SDL_Renderer* renderer, std::vector<Triangle>& object,
     // Create projection matrix
     Eigen::Matrix4d projectionMatrix = Matrices::createPerspectiveProjection(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR, FAR);
 
-    // Define the clip planes
-    std::vector<ClipPlane> clipPlanes = {
-        ClipPlane({0, 0, 0, 1}, {0, 1, 0, 1}), // Top
-		ClipPlane({0, (double)WINDOW_HEIGHT - 1, 0, 1}, {0, -1, 0, 1}), // Bottom
-        ClipPlane({0, 0, 0, 1}, {1, 0, 0, 1}), // Left
-        ClipPlane({(double)WINDOW_WIDTH - 1, 0, 0, 1}, {-1, 0, 0, 1}), // Right
-        ClipPlane({0, 0, -NEAR, 1}, {0, 0, -1, 1}), // Near, FLIPPED Z TO NEG, HAVE TO FLIP NEAR AS WELL
-        ClipPlane({0, 0, -FAR, 1}, {0, 0, 1, 1}) // Far, FLIPPED Z AND FAR DUE TO ABOVE NEAR CHANGE, NO FAR CLIPPING IMPLEMENTED
-    };
-
     // Common vector for all triangles to draw
     std::vector<Triangle> finalTriangles;
 
-    for (const Triangle& triangle : object) {
-        Eigen::Vector4d v1 = triangle.v1;
-        Eigen::Vector4d v2 = triangle.v2;
-        Eigen::Vector4d v3 = triangle.v3;
+    for (const Mesh& mesh : object) {
+        for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+            // Create a triangle from the current set of indices
+            const Eigen::Vector4d& v1 = mesh.vertices[mesh.indices[i]];
+            const Eigen::Vector4d& v2 = mesh.vertices[mesh.indices[i + 1]];
+            const Eigen::Vector4d& v3 = mesh.vertices[mesh.indices[i + 2]];
+            Triangle triangle(v1, v2, v3);
 
-        // World Matrix Transform
-        Eigen::Vector4d triTransformed_v1 = matWorld * v1;
-        Eigen::Vector4d triTransformed_v2 = matWorld * v2;
-        Eigen::Vector4d triTransformed_v3 = matWorld * v3;
+            // World Matrix Transform
+            Eigen::Vector4d triTransformed_v1 = matWorld * v1;
+            Eigen::Vector4d triTransformed_v2 = matWorld * v2;
+            Eigen::Vector4d triTransformed_v3 = matWorld * v3;
 
-        // Calculate triangle Normal
-        Eigen::Vector3d line1 = (triTransformed_v2 - triTransformed_v1).head<3>();
-        Eigen::Vector3d line2 = (triTransformed_v3 - triTransformed_v1).head<3>();
-        Eigen::Vector3d normal = line1.cross(line2);
-        normal.normalize();
+            // Calculate triangle Normal
+            Eigen::Vector3d line1 = (triTransformed_v2 - triTransformed_v1).head<3>();
+            Eigen::Vector3d line2 = (triTransformed_v3 - triTransformed_v1).head<3>();
+            Eigen::Vector3d normal = line1.cross(line2);
+            normal.normalize();
 
-        // Get Ray from triangle to camera
-        Eigen::Vector3d vCameraRay = (triTransformed_v1.head<3>() - cameraPos.head<3>()).normalized();
+            // Get Ray from triangle to camera
+            Eigen::Vector3d vCameraRay = (triTransformed_v1.head<3>() - cameraPos.head<3>()).normalized();
 
-        // Skip triangle if back face
-        if (normal.dot(vCameraRay) > 0) {
-            continue;
+            // Skip triangle if back face
+            if (normal.dot(vCameraRay) > 0) {
+                continue;
+            }
+
+            // Illumination
+            Eigen::Vector3d light_direction = {0, 1, -1};
+            light_direction.normalize();
+
+            // Dot product for shasing
+            double dp = std::max(0.1, normal.dot(light_direction.head<3>()));
+            SDL_Color shadingColor = getShadingColor(dp);
+
+            Eigen::Vector4d triViewedV1 = viewMatrix * triTransformed_v1;
+            Eigen::Vector4d triViewedV2 = viewMatrix * triTransformed_v2;
+            Eigen::Vector4d triViewedV3 = viewMatrix * triTransformed_v3;
+
+            // Clip Viewed Triangle against near plane
+            int nClippedTriangles = 0;
+            Triangle clipped[2];
+            Triangle triViewed(triViewedV1, triViewedV2, triViewedV3);
+            nClippedTriangles = clipTriangleAgainstPlane(clipPlanes[4], triViewed, clipped[0], clipped[1]);
+
+            // Project triangles from 3D to 2D
+            for (int n = 0; n < nClippedTriangles; n++) {
+                Triangle triProjected(clipped[n].v1, clipped[n].v2, clipped[n].v3, shadingColor);
+
+                // Project vertices
+                triProjected.v1 = projectionMatrix * triProjected.v1;
+                triProjected.v2 = projectionMatrix * triProjected.v2;
+                triProjected.v3 = projectionMatrix * triProjected.v3;
+
+                    // Convert to normalized device coordinates
+                triProjected.v1 /= triProjected.v1.w();
+                triProjected.v2 /= triProjected.v2.w();
+                triProjected.v3 /= triProjected.v3.w();
+
+                // Convert to screen space coordinates
+                triProjected.v1.x() = (triProjected.v1.x() + 1.0) * scaleFactor;
+                triProjected.v1.y() = (1.0 - triProjected.v1.y()) * scaleFactor;
+                triProjected.v2.x() = (triProjected.v2.x() + 1.0) * scaleFactor;
+                triProjected.v2.y() = (1.0 - triProjected.v2.y()) * scaleFactor;
+                triProjected.v3.x() = (triProjected.v3.x() + 1.0) * scaleFactor;
+                triProjected.v3.y() = (1.0 - triProjected.v3.y()) * scaleFactor;
+
+                finalTriangles.push_back(triProjected);
+            }
+                
         }
-
-        // Illumination
-        Eigen::Vector3d light_direction = {0, 1, -1};
-        light_direction.normalize();
-
-        // Dot product for shasing
-        double dp = std::max(0.1, normal.dot(light_direction.head<3>()));
-        SDL_Color shadingColor = getShadingColor(dp);
-
-        Eigen::Vector4d triViewedV1 = viewMatrix * triTransformed_v1;
-        Eigen::Vector4d triViewedV2 = viewMatrix * triTransformed_v2;
-        Eigen::Vector4d triViewedV3 = viewMatrix * triTransformed_v3;
-
-        // Clip Viewed Triangle against near plane
-        int nClippedTriangles = 0;
-        Triangle clipped[2];
-        Triangle triViewed(triViewedV1, triViewedV2, triViewedV3);
-        nClippedTriangles = clipTriangleAgainstPlane(clipPlanes[4], triViewed, clipped[0], clipped[1]);
-
-        // Project triangles from 3D to 2D
-        for (int n = 0; n < nClippedTriangles; n++) {
-            Triangle triProjected(clipped[n].v1, clipped[n].v2, clipped[n].v3, shadingColor);
-
-            // Project vertices
-            triProjected.v1 = projectionMatrix * triProjected.v1;
-            triProjected.v2 = projectionMatrix * triProjected.v2;
-            triProjected.v3 = projectionMatrix * triProjected.v3;
-
-                // Convert to normalized device coordinates
-            triProjected.v1 /= triProjected.v1.w();
-            triProjected.v2 /= triProjected.v2.w();
-            triProjected.v3 /= triProjected.v3.w();
-
-            // Convert to screen space coordinates
-            triProjected.v1.x() = (triProjected.v1.x() + 1.0) * scaleFactor;
-            triProjected.v1.y() = (1.0 - triProjected.v1.y()) * scaleFactor;
-            triProjected.v2.x() = (triProjected.v2.x() + 1.0) * scaleFactor;
-            triProjected.v2.y() = (1.0 - triProjected.v2.y()) * scaleFactor;
-            triProjected.v3.x() = (triProjected.v3.x() + 1.0) * scaleFactor;
-            triProjected.v3.y() = (1.0 - triProjected.v3.y()) * scaleFactor;
-
-            finalTriangles.push_back(triProjected);
-        }
-        
     }
 
     // Edge clip and draw triangles
