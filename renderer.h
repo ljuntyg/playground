@@ -21,7 +21,7 @@ class Renderer {
 public:
     // Rendering constants, scalefactor for equal x,y-coordinate scaling in projection
     static const int WINDOW_WIDTH = 640;
-    static const int WINDOW_HEIGHT = 48+;
+    static const int WINDOW_HEIGHT = 480;
     static constexpr double scaleFactor = std::min(WINDOW_WIDTH, WINDOW_HEIGHT) / 2.0;
     static const int TICKS_PER_FRAME = 1000 / 60;
 
