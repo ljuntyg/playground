@@ -2,45 +2,8 @@
 #include <iostream>
 #include <Eigen>
 #include <cmath>
-#include <filesystem>
 
 #include "renderer.h"
-#include "main.h"
-
-std::vector<Mesh> Main::objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes) {
-    std::vector<Mesh> retVec;
-    for (auto objlMesh : objlMeshes) {
-        std::vector<Eigen::Vector4d> vertices;
-        std::vector<size_t> indices;
-
-        for (const auto& vertex : objlMesh.Vertices) {
-            vertices.emplace_back(vertex.Position.X, vertex.Position.Y, vertex.Position.Z, 1.0);
-        }
-
-        for (const auto& index : objlMesh.Indices) {
-            indices.push_back(index);
-        }
-
-        retVec.emplace_back(Mesh(vertices, indices));
-    }
-    return retVec;
-}
-
-std::vector<std::string> Main::getObjFiles(const std::string& folderName) {
-    std::vector<std::string> objFiles;
-
-    try {
-        for (const auto& entry : std::filesystem::directory_iterator(folderName)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".obj") {
-                objFiles.push_back(entry.path().string());
-            }
-        }
-    } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
-
-    return objFiles;
-}
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -202,7 +165,7 @@ int main(int argc, char* argv[]) {
             rotZ += objectRotationSpeed;
 
             // Make calls to renderer here
-            Renderer::drawObject(renderer, Renderer::targetObj, -1.514, rotY, rotZ);
+            Renderer::drawObject(renderer, Renderer::targetObj, rotX, rotY, rotZ);
 
             // Update the screen
             SDL_RenderPresent(renderer);

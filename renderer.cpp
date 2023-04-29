@@ -2,22 +2,17 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "renderer.h"
 #include "matrices.h"
-#include "main.h"
 
 RenderMode Renderer::RENDER_MODE = MODE_NORMAL;
 
 std::string Renderer::objFolder = "res"; // Must be in working directory
-std::vector<std::string> Renderer::allObjNames = Main::getObjFiles(objFolder);
-std::string Renderer::targetFile = "3d_city_sample_terrain.obj"; // Don't forget .obj extension
+std::vector<std::string> Renderer::allObjNames = getObjFiles(objFolder);
+std::string Renderer::targetFile = "apartment building.obj"; // Don't forget .obj extension
 std::vector<Mesh> Renderer::targetObj = getTargetObj();
-std::vector<Mesh> Renderer::getTargetObj() {
-    objl::Loader loader;
-    loader.LoadFile(objFolder + "/" + targetFile);
-    return Main::objlMeshToCustomMesh(loader.LoadedMeshes);
-}
 
 std::vector<double> Renderer::depthBuffer(WINDOW_WIDTH * WINDOW_HEIGHT, std::numeric_limits<double>::max());
 std::vector<ClipPlane> Renderer::clipPlanes = {
@@ -37,7 +32,7 @@ double Renderer::cameraYaw = 0;
 double Renderer::cameraPitch = 0;
 
 Eigen::Vector4d Renderer::lookDir(0, 0, 1, 1);
-Eigen::Vector4d Renderer::cameraPos(0, 0, -10, 1); // Change to change camera start position
+Eigen::Vector4d Renderer::cameraPos(0, 0, -50, 1); // Change to change camera start position
 Eigen::Vector4d Renderer::targetPos(0, 0, 0, 1);
 Eigen::Vector4d Renderer::lightDir(0, 0, -1, 1);
 
@@ -491,4 +486,49 @@ SDL_Color Renderer::jet(double value) {
     }
 
     return color;
+}
+
+std::vector<Mesh> Renderer::objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes) {
+    std::vector<Mesh> retVec;
+    for (auto objlMesh : objlMeshes) {
+        std::vector<Eigen::Vector4d> vertices;
+        std::vector<size_t> indices;
+
+        for (const auto& vertex : objlMesh.Vertices) {
+            vertices.emplace_back(vertex.Position.X, vertex.Position.Y, vertex.Position.Z, 1.0);
+        }
+
+        for (const auto& index : objlMesh.Indices) {
+            indices.push_back(index);
+        }
+
+        retVec.emplace_back(Mesh(vertices, indices));
+    }
+    return retVec;
+}
+
+std::vector<std::string> Renderer::getObjFiles(const std::string& folderName) {
+    std::vector<std::string> objFiles;
+
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(folderName)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".obj") {
+                objFiles.push_back(entry.path().string());
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
+    return objFiles;
+}
+
+std::vector<Mesh> Renderer::getTargetObj() {
+    objl::Loader loader;
+    if (loader.LoadFile(objFolder + "/" + targetFile) == 0) {
+        std::cout << "Failed to load object file" << std::endl;
+    } else {
+        std::cout << "Successfully loaded object file" << std::endl;
+    }
+    return objlMeshToCustomMesh(loader.LoadedMeshes);
 }

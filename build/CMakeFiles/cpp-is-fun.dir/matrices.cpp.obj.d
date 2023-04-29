@@ -611,4 +611,11 @@ CMakeFiles/cpp-is-fun.dir/matrices.cpp.obj: \
  C:/msys64/mingw64/include/SDL2/SDL_version.h \
  C:/msys64/mingw64/include/SDL2/SDL_locale.h \
  C:/msys64/mingw64/include/SDL2/SDL_misc.h \
- C:\Users\gbhko\Desktop\Prog\VSCode\playground\structs.h
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\structs.h \
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.h \
+ C:/msys64/mingw64/include/c++/12.2.0/iostream \
+ C:/msys64/mingw64/include/c++/12.2.0/fstream \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/codecvt.h \
+ C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h \
+ C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/c++io.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/fstream.tcc

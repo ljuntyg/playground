@@ -153,6 +153,32 @@ CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: \
  C:/msys64/mingw64/include/c++/12.2.0/bits/fstream.tcc \
  C:/msys64/mingw64/include/c++/12.2.0/sstream \
  C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc \
+ C:/msys64/mingw64/include/c++/12.2.0/filesystem \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/fs_fwd.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/chrono.h \
+ C:/msys64/mingw64/include/c++/12.2.0/ratio \
+ C:/msys64/mingw64/include/c++/12.2.0/ctime \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/parse_numbers.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/fs_path.h \
+ C:/msys64/mingw64/include/c++/12.2.0/locale \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/locale_facets_nonio.h \
+ C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/time_members.h \
+ C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/messages_members.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/locale_facets_nonio.tcc \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/locale_conv.h \
+ C:/msys64/mingw64/include/c++/12.2.0/iomanip \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/quoted_string.h \
+ C:/msys64/mingw64/include/c++/12.2.0/codecvt \
+ C:/msys64/mingw64/include/c++/12.2.0/ext/concurrence.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/shared_ptr.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/shared_ptr_base.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/allocated_ptr.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/unique_ptr.h \
+ C:/msys64/mingw64/include/c++/12.2.0/tuple \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/uses_allocator.h \
+ C:/msys64/mingw64/include/c++/12.2.0/ext/aligned_buffer.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/fs_dir.h \
+ C:/msys64/mingw64/include/c++/12.2.0/bits/fs_ops.h \
  C:\Users\gbhko\Desktop\Prog\VSCode\playground\renderer.h \
  C:/msys64/mingw64/include/SDL2/SDL.h \
  C:/msys64/mingw64/include/SDL2/SDL_main.h \
@@ -320,11 +346,8 @@ CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: \
  C:/msys64/mingw64/include/c++/12.2.0/cassert \
  C:/msys64/mingw64/include/assert.h \
  C:/msys64/mingw64/include/c++/12.2.0/functional \
- C:/msys64/mingw64/include/c++/12.2.0/tuple \
- C:/msys64/mingw64/include/c++/12.2.0/bits/uses_allocator.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/std_function.h \
  C:/msys64/mingw64/include/c++/12.2.0/unordered_map \
- C:/msys64/mingw64/include/c++/12.2.0/ext/aligned_buffer.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/hashtable.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/hashtable_policy.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/enable_special_members.h \
@@ -612,9 +635,7 @@ CMakeFiles/cpp-is-fun.dir/renderer.cpp.obj: \
  C:/Users/gbhko/Desktop/Prog/VSCode/playground/Eigen/src/IterativeLinearSolvers/IncompleteCholesky.h \
  C:/msys64/mingw64/include/c++/12.2.0/list \
  C:/msys64/mingw64/include/c++/12.2.0/bits/stl_list.h \
- C:/msys64/mingw64/include/c++/12.2.0/bits/allocated_ptr.h \
  C:/msys64/mingw64/include/c++/12.2.0/bits/list.tcc \
  C:\Users\gbhko\Desktop\Prog\VSCode\playground\structs.h \
- C:\Users\gbhko\Desktop\Prog\VSCode\playground\matrices.h \
- C:\Users\gbhko\Desktop\Prog\VSCode\playground\main.h \
- C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.h
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\obj_loader.h \
+ C:\Users\gbhko\Desktop\Prog\VSCode\playground\matrices.h

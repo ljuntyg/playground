@@ -7,6 +7,7 @@
 #include <Eigen>
 
 #include "structs.h"
+#include "obj_loader.h"
 
 // How to render, fill in, show depth map, show clipping? etc.
 enum RenderMode {
@@ -20,8 +21,8 @@ enum RenderMode {
 class Renderer {
 public:
     // Rendering constants, scalefactor for equal x,y-coordinate scaling in projection
-    static const int WINDOW_WIDTH = 640;
-    static const int WINDOW_HEIGHT = 480;
+    static const int WINDOW_WIDTH = 1280;
+    static const int WINDOW_HEIGHT = 720;
     static constexpr double scaleFactor = std::min(WINDOW_WIDTH, WINDOW_HEIGHT) / 2.0;
     static const int TICKS_PER_FRAME = 1000 / 60;
 
@@ -40,7 +41,6 @@ public:
     static std::vector<std::string> allObjNames;
     static std::string targetFile;
     static std::vector<Mesh> targetObj;
-    static std::vector<Mesh> getTargetObj();
 
     static std::vector<double> depthBuffer; // For depth buffer
     static std::vector<ClipPlane> clipPlanes; // For view frustum clipping
@@ -73,6 +73,10 @@ public:
     static SDL_Color getShadingColor(double intensity);
     static void visualizeDepthBuffer(SDL_Renderer* renderer);
     static SDL_Color jet(double value);
+
+    static std::vector<std::string> getObjFiles(const std::string& folderName);
+    static std::vector<Mesh> objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes);
+    static std::vector<Mesh> getTargetObj();
 };
 
 #endif // RENDERER_H
