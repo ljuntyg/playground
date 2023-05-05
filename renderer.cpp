@@ -13,9 +13,65 @@ namespace renderer
     glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 lightPos = glm::vec3(0.0f, 50.0f, 500.0f);
+
     float cameraYaw = -M_PI_2; // -90 degrees
     float cameraPitch = 0.0f;
     Mesh cube(cubeVertices, cubeIndices);
+
+    const GLchar *vertexShaderSource = R"glsl(
+        #version 330 core
+        layout (location = 0) in vec3 position;
+        layout (location = 1) in vec3 normal; // Add this line
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        out vec3 FragPos; // Add this line
+        out vec3 Normal;  // Add this line
+
+        void main()
+        {
+            gl_Position = projection * view * model * vec4(position, 1.0);
+            FragPos = vec3(model * vec4(position, 1.0)); // Add this line
+            Normal = mat3(transpose(inverse(model))) * normal; // Add this line
+        }
+    )glsl";
+    const GLchar *fragmentShaderSource = R"glsl(
+        #version 330 core
+        in vec3 FragPos;
+        in vec3 Normal;
+
+        out vec4 color;
+
+        uniform vec3 lightPos;
+        uniform vec3 viewPos;
+
+        void main()
+        {
+            // Ambient
+            float ambientStrength = 0.1;
+            vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
+
+            // Diffuse
+            vec3 norm = normalize(Normal);
+            vec3 lightDir = normalize(lightPos - FragPos);
+            float diff = max(dot(norm, lightDir), 0.0);
+            vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);
+
+            // Specular
+            float specularStrength = 0.5;
+            vec3 viewDir = normalize(viewPos - FragPos);
+            vec3 reflectDir = reflect(lightDir, norm);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+            vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0);
+
+            // Final color
+            vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);
+            color = vec4(result, 1.0);
+        }
+    )glsl";
 
     // Function to compile a shader
     GLuint compileShader(const GLenum type, const GLchar *source)
@@ -63,31 +119,6 @@ namespace renderer
     }
 
     void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
-        // Vertex shader source
-        const GLchar *vertexShaderSource = R"glsl(
-            #version 330 core
-            layout (location = 0) in vec3 position;
-
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
-
-            void main()
-            {
-                gl_Position = projection * view * model * vec4(position, 1.0);
-            }
-        )glsl";
-
-        // Fragment shader source
-        const GLchar *fragmentShaderSource = R"glsl(
-            #version 330 core
-            out vec4 color;
-            void main()
-            {
-                color = vec4(1.0, 0.5, 0.2, 1.0);
-            }
-        )glsl";
-
         GLuint shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
         // Set up vertex array and buffer objects
@@ -109,6 +140,10 @@ namespace renderer
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
             glEnableVertexAttribArray(0);
 
+            // For Lighting
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
+            glEnableVertexAttribArray(1);
+
             glBindVertexArray(0); // Unbind the VAO
 
             // Use the shader program
@@ -123,6 +158,13 @@ namespace renderer
 
             GLint projectionLocation = glGetUniformLocation(shaderProgram, "projection");
             glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+            // Pass the light and camera positions to the shader program
+            GLint lightPosLocation = glGetUniformLocation(shaderProgram, "lightPos");
+            glUniform3fv(lightPosLocation, 1, glm::value_ptr(lightPos));
+
+            GLint cameraPosLocation = glGetUniformLocation(shaderProgram, "viewPos");
+            glUniform3fv(cameraPosLocation, 1, glm::value_ptr(cameraPos));
 
             // Draw the mesh
             glBindVertexArray(VAO);

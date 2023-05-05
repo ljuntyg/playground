@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24); // Request a 24-bit depth buffer
 
     SDL_Window *window = SDL_CreateWindow("SDL2 OpenGL Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderer::WINDOW_WIDTH, renderer::WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     if (!window)
@@ -41,6 +42,12 @@ int main(int argc, char *argv[])
         std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(glewError) << std::endl;
         return 1;
     }
+
+    // Enable back face culling and depth buffer
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     bool firstMouseMotion = true;
     bool quit = false;
@@ -74,7 +81,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (firstMouseMotion) {
+        if (firstMouseMotion) { // When updateCamera is called first time the lookDir will change, call it pre-emptively to avoid visible snap
             firstMouseMotion = false;
             renderer::updateCamera(0, 0);
         }
@@ -126,8 +133,8 @@ int main(int argc, char *argv[])
         /* std::cout << "Camera Position: (" << renderer::cameraPos.x << ", " << renderer::cameraPos.y << ", " << renderer::cameraPos.z << ")\n";
         std::cout << "Front Vector: (" << front.x << ", " << front.y << ", " << front.z << ")\n"; */
 
-        glClearColor(0.0f, 0.0f, 00.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Create the model, view, and projection matrices
         glm::mat4 modelMatrix = glm::mat4(1.0f);

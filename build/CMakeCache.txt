@@ -299,6 +299,9 @@ CTEST_SUBMIT_RETRY_DELAY:STRING=5
 //Maximum time allowed before CTest will kill the test.
 DART_TESTING_TIMEOUT:STRING=1500
 
+//Path to a program.
+GITCOMMAND:FILEPATH=C:/Program Files/Git/cmd/git.exe
+
 //The directory containing a CMake configuration file for GLEW.
 GLEW_DIR:PATH=C:/msys64/mingw64/lib/cmake/glew
 
@@ -588,6 +591,8 @@ DART_TESTING_TIMEOUT-ADVANCED:INTERNAL=1
 FIND_PACKAGE_MESSAGE_DETAILS_GLEW:INTERNAL=[C:/msys64/mingw64/lib/cmake/glew/glew-config.cmake][v()]
 //Details about finding OpenGL
 FIND_PACKAGE_MESSAGE_DETAILS_OpenGL:INTERNAL=[opengl32][c ][v()]
+//ADVANCED property for variable: GITCOMMAND
+GITCOMMAND-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: GLEW_LIBRARY_DEBUG
 GLEW_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: MAKECOMMAND

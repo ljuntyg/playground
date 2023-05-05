@@ -30,9 +30,11 @@ namespace renderer
     extern glm::vec3 targetPos;
     extern glm::vec3 cameraUp;
     extern glm::vec3 lookDir;
+    extern glm::vec3 lightPos;
+
     extern float cameraYaw;
     extern float cameraPitch;
-    const float cameraSpeed = 0.05f;
+    const float cameraSpeed = 1.0f;
     const float mouseSensitivity = 0.05f;
 
     const std::vector<Vertex> cubeVertices {
@@ -82,6 +84,9 @@ namespace renderer
         20, 21, 22, 20, 22, 23
     };
     extern Mesh cube;
+
+    extern const GLchar *vertexShaderSource;
+    extern const GLchar *fragmentShaderSource;
     
     GLuint compileShader(const GLenum type, const GLchar *source);
     GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);
