@@ -139,6 +139,8 @@ CMakeFiles/reground.dir/main.cpp.obj
  C:/msys64/mingw64/include/c++/12.2.0/bits/ostream.tcc
  C:/msys64/mingw64/include/c++/12.2.0/istream
  C:/msys64/mingw64/include/c++/12.2.0/bits/istream.tcc
+ C:/msys64/mingw64/include/c++/12.2.0/sstream
+ C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc
  C:/msys64/mingw64/include/GL/glew.h
  C:/msys64/mingw64/include/inttypes.h
  C:/msys64/mingw64/include/GL/glu.h
@@ -509,8 +511,6 @@ CMakeFiles/reground.dir/main.cpp.obj
  C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h
  C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/c++io.h
  C:/msys64/mingw64/include/c++/12.2.0/bits/fstream.tcc
- C:/msys64/mingw64/include/c++/12.2.0/sstream
- C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc
  C:/msys64/mingw64/include/c++/12.2.0/filesystem
  C:/msys64/mingw64/include/c++/12.2.0/bits/fs_fwd.h
  C:/msys64/mingw64/include/c++/12.2.0/bits/chrono.h

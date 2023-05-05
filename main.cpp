@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24); // Request a 24-bit depth buffer
 
-    SDL_Window *window = SDL_CreateWindow("SDL2 OpenGL Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderer::WINDOW_WIDTH, renderer::WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("Playground - FPS: ", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderer::WINDOW_WIDTH, renderer::WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -48,6 +49,9 @@ int main(int argc, char *argv[])
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    Uint32 frameCounter = 0;
+    Uint32 timerFPS = SDL_GetTicks();
 
     bool firstMouseMotion = true;
     bool quit = false;
@@ -130,9 +134,6 @@ int main(int argc, char *argv[])
             renderer::targetPos -= up;
         }
 
-        /* std::cout << "Camera Position: (" << renderer::cameraPos.x << ", " << renderer::cameraPos.y << ", " << renderer::cameraPos.z << ")\n";
-        std::cout << "Front Vector: (" << front.x << ", " << front.y << ", " << front.z << ")\n"; */
-
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -156,6 +157,19 @@ int main(int argc, char *argv[])
         renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
 
         SDL_GL_SwapWindow(window);
+
+        frameCounter++;
+        Uint32 ticksNow = SDL_GetTicks();
+        Uint32 elapsedTime = ticksNow - timerFPS;
+
+        if (elapsedTime >= 1000)
+        {
+            std::stringstream ss;
+            ss << "Playground - FPS: " << frameCounter;
+            SDL_SetWindowTitle(window, ss.str().c_str());
+            frameCounter = 0;
+            timerFPS = SDL_GetTicks();
+        }
     }
 
     SDL_GL_DeleteContext(context);

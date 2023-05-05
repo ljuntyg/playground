@@ -6,7 +6,7 @@ namespace renderer
 {
     std::string objFolder = "res"; // Must be in working directory
     std::vector<std::string> allObjNames = getObjFiles(objFolder);
-    std::string targetFile = "teapot.obj"; // Don't forget .obj extension
+    std::string targetFile = "mountains.obj"; // Don't forget .obj extension
     std::vector<Mesh> targetObj = getTargetObj();
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);

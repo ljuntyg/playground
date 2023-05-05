@@ -138,6 +138,8 @@ CMakeFiles/reground.dir/main.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/regroun
   C:/msys64/mingw64/include/c++/12.2.0/bits/ostream.tcc \
   C:/msys64/mingw64/include/c++/12.2.0/istream \
   C:/msys64/mingw64/include/c++/12.2.0/bits/istream.tcc \
+  C:/msys64/mingw64/include/c++/12.2.0/sstream \
+  C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc \
   C:/msys64/mingw64/include/GL/glew.h \
   C:/msys64/mingw64/include/inttypes.h \
   C:/msys64/mingw64/include/GL/glu.h \
@@ -508,8 +510,6 @@ CMakeFiles/reground.dir/main.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/regroun
   C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/basic_file.h \
   C:/msys64/mingw64/include/c++/12.2.0/x86_64-w64-mingw32/bits/c++io.h \
   C:/msys64/mingw64/include/c++/12.2.0/bits/fstream.tcc \
-  C:/msys64/mingw64/include/c++/12.2.0/sstream \
-  C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc \
   C:/msys64/mingw64/include/c++/12.2.0/filesystem \
   C:/msys64/mingw64/include/c++/12.2.0/bits/fs_fwd.h \
   C:/msys64/mingw64/include/c++/12.2.0/bits/chrono.h \
@@ -1459,6 +1459,8 @@ C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/gfniintrin.h:
 
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/fmaintrin.h:
 
+C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/avx512vp2intersectintrin.h:
+
 C:/msys64/mingw64/include/c++/12.2.0/bits/locale_facets.h:
 
 C:/msys64/mingw64/include/glm/detail/type_vec2.hpp:
@@ -1879,8 +1881,6 @@ C:/msys64/mingw64/include/glm/ext/vector_float3_precision.hpp:
 
 C:/msys64/mingw64/include/c++/12.2.0/bits/nested_exception.h:
 
-C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/avx512vp2intersectintrin.h:
-
 C:/msys64/mingw64/include/c++/12.2.0/bits/std_abs.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/bits/locale_classes.tcc:
@@ -1955,9 +1955,9 @@ C:/msys64/mingw64/include/string.h:
 
 C:/msys64/mingw64/include/c++/12.2.0/codecvt:
 
-C:/msys64/mingw64/include/c++/12.2.0/sstream:
-
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/avx512vp2intersectvlintrin.h:
+
+C:/msys64/mingw64/include/c++/12.2.0/sstream:
 
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/stdarg.h:
 
@@ -2087,9 +2087,9 @@ C:/msys64/mingw64/include/stdio.h:
 
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/rtmintrin.h:
 
-C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc:
-
 C:/msys64/mingw64/include/setjmp.h:
+
+C:/msys64/mingw64/include/c++/12.2.0/bits/sstream.tcc:
 
 C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/12.2.0/include/serializeintrin.h:
 
