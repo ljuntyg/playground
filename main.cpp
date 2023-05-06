@@ -80,58 +80,42 @@ int main(int argc, char *argv[])
                     dy -= mouseY * renderer::mouseSensitivity;
 
                     // Call function to update camera based on mouse motion
-                    renderer::updateCamera(dx, dy);
+                    renderer::onYawPitch(dx, dy);
                 }
             }
         }
 
         if (firstMouseMotion) { // When updateCamera is called first time the lookDir will change, call it pre-emptively to avoid visible snap
             firstMouseMotion = false;
-            renderer::updateCamera(0, 0);
+            renderer::onYawPitch(0, 0);
         }
 
         const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
 
-        glm::vec3 front = renderer::lookDir;
-        glm::vec3 right = glm::normalize(glm::cross(renderer::cameraUp, front));
-        glm::vec3 up = renderer::cameraUp;
-
         // Update camera and target position based on key input
         if (keyboardState[SDL_SCANCODE_W])
         {
-            front *= renderer::cameraSpeed;
-            renderer::cameraPos += front;
-            renderer::targetPos += front;
+            renderer::onKeys(0);
         }
         if (keyboardState[SDL_SCANCODE_S])
         {
-            front *= renderer::cameraSpeed;
-            renderer::cameraPos -= front;
-            renderer::targetPos -= front;
+            renderer::onKeys(1);
         }
         if (keyboardState[SDL_SCANCODE_A])
         {
-            right *= renderer::cameraSpeed;
-            renderer::cameraPos += right;
-            renderer::targetPos += right;
+            renderer::onKeys(2);
         }
         if (keyboardState[SDL_SCANCODE_D])
         {
-            right *= renderer::cameraSpeed;
-            renderer::cameraPos -= right;
-            renderer::targetPos -= right;
+            renderer::onKeys(3);
         }
         if (keyboardState[SDL_SCANCODE_LSHIFT])
         {
-            up *= renderer::cameraSpeed;
-            renderer::cameraPos += up;
-            renderer::targetPos += up;
+            renderer::onKeys(4);
         }
         if (keyboardState[SDL_SCANCODE_LCTRL])
         {
-            up *= renderer::cameraSpeed;
-            renderer::cameraPos -= up;
-            renderer::targetPos -= up;
+            renderer::onKeys(5);
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -151,9 +135,7 @@ int main(int argc, char *argv[])
             renderer::FAR_DIST // Far plane
         );
 
-        std::vector<Mesh> object = {renderer::cube};
-
-        // Render your OpenGL content here
+        // Render OpenGL content here
         renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
 
         SDL_GL_SwapWindow(window);

@@ -11,6 +11,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/main.cpp" "CMakeFiles/reground.dir/main.cpp.obj" "gcc" "CMakeFiles/reground.dir/main.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/obj_loader.cpp" "CMakeFiles/reground.dir/obj_loader.cpp.obj" "gcc" "CMakeFiles/reground.dir/obj_loader.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/renderer.cpp" "CMakeFiles/reground.dir/renderer.cpp.obj" "gcc" "CMakeFiles/reground.dir/renderer.cpp.obj.d"
+  "C:/Users/gbhko/Desktop/Prog/VSCode/reground/structs.cpp" "CMakeFiles/reground.dir/structs.cpp.obj" "gcc" "CMakeFiles/reground.dir/structs.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

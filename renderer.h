@@ -15,6 +15,8 @@
 
 namespace renderer 
 {
+    using namespace structs;
+
     const float WINDOW_WIDTH = 1280.0f;
     const float WINDOW_HEIGHT = 720.0f;
     const float NEAR_DIST = 0.1f;
@@ -92,9 +94,9 @@ namespace renderer
     GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);
 
     void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
-    void updateCamera(float dx, float dy);
+    void onYawPitch(float dx, float dy);
+    void onKeys(const int& key);
 
     std::vector<std::string> getObjFiles(const std::string& folderName);
     std::vector<Mesh> getTargetObj();
-    std::vector<Mesh> objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes);
 };

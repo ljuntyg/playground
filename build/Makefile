@@ -594,6 +594,30 @@ renderer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/renderer.cpp.s
 .PHONY : renderer.cpp.s
 
+structs.obj: structs.cpp.obj
+.PHONY : structs.obj
+
+# target to build an object file
+structs.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/structs.cpp.obj
+.PHONY : structs.cpp.obj
+
+structs.i: structs.cpp.i
+.PHONY : structs.i
+
+# target to preprocess a source file
+structs.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/structs.cpp.i
+.PHONY : structs.cpp.i
+
+structs.s: structs.cpp.s
+.PHONY : structs.s
+
+# target to generate assembly for a file
+structs.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/structs.cpp.s
+.PHONY : structs.cpp.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -643,6 +667,9 @@ help:
 	@echo ... renderer.obj
 	@echo ... renderer.i
 	@echo ... renderer.s
+	@echo ... structs.obj
+	@echo ... structs.i
+	@echo ... structs.s
 .PHONY : help
 
 

@@ -113,11 +113,27 @@ CMakeFiles/reground.dir/obj_loader.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/reground.dir/obj_loader.cpp.s"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\reground\obj_loader.cpp -o CMakeFiles\reground.dir\obj_loader.cpp.s
 
+CMakeFiles/reground.dir/structs.cpp.obj: CMakeFiles/reground.dir/flags.make
+CMakeFiles/reground.dir/structs.cpp.obj: CMakeFiles/reground.dir/includes_CXX.rsp
+CMakeFiles/reground.dir/structs.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/reground/structs.cpp
+CMakeFiles/reground.dir/structs.cpp.obj: CMakeFiles/reground.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/reground.dir/structs.cpp.obj"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/reground.dir/structs.cpp.obj -MF CMakeFiles\reground.dir\structs.cpp.obj.d -o CMakeFiles\reground.dir\structs.cpp.obj -c C:\Users\gbhko\Desktop\Prog\VSCode\reground\structs.cpp
+
+CMakeFiles/reground.dir/structs.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/reground.dir/structs.cpp.i"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\gbhko\Desktop\Prog\VSCode\reground\structs.cpp > CMakeFiles\reground.dir\structs.cpp.i
+
+CMakeFiles/reground.dir/structs.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/reground.dir/structs.cpp.s"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\reground\structs.cpp -o CMakeFiles\reground.dir\structs.cpp.s
+
 # Object files for target reground
 reground_OBJECTS = \
 "CMakeFiles/reground.dir/main.cpp.obj" \
 "CMakeFiles/reground.dir/renderer.cpp.obj" \
-"CMakeFiles/reground.dir/obj_loader.cpp.obj"
+"CMakeFiles/reground.dir/obj_loader.cpp.obj" \
+"CMakeFiles/reground.dir/structs.cpp.obj"
 
 # External object files for target reground
 reground_EXTERNAL_OBJECTS =
@@ -125,6 +141,7 @@ reground_EXTERNAL_OBJECTS =
 reground.exe: CMakeFiles/reground.dir/main.cpp.obj
 reground.exe: CMakeFiles/reground.dir/renderer.cpp.obj
 reground.exe: CMakeFiles/reground.dir/obj_loader.cpp.obj
+reground.exe: CMakeFiles/reground.dir/structs.cpp.obj
 reground.exe: CMakeFiles/reground.dir/build.make
 reground.exe: C:/msys64/mingw64/lib/libSDL2main.a
 reground.exe: C:/msys64/mingw64/lib/libSDL2.dll.a
@@ -132,7 +149,7 @@ reground.exe: C:/msys64/mingw64/lib/libglew32.dll.a
 reground.exe: CMakeFiles/reground.dir/linkLibs.rsp
 reground.exe: CMakeFiles/reground.dir/objects1.rsp
 reground.exe: CMakeFiles/reground.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable reground.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable reground.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\reground.dir\link.txt --verbose=$(VERBOSE)
 	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/gbhko/Desktop/Prog/VSCode/reground/build/reground.exe -installedDir C:/dev/vcpkg/installed/x64-windows/debug/bin -OutVariable out
 

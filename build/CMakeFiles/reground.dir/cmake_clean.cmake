@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/reground.dir/obj_loader.cpp.obj.d"
   "CMakeFiles/reground.dir/renderer.cpp.obj"
   "CMakeFiles/reground.dir/renderer.cpp.obj.d"
+  "CMakeFiles/reground.dir/structs.cpp.obj"
+  "CMakeFiles/reground.dir/structs.cpp.obj.d"
   "libreground.dll.a"
   "reground.exe"
   "reground.exe.manifest"

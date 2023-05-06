@@ -13,7 +13,7 @@ namespace renderer
     glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 lightPos = glm::vec3(0.0f, 50.0f, 500.0f);
+    glm::vec3 lightPos = glm::vec3(0.0f, 50.0f, -500.0f);
 
     float cameraYaw = -M_PI_2; // -90 degrees
     float cameraPitch = 0.0f;
@@ -118,7 +118,8 @@ namespace renderer
         return program;
     }
 
-    void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
+    void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) 
+    {
         GLuint shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
         // Set up vertex array and buffer objects
@@ -128,7 +129,8 @@ namespace renderer
         glGenBuffers(1, &EBO);
 
         // Loop through the meshes in the object
-        for (const Mesh& mesh : object) {
+        for (const Mesh& mesh : object) 
+        {
             glBindVertexArray(VAO);
 
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -179,16 +181,19 @@ namespace renderer
         glDeleteBuffers(1, &EBO);
     }
 
-    void updateCamera(float dx, float dy) {
+    void onYawPitch(float dx, float dy) 
+    {
         // Update camera yaw and pitch
         cameraYaw += dx;
         cameraPitch += dy;
 
         // Clamp pitch between -89 and 89 degrees
-        if (cameraPitch > glm::radians(89.0f)) {
+        if (cameraPitch > glm::radians(89.0f)) 
+        {
             cameraPitch = glm::radians(89.0f);
         }
-        if (cameraPitch < glm::radians(-89.0f)) {
+        if (cameraPitch < glm::radians(-89.0f)) 
+        {
             cameraPitch = glm::radians(-89.0f);
         }
 
@@ -203,73 +208,67 @@ namespace renderer
         targetPos = cameraPos + lookDir;
     }
 
-    std::vector<std::string> getObjFiles(const std::string& folderName) {
+    void onKeys(const int& key) 
+    {
+        glm::vec3 front = lookDir;
+        glm::vec3 right = glm::normalize(glm::cross(cameraUp, front));
+        glm::vec3 up = cameraUp;
+
+        float sign = std::pow(-1, key);
+
+        if (key == 0 || key == 1) // Forward/backward
+        {
+            front *= cameraSpeed;
+            cameraPos += sign * front;
+            targetPos += sign * front;
+        }
+        if (key == 2 || key == 3) // Right/left
+        {
+            right *= cameraSpeed;
+            cameraPos += sign * right;
+            targetPos += sign * right;
+        }
+        if (key == 4 || key == 5) // Up/down
+        {
+            up *= cameraSpeed;
+            cameraPos += sign * up;
+            targetPos += sign * up;
+        }
+    }
+
+    std::vector<std::string> getObjFiles(const std::string& folderName) 
+    {
         std::vector<std::string> objFiles;
 
-        try {
-            for (const auto& entry : std::filesystem::directory_iterator(folderName)) {
-                if (entry.is_regular_file() && entry.path().extension() == ".obj") {
+        try 
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(folderName)) 
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".obj") 
+                {
                     objFiles.push_back(entry.path().string());
                 }
             }
-        } catch (const std::filesystem::filesystem_error& e) {
+        } 
+        catch (const std::filesystem::filesystem_error& e) 
+        {
             std::cerr << "Error: " << e.what() << std::endl;
         }
 
         return objFiles;
     }
 
-    std::vector<Mesh> getTargetObj() {
+    std::vector<Mesh> getTargetObj() 
+    {
         objl::Loader loader;
-        if (loader.LoadFile(objFolder + "/" + targetFile) == 0) {
+        if (loader.LoadFile(objFolder + "/" + targetFile) == 0) 
+        {
             std::cout << "Failed to load object file" << std::endl;
-        } else {
+        } 
+        else 
+        {
             std::cout << "Successfully loaded object file" << std::endl;
         }
         return objlMeshToCustomMesh(loader.LoadedMeshes);
-    }
-
-    std::vector<Mesh> objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes) {
-        std::vector<Mesh> customMeshes;
-
-        for (const objl::Mesh& objlMesh : objlMeshes) {
-            std::vector<Vertex> customVertices;
-            std::vector<unsigned int> customIndices;
-
-            for (const objl::Vertex& objlVertex : objlMesh.Vertices) {
-                glm::vec3 position(objlVertex.Position.X, objlVertex.Position.Y, objlVertex.Position.Z);
-                glm::vec3 normal(objlVertex.Normal.X, objlVertex.Normal.Y, objlVertex.Normal.Z);
-                glm::vec2 textureCoordinate(objlVertex.TextureCoordinate.X, objlVertex.TextureCoordinate.Y);
-                customVertices.emplace_back(position, normal, textureCoordinate);
-            }
-
-            customIndices = objlMesh.Indices;
-
-            Mesh customMesh(customVertices, customIndices);
-            customMesh.meshName = objlMesh.MeshName;
-
-            const objl::Material& objlMat = objlMesh.MeshMaterial;
-            Material customMaterial;
-            customMaterial.name = objlMat.name;
-            customMaterial.ka = glm::vec3(objlMat.Ka.X, objlMat.Ka.Y, objlMat.Ka.Z);
-            customMaterial.kd = glm::vec3(objlMat.Kd.X, objlMat.Kd.Y, objlMat.Kd.Z);
-            customMaterial.ks = glm::vec3(objlMat.Ks.X, objlMat.Ks.Y, objlMat.Ks.Z);
-            customMaterial.ns = objlMat.Ns;
-            customMaterial.ni = objlMat.Ni;
-            customMaterial.d = objlMat.d;
-            customMaterial.illum = objlMat.illum;
-            customMaterial.kaMap = objlMat.map_Ka;
-            customMaterial.kdMap = objlMat.map_Kd;
-            customMaterial.ksMap = objlMat.map_Ks;
-            customMaterial.nsMap = objlMat.map_Ns;
-            customMaterial.dMap = objlMat.map_d;
-            customMaterial.bumpMap = objlMat.map_bump;
-
-            customMesh.meshMaterial = customMaterial;
-
-            customMeshes.push_back(customMesh);
-        }
-
-        return customMeshes;
     }
 }

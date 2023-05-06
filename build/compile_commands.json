@@ -16,5 +16,11 @@
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/reground.dir/includes_CXX.rsp -g -o CMakeFiles\\reground.dir\\obj_loader.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\reground\\obj_loader.cpp",
   "file": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/obj_loader.cpp",
   "output": "CMakeFiles/reground.dir/obj_loader.cpp.obj"
+},
+{
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/reground.dir/includes_CXX.rsp -g -o CMakeFiles\\reground.dir\\structs.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\reground\\structs.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/structs.cpp",
+  "output": "CMakeFiles/reground.dir/structs.cpp.obj"
 }
 ]
