@@ -6,14 +6,14 @@ namespace renderer
 {
     std::string objFolder = "res"; // Must be in working directory
     std::vector<std::string> allObjNames = getObjFiles(objFolder);
-    std::string targetFile = "mountains.obj"; // Don't forget .obj extension
+    std::string targetFile = "apartment building.obj"; // Don't forget .obj extension
     std::vector<Mesh> targetObj = getTargetObj();
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
     glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 lightPos = glm::vec3(0.0f, 50.0f, -500.0f);
+    glm::vec3 lightPos = glm::vec3(0.0f, 500.0f, -500.0f);
 
     float cameraYaw = -M_PI_2; // -90 degrees
     float cameraPitch = 0.0f;

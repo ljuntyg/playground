@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "renderer.h"
+#include "ui.h"
 
 int main(int argc, char *argv[])
 {
@@ -49,6 +50,12 @@ int main(int argc, char *argv[])
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
+    ui::UIManager uiManager = ui::UIManager(uiRenderer);
+
+    std::shared_ptr<ui::UIWindow> uiWindow = std::make_shared<ui::UIWindow>(ui::UIWindow(0, 0, 100, 100));
+    uiManager.addElement(uiWindow);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -136,7 +143,14 @@ int main(int argc, char *argv[])
         );
 
         // Render OpenGL content here
-        renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
+        // renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
+
+        // glEnable(GL_BLEND); // ??
+        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // ??
+        glDisable(GL_DEPTH_TEST);
+        uiManager.render();
+        glEnable(GL_DEPTH_TEST);
+        // glDisable(GL_BLEND); // ??
 
         SDL_GL_SwapWindow(window);
 
