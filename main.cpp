@@ -10,6 +10,32 @@
 #include "renderer.h"
 #include "ui.h"
 
+// Define the vertex shader source code
+const char* vertexShaderSource = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+
+    void main()
+    {
+        gl_Position = projection * view * model * vec4(aPos, 1.0);
+    }
+)";
+
+// Define the fragment shader source code
+const char* fragmentShaderSource = R"(
+    #version 330 core
+    out vec4 FragColor;
+
+    void main()
+    {
+        FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+    }
+)";
+
 int main(int argc, char *argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -54,8 +80,11 @@ int main(int argc, char *argv[])
     std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
     ui::UIManager uiManager = ui::UIManager(uiRenderer);
 
-    std::shared_ptr<ui::UIWindow> uiWindow = std::make_shared<ui::UIWindow>(ui::UIWindow(0, 0, 100, 100));
-    uiManager.addElement(uiWindow);
+    std::shared_ptr<ui::UIWindow> uiWindow1 = std::make_shared<ui::UIWindow>(ui::UIWindow(10, 10, 50, 50));
+    uiManager.addElement(uiWindow1);
+
+    std::shared_ptr<ui::UIWindow> uiWindow2 = std::make_shared<ui::UIWindow>(ui::UIWindow(10, 600, 50, 50));
+    uiManager.addElement(uiWindow2);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -143,14 +172,12 @@ int main(int argc, char *argv[])
         );
 
         // Render OpenGL content here
-        // renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
+        renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
 
-        // glEnable(GL_BLEND); // ??
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // ??
+        // Draw all elements in ui manager
         glDisable(GL_DEPTH_TEST);
         uiManager.render();
         glEnable(GL_DEPTH_TEST);
-        // glDisable(GL_BLEND); // ??
 
         SDL_GL_SwapWindow(window);
 

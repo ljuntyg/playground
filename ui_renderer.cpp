@@ -1,112 +1,107 @@
 #include "ui.h"
 #include "renderer.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
 namespace ui
 {
     UIRenderer::UIRenderer()
     {
         vertexShaderSource = R"(
             #version 330 core
-            layout (location = 0) in vec2 aPos;
-            layout (location = 1) in vec2 aTexCoord;
+            layout (location = 0) in vec3 aPos;
 
-            out vec2 TexCoord;
-
-            uniform mat4 projection;
             uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
 
             void main()
             {
-                gl_Position = projection * model * vec4(aPos, 0.0, 1.0);
-                TexCoord = aTexCoord;
-            })";
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
+            }
+        )";
 
         fragmentShaderSource = R"(
             #version 330 core
             out vec4 FragColor;
 
-            in vec2 TexCoord;
-
-            uniform vec4 color;
-
             void main()
             {
-                FragColor = color;
-            })";
-
-        // Initialize the shader program
-        shaderProgram = renderer::createShaderProgram(vertexShaderSource, fragmentShaderSource);
-
-        // Set up the orthogonal projection matrix, model set in render
-        projection = glm::ortho(0.0f, renderer::WINDOW_WIDTH, 0.0f, renderer::WINDOW_HEIGHT);
-
-        // Generate the VAO, VBO, EBO
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
+                FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+            }
+        )";
     }
 
     UIRenderer::~UIRenderer()
     {
         // Clean up OpenGL resources
         glDeleteProgram(shaderProgram);
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
     }
 
     void UIRenderer::render(UIElement& element)
     {
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(element.x, element.y, 0.0f));
+        shaderProgram = renderer::createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
-        std::vector<GLfloat> vertices = {
-            0.0f, 0.0f, 0.0f, 0.0f,
-            (float)element.width, 0.0f, 1.0f, 0.0f,
-            (float)element.width, (float)element.height, 1.0f, 1.0f,
-            0.0f, (float)element.height, 0.0f, 1.0f
+        // Define 1x1 square with bottom-left square corner at origin
+        float vertices[] = {
+            0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f
         };
 
-        std::vector<GLuint> indices = {
+        // Define the square's indices
+        unsigned int indices[] = {
             0, 1, 2,
             2, 3, 0
         };
 
-        // Bind the VAO
+        GLuint VAO, VBO, EBO;
+
+        glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
 
-        // Update the VBO data
+        glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        // Update the EBO data
+        glGenBuffers(1, &EBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-        // Enable and specify the vertex attributes
+        // Set the vertex attributes pointers
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid *)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid *)(2 * sizeof(GLfloat)));
+
+        // Set up the model, view, and projection matrices
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(element.x, element.y, 0.0f)); // Translate ui
+        model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::ortho(0.0f, renderer::WINDOW_WIDTH, 0.0f, renderer::WINDOW_HEIGHT, -1.0f, 1.0f);
 
         // Use the shader program
         glUseProgram(shaderProgram);
 
-        // Set the projection uniform
-        GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        // Pass the matrices to the shader
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Set the model uniform
-        GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // Draw the square
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        // Set the color uniform (example: white)
-        GLint colorLoc = glGetUniformLocation(shaderProgram, "color");
-        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
-
-        // Draw the element
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
-        // Unbind the VAO
+        // Clean up
+        glDisableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteProgram(shaderProgram);
     }
 }

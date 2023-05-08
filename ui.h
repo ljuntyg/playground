@@ -36,8 +36,7 @@ namespace ui
         void render(UIElement& element);
     private:
         const GLchar *vertexShaderSource, *fragmentShaderSource;
-        GLuint VAO, VBO, EBO, shaderProgram;
-        glm::mat4 projection, model;
+        GLuint shaderProgram;
     };
     
     class UIElement // Abstract class

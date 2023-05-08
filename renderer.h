@@ -20,7 +20,7 @@ namespace renderer
     const float WINDOW_WIDTH = 1280.0f;
     const float WINDOW_HEIGHT = 720.0f;
     const float NEAR_DIST = 0.1f;
-    const float FAR_DIST = 1000.0f;
+    const float FAR_DIST = 10000.0f;
     const float FOV = M_PI_2;
 
     extern std::string objFolder;
