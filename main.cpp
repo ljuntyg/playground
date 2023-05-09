@@ -10,32 +10,6 @@
 #include "renderer.h"
 #include "ui.h"
 
-// Define the vertex shader source code
-const char* vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    void main()
-    {
-        gl_Position = projection * view * model * vec4(aPos, 1.0);
-    }
-)";
-
-// Define the fragment shader source code
-const char* fragmentShaderSource = R"(
-    #version 330 core
-    out vec4 FragColor;
-
-    void main()
-    {
-        FragColor = vec4(1.0, 0.5, 0.2, 1.0);
-    }
-)";
-
 int main(int argc, char *argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -80,8 +54,14 @@ int main(int argc, char *argv[])
     std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
     ui::UIManager uiManager = ui::UIManager(uiRenderer);
 
-    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(ui::UIButton(10, 10, 50, 50));
+    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, renderer::colorMap.at("RED"));
     uiManager.addElement(uiWindow1);
+
+    std::shared_ptr<ui::UIBox> uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, renderer::colorMap.at("BLUE"));
+    uiWindow1->addChild(uiBox1);
+
+    std::shared_ptr<ui::UIBox> uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, renderer::colorMap.at("GREEN"));
+    uiBox1->addChild(uiBox2);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();

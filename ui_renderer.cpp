@@ -28,9 +28,11 @@ namespace ui
             #version 330 core
             out vec4 FragColor;
 
+            uniform vec4 color;
+
             void main()
             {
-                FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+                FragColor = color;
             }
         )";
     }
@@ -86,10 +88,11 @@ namespace ui
         // Use the shader program
         glUseProgram(shaderProgram);
 
-        // Pass the matrices to the shader
+        // Pass the matrices and color to the shader
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(shaderProgram, "color"), 1, glm::value_ptr(element.color));
 
         // Draw the square
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -103,5 +106,14 @@ namespace ui
         glDeleteBuffers(1, &EBO);
         glDeleteVertexArrays(1, &VAO);
         glDeleteProgram(shaderProgram);
+
+        // Render children here at bottom so they are rendered on top of parent
+        if (!element.children.empty())
+        {
+            for (const auto& child : element.children)
+            {
+                render(*child);
+            }
+        }
     }
 }

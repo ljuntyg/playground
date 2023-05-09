@@ -46,5 +46,11 @@
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/reground.dir/includes_CXX.rsp -g -o CMakeFiles\\reground.dir\\ui_button.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\reground\\ui_button.cpp",
   "file": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_button.cpp",
   "output": "CMakeFiles/reground.dir/ui_button.cpp.obj"
+},
+{
+  "directory": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/reground.dir/includes_CXX.rsp -g -o CMakeFiles\\reground.dir\\ui_box.cpp.obj -c C:\\Users\\gbhko\\Desktop\\Prog\\VSCode\\reground\\ui_box.cpp",
+  "file": "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_box.cpp",
+  "output": "CMakeFiles/reground.dir/ui_box.cpp.obj"
 }
 ]

@@ -75,6 +75,16 @@ namespace renderer
             color = vec4(result, 1.0);
         }
     )glsl";
+    const std::unordered_map<std::string, glm::vec4> colorMap = {
+        {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+        {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+        {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+        {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
+        {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
+        {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
+        {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
+        {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
+    };
 
     // Function to compile a shader
     GLuint compileShader(const GLenum type, const GLchar *source)
@@ -281,7 +291,7 @@ namespace renderer
 
         std::vector<std::string> fileNames = allObjNames;
 
-        // Remove file directory from file name
+        // Remove file directory prefix from file names
         for (auto& file : fileNames) 
         {
             std::string prefix = objFolder + "\\";
@@ -293,7 +303,7 @@ namespace renderer
         }
 
         int objIx = std::find(fileNames.begin(), fileNames.end(), targetFile) - fileNames.begin();
-        assert(objIx != fileNames.size());
+        assert(objIx != fileNames.size()); // Means file name not found
 
         if (objIx == fileNames.size() - 1)
         {

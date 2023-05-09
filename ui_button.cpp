@@ -29,7 +29,6 @@ namespace ui
 
     void UIButton::handleClick(int mouseX, int mouseY)
     {
-        std::cout << "test" << std::endl;
         renderer::nextTargetObj();
     }
 

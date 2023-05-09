@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <unordered_map>
 
 #include "structs.h"
 #include "obj_loader.h"
@@ -97,6 +98,7 @@ namespace renderer
 
     extern const GLchar *vertexShaderSource;
     extern const GLchar *fragmentShaderSource;
+    extern const std::unordered_map<std::string, glm::vec4> colorMap;
     
     GLuint compileShader(const GLenum type, const GLchar *source);
     GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);

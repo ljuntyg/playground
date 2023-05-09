@@ -836,12 +836,12 @@ CMakeFiles/ContinuousSubmit.dir/clean:
 CMakeFiles/reground.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9 "Built target reground"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Built target reground"
 .PHONY : CMakeFiles/reground.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/reground.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles 10
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/reground.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles 0
 .PHONY : CMakeFiles/reground.dir/rule

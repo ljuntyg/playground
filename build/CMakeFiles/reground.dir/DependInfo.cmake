@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/obj_loader.cpp" "CMakeFiles/reground.dir/obj_loader.cpp.obj" "gcc" "CMakeFiles/reground.dir/obj_loader.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/renderer.cpp" "CMakeFiles/reground.dir/renderer.cpp.obj" "gcc" "CMakeFiles/reground.dir/renderer.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/structs.cpp" "CMakeFiles/reground.dir/structs.cpp.obj" "gcc" "CMakeFiles/reground.dir/structs.cpp.obj.d"
+  "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_box.cpp" "CMakeFiles/reground.dir/ui_box.cpp.obj" "gcc" "CMakeFiles/reground.dir/ui_box.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_button.cpp" "CMakeFiles/reground.dir/ui_button.cpp.obj" "gcc" "CMakeFiles/reground.dir/ui_button.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_element.cpp" "CMakeFiles/reground.dir/ui_element.cpp.obj" "gcc" "CMakeFiles/reground.dir/ui_element.cpp.obj.d"
   "C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_manager.cpp" "CMakeFiles/reground.dir/ui_manager.cpp.obj" "gcc" "CMakeFiles/reground.dir/ui_manager.cpp.obj.d"

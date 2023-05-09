@@ -618,6 +618,30 @@ structs.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/structs.cpp.s
 .PHONY : structs.cpp.s
 
+ui_box.obj: ui_box.cpp.obj
+.PHONY : ui_box.obj
+
+# target to build an object file
+ui_box.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_box.cpp.obj
+.PHONY : ui_box.cpp.obj
+
+ui_box.i: ui_box.cpp.i
+.PHONY : ui_box.i
+
+# target to preprocess a source file
+ui_box.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_box.cpp.i
+.PHONY : ui_box.cpp.i
+
+ui_box.s: ui_box.cpp.s
+.PHONY : ui_box.s
+
+# target to generate assembly for a file
+ui_box.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_box.cpp.s
+.PHONY : ui_box.cpp.s
+
 ui_button.obj: ui_button.cpp.obj
 .PHONY : ui_button.obj
 
@@ -766,6 +790,9 @@ help:
 	@echo ... structs.obj
 	@echo ... structs.i
 	@echo ... structs.s
+	@echo ... ui_box.obj
+	@echo ... ui_box.i
+	@echo ... ui_box.s
 	@echo ... ui_button.obj
 	@echo ... ui_button.i
 	@echo ... ui_button.s

@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/reground.dir/renderer.cpp.obj.d"
   "CMakeFiles/reground.dir/structs.cpp.obj"
   "CMakeFiles/reground.dir/structs.cpp.obj.d"
+  "CMakeFiles/reground.dir/ui_box.cpp.obj"
+  "CMakeFiles/reground.dir/ui_box.cpp.obj.d"
   "CMakeFiles/reground.dir/ui_button.cpp.obj"
   "CMakeFiles/reground.dir/ui_button.cpp.obj.d"
   "CMakeFiles/reground.dir/ui_element.cpp.obj"
