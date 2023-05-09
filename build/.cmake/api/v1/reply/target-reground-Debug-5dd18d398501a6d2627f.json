@@ -307,7 +307,7 @@
 		{
 			"backtrace" : 2,
 			"compileGroupIndex" : 0,
-			"path" : "ui_window.cpp",
+			"path" : "ui_button.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

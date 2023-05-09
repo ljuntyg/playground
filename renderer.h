@@ -17,6 +17,14 @@ namespace renderer
 {
     using namespace structs;
 
+    enum RenderState
+    {
+        RENDERER_RUN,
+        RENDERER_PAUSE,
+        renderStateCount
+    };
+    extern RenderState RENDERER_STATE;
+
     const float WINDOW_WIDTH = 1280.0f;
     const float WINDOW_HEIGHT = 720.0f;
     const float NEAR_DIST = 0.1f;
@@ -99,4 +107,5 @@ namespace renderer
 
     std::vector<std::string> getObjFiles(const std::string& folderName);
     std::vector<Mesh> getTargetObj();
+    void nextTargetObj();
 };

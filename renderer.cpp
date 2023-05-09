@@ -1,9 +1,12 @@
 #include <iostream>
+#include <algorithm>
 
 #include "renderer.h"
 
 namespace renderer 
 {
+    RenderState RENDERER_STATE = RENDERER_RUN;
+
     std::string objFolder = "res"; // Must be in working directory
     std::vector<std::string> allObjNames = getObjFiles(objFolder);
     std::string targetFile = "apartment building.obj"; // Don't forget .obj extension
@@ -13,7 +16,7 @@ namespace renderer
     glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 lightPos = glm::vec3(0.0f, 500.0f, -500.0f);
+    glm::vec3 lightPos = glm::vec3(0.0f, -1000.0f, -1000.0f);
 
     float cameraYaw = -M_PI_2; // -90 degrees
     float cameraPitch = 0.0f;
@@ -270,5 +273,36 @@ namespace renderer
             std::cout << "Successfully loaded object file" << std::endl;
         }
         return objlMeshToCustomMesh(loader.LoadedMeshes);
+    }
+
+    void nextTargetObj()
+    {
+        RENDERER_STATE = RENDERER_PAUSE; // Probably not necessary here
+
+        std::vector<std::string> fileNames = allObjNames;
+
+        // Remove file directory from file name
+        for (auto& file : fileNames) 
+        {
+            std::string prefix = objFolder + "\\";
+            std::size_t found = file.find(prefix);
+            
+            if (found != std::string::npos) {
+                file = file.substr(found + prefix.length());
+            }
+        }
+
+        int objIx = std::find(fileNames.begin(), fileNames.end(), targetFile) - fileNames.begin();
+        assert(objIx != fileNames.size());
+
+        if (objIx == fileNames.size() - 1)
+        {
+            objIx = 0;
+        }
+
+        targetFile = fileNames[objIx+1];
+        targetObj = getTargetObj();
+
+        RENDERER_STATE = RENDERER_RUN;
     }
 }

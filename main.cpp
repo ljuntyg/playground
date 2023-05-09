@@ -80,11 +80,8 @@ int main(int argc, char *argv[])
     std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
     ui::UIManager uiManager = ui::UIManager(uiRenderer);
 
-    std::shared_ptr<ui::UIWindow> uiWindow1 = std::make_shared<ui::UIWindow>(ui::UIWindow(10, 10, 50, 50));
+    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(ui::UIButton(10, 10, 50, 50));
     uiManager.addElement(uiWindow1);
-
-    std::shared_ptr<ui::UIWindow> uiWindow2 = std::make_shared<ui::UIWindow>(ui::UIWindow(10, 600, 50, 50));
-    uiManager.addElement(uiWindow2);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -95,6 +92,11 @@ int main(int argc, char *argv[])
 
     while (!quit)
     {
+        if (renderer::RENDERER_STATE == renderer::RENDERER_PAUSE)
+        {
+            continue;
+        }
+
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -119,6 +121,8 @@ int main(int argc, char *argv[])
                     renderer::onYawPitch(dx, dy);
                 }
             }
+            
+            uiManager.handleInput(event);
         }
 
         if (firstMouseMotion) { // When updateCamera is called first time the lookDir will change, call it pre-emptively to avoid visible snap

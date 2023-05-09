@@ -21,6 +21,7 @@ namespace ui
         ~UIManager();
 
         void addElement(std::shared_ptr<UIElement> element);
+        void handleInput(const SDL_Event& event);
         void render();
     private:
         std::shared_ptr<UIRenderer> renderer;
@@ -47,19 +48,20 @@ namespace ui
 
         virtual void handleInput(const SDL_Event& event) = 0;
         virtual void render(UIRenderer& renderer) = 0;
-    private:
+    protected:
         friend class UIRenderer;
 
         int x, y, width, height;
     };
 
-    class UIWindow : public UIElement
+    class UIButton : public UIElement
     {
     public:
-        UIWindow(int x, int y, int width, int height) : UIElement(x, y, width, height) {}
-        ~UIWindow() override;
+        UIButton(int x, int y, int width, int height) : UIElement(x, y, width, height) {}
+        ~UIButton() override;
 
         void handleInput(const SDL_Event& event) override;
+        void handleClick(int mouseX, int mouseY);
         void render(UIRenderer& renderer) override;
     };
 }

@@ -78,10 +78,10 @@ namespace ui
 
         // Set up the model, view, and projection matrices
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(element.x, element.y, 0.0f)); // Translate ui
-        model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui
+        model = glm::translate(model, glm::vec3(element.x, element.y, 0.0f)); // Translate ui element
+        model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui element
         glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::ortho(0.0f, renderer::WINDOW_WIDTH, 0.0f, renderer::WINDOW_HEIGHT, -1.0f, 1.0f);
+        glm::mat4 projection = glm::ortho(0.0f, renderer::WINDOW_WIDTH, 0.0f, renderer::WINDOW_HEIGHT);
 
         // Use the shader program
         glUseProgram(shaderProgram);

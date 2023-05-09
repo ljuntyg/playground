@@ -11,6 +11,14 @@ namespace ui
         elements.push_back(element);
     }
 
+    void UIManager::handleInput(const SDL_Event& event)
+    {
+        for (const auto& element : elements)
+        {
+            element->handleInput(event);
+        }
+    }
+
     void UIManager::render()
     {
         for (const auto& element : elements)

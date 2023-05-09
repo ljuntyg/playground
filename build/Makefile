@@ -618,6 +618,30 @@ structs.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/structs.cpp.s
 .PHONY : structs.cpp.s
 
+ui_button.obj: ui_button.cpp.obj
+.PHONY : ui_button.obj
+
+# target to build an object file
+ui_button.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_button.cpp.obj
+.PHONY : ui_button.cpp.obj
+
+ui_button.i: ui_button.cpp.i
+.PHONY : ui_button.i
+
+# target to preprocess a source file
+ui_button.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_button.cpp.i
+.PHONY : ui_button.cpp.i
+
+ui_button.s: ui_button.cpp.s
+.PHONY : ui_button.s
+
+# target to generate assembly for a file
+ui_button.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_button.cpp.s
+.PHONY : ui_button.cpp.s
+
 ui_element.obj: ui_element.cpp.obj
 .PHONY : ui_element.obj
 
@@ -690,30 +714,6 @@ ui_renderer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_renderer.cpp.s
 .PHONY : ui_renderer.cpp.s
 
-ui_window.obj: ui_window.cpp.obj
-.PHONY : ui_window.obj
-
-# target to build an object file
-ui_window.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_window.cpp.obj
-.PHONY : ui_window.cpp.obj
-
-ui_window.i: ui_window.cpp.i
-.PHONY : ui_window.i
-
-# target to preprocess a source file
-ui_window.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_window.cpp.i
-.PHONY : ui_window.cpp.i
-
-ui_window.s: ui_window.cpp.s
-.PHONY : ui_window.s
-
-# target to generate assembly for a file
-ui_window.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\reground.dir\build.make CMakeFiles/reground.dir/ui_window.cpp.s
-.PHONY : ui_window.cpp.s
-
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -766,6 +766,9 @@ help:
 	@echo ... structs.obj
 	@echo ... structs.i
 	@echo ... structs.s
+	@echo ... ui_button.obj
+	@echo ... ui_button.i
+	@echo ... ui_button.s
 	@echo ... ui_element.obj
 	@echo ... ui_element.i
 	@echo ... ui_element.s
@@ -775,9 +778,6 @@ help:
 	@echo ... ui_renderer.obj
 	@echo ... ui_renderer.i
 	@echo ... ui_renderer.s
-	@echo ... ui_window.obj
-	@echo ... ui_window.i
-	@echo ... ui_window.s
 .PHONY : help
 
 

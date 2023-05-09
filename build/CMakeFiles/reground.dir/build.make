@@ -173,20 +173,20 @@ CMakeFiles/reground.dir/ui_renderer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/reground.dir/ui_renderer.cpp.s"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_renderer.cpp -o CMakeFiles\reground.dir\ui_renderer.cpp.s
 
-CMakeFiles/reground.dir/ui_window.cpp.obj: CMakeFiles/reground.dir/flags.make
-CMakeFiles/reground.dir/ui_window.cpp.obj: CMakeFiles/reground.dir/includes_CXX.rsp
-CMakeFiles/reground.dir/ui_window.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_window.cpp
-CMakeFiles/reground.dir/ui_window.cpp.obj: CMakeFiles/reground.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/reground.dir/ui_window.cpp.obj"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/reground.dir/ui_window.cpp.obj -MF CMakeFiles\reground.dir\ui_window.cpp.obj.d -o CMakeFiles\reground.dir\ui_window.cpp.obj -c C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_window.cpp
+CMakeFiles/reground.dir/ui_button.cpp.obj: CMakeFiles/reground.dir/flags.make
+CMakeFiles/reground.dir/ui_button.cpp.obj: CMakeFiles/reground.dir/includes_CXX.rsp
+CMakeFiles/reground.dir/ui_button.cpp.obj: C:/Users/gbhko/Desktop/Prog/VSCode/reground/ui_button.cpp
+CMakeFiles/reground.dir/ui_button.cpp.obj: CMakeFiles/reground.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\gbhko\Desktop\Prog\VSCode\reground\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/reground.dir/ui_button.cpp.obj"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/reground.dir/ui_button.cpp.obj -MF CMakeFiles\reground.dir\ui_button.cpp.obj.d -o CMakeFiles\reground.dir\ui_button.cpp.obj -c C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_button.cpp
 
-CMakeFiles/reground.dir/ui_window.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/reground.dir/ui_window.cpp.i"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_window.cpp > CMakeFiles\reground.dir\ui_window.cpp.i
+CMakeFiles/reground.dir/ui_button.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/reground.dir/ui_button.cpp.i"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_button.cpp > CMakeFiles\reground.dir\ui_button.cpp.i
 
-CMakeFiles/reground.dir/ui_window.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/reground.dir/ui_window.cpp.s"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_window.cpp -o CMakeFiles\reground.dir\ui_window.cpp.s
+CMakeFiles/reground.dir/ui_button.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/reground.dir/ui_button.cpp.s"
+	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\gbhko\Desktop\Prog\VSCode\reground\ui_button.cpp -o CMakeFiles\reground.dir\ui_button.cpp.s
 
 # Object files for target reground
 reground_OBJECTS = \
@@ -197,7 +197,7 @@ reground_OBJECTS = \
 "CMakeFiles/reground.dir/ui_element.cpp.obj" \
 "CMakeFiles/reground.dir/ui_manager.cpp.obj" \
 "CMakeFiles/reground.dir/ui_renderer.cpp.obj" \
-"CMakeFiles/reground.dir/ui_window.cpp.obj"
+"CMakeFiles/reground.dir/ui_button.cpp.obj"
 
 # External object files for target reground
 reground_EXTERNAL_OBJECTS =
@@ -209,7 +209,7 @@ reground.exe: CMakeFiles/reground.dir/structs.cpp.obj
 reground.exe: CMakeFiles/reground.dir/ui_element.cpp.obj
 reground.exe: CMakeFiles/reground.dir/ui_manager.cpp.obj
 reground.exe: CMakeFiles/reground.dir/ui_renderer.cpp.obj
-reground.exe: CMakeFiles/reground.dir/ui_window.cpp.obj
+reground.exe: CMakeFiles/reground.dir/ui_button.cpp.obj
 reground.exe: CMakeFiles/reground.dir/build.make
 reground.exe: C:/msys64/mingw64/lib/libSDL2main.a
 reground.exe: C:/msys64/mingw64/lib/libSDL2.dll.a
