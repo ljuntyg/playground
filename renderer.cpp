@@ -7,8 +7,7 @@ namespace renderer
 {
     RenderState RENDERER_STATE = RENDERER_RUN;
 
-    std::string objFolder = "res"; // Must be in working directory
-    std::vector<std::string> allObjNames = getObjFiles(objFolder);
+    std::vector<std::string> allObjNames = getObjFiles(OBJ_PATH);
     std::string targetFile = "apartment building.obj"; // Don't forget .obj extension
     std::vector<Mesh> targetObj = getTargetObj();
 
@@ -274,7 +273,7 @@ namespace renderer
     std::vector<Mesh> getTargetObj() 
     {
         objl::Loader loader;
-        if (loader.LoadFile(objFolder + "/" + targetFile) == 0) 
+        if (loader.LoadFile(OBJ_PATH + "/" + targetFile) == 0) 
         {
             std::cout << "Failed to load object file" << std::endl;
         } 
@@ -294,7 +293,7 @@ namespace renderer
         // Remove file directory prefix from file names
         for (auto& file : fileNames) 
         {
-            std::string prefix = objFolder + "\\";
+            std::string prefix = OBJ_PATH + "\\";
             std::size_t found = file.find(prefix);
             
             if (found != std::string::npos) {

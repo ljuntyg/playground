@@ -1,13 +1,33 @@
 #include "ui.h"
 #include "renderer.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-
 namespace ui
 {
+    UIManager::UIManager(std::shared_ptr<UIRenderer> renderer) : renderer(renderer) {}
+    
+    UIManager::~UIManager() {}
+
+    void UIManager::addElement(std::shared_ptr<UIElement> element)
+    {
+        elements.push_back(element);
+    }
+
+    void UIManager::handleInput(const SDL_Event& event)
+    {
+        for (const auto& element : elements)
+        {
+            element->handleInput(event);
+        }
+    }
+
+    void UIManager::render()
+    {
+        for (const auto& element : elements)
+        {
+            element->render(*renderer);
+        }
+    }
+
     UIRenderer::UIRenderer()
     {
         vertexShaderSource = R"(
@@ -115,5 +135,59 @@ namespace ui
                 render(*child);
             }
         }
+    }
+
+    UIElement::UIElement(int x, int y, int width, int height, const glm::vec4& color)
+        : x(x), y(y), width(width), height(height), color(color) {}
+
+    UIElement::~UIElement() {}
+
+    void UIElement::addChild(std::shared_ptr<UIElement> element)
+    {
+        children.emplace_back(element);
+        element->parent = shared_from_this();
+        element->x += x; // Offset child x in relation to parent (this)
+        element->y += y; // Offset child y in relation to parent (this)
+    }
+
+    UIBox::~UIBox() {}
+
+    void UIBox::handleInput(const SDL_Event& event) {}
+
+    void UIBox::render(UIRenderer& renderer)
+    {
+        renderer.render(*this);
+    }
+
+    UIButton::~UIButton() {}
+
+    void UIButton::handleInput(const SDL_Event& event)
+    {
+        if (event.type == SDL_MOUSEBUTTONDOWN)
+        {
+            // Get the mouse click coordinates
+            int mouseX = event.button.x;
+            int mouseY = event.button.y;
+
+            // SDL coordinates are centered at top left with Y pointing down, OpenGL is centered at bottom left with Y up, adjust Y
+            mouseY = renderer::WINDOW_HEIGHT - mouseY;
+
+            // Check if the click is within the range of the UI window
+            if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height)
+            {
+                // Handle the mouse click event here
+                handleClick(mouseX, mouseY);
+            }
+        }
+    }
+
+    void UIButton::handleClick(int mouseX, int mouseY)
+    {
+        renderer::nextTargetObj();
+    }
+
+    void UIButton::render(UIRenderer& renderer)
+    {
+        renderer.render(*this);
     }
 }

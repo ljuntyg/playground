@@ -32,7 +32,7 @@ namespace renderer
     const float FAR_DIST = 10000.0f;
     const float FOV = M_PI_2;
 
-    extern std::string objFolder;
+    const std::string OBJ_PATH = "res/obj"; // Must be in working directory
     extern std::vector<std::string> allObjNames;
     extern std::string targetFile;
     extern std::vector<Mesh> targetObj;

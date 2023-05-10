@@ -9,6 +9,7 @@
 
 #include "renderer.h"
 #include "ui.h"
+#include "text.h"
 
 int main(int argc, char *argv[])
 {
@@ -50,6 +51,9 @@ int main(int argc, char *argv[])
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    std::shared_ptr<text::TextManager> textManager = std::make_shared<text::TextManager>();
+    text::Text text1 = text::Text("testing!", textManager);
 
     std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
     ui::UIManager uiManager = ui::UIManager(uiRenderer);
