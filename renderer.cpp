@@ -3,144 +3,27 @@
 
 #include "renderer.h"
 
-namespace renderer 
+namespace renderer
 {
-    RenderState RENDERER_STATE = RENDERER_RUN;
-
-    std::vector<std::string> allObjNames = getObjFiles(OBJ_PATH);
-    std::string targetFile = "apartment building.obj"; // Don't forget .obj extension
-    std::vector<Mesh> targetObj = getTargetObj();
-
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
-    glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 lightPos = glm::vec3(0.0f, -1000.0f, -1000.0f);
-
-    float cameraYaw = -M_PI_2; // -90 degrees
-    float cameraPitch = 0.0f;
-    Mesh cube(cubeVertices, cubeIndices);
-
-    const GLchar *vertexShaderSource = R"glsl(
-        #version 330 core
-        layout (location = 0) in vec3 position;
-        layout (location = 1) in vec3 normal; // Add this line
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        out vec3 FragPos; // Add this line
-        out vec3 Normal;  // Add this line
-
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(position, 1.0);
-            FragPos = vec3(model * vec4(position, 1.0)); // Add this line
-            Normal = mat3(transpose(inverse(model))) * normal; // Add this line
-        }
-    )glsl";
-    const GLchar *fragmentShaderSource = R"glsl(
-        #version 330 core
-        in vec3 FragPos;
-        in vec3 Normal;
-
-        out vec4 color;
-
-        uniform vec3 lightPos;
-        uniform vec3 viewPos;
-
-        void main()
-        {
-            // Ambient
-            float ambientStrength = 0.1;
-            vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
-
-            // Diffuse
-            vec3 norm = normalize(Normal);
-            vec3 lightDir = normalize(lightPos - FragPos);
-            float diff = max(dot(norm, lightDir), 0.0);
-            vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);
-
-            // Specular
-            float specularStrength = 0.5;
-            vec3 viewDir = normalize(viewPos - FragPos);
-            vec3 reflectDir = reflect(lightDir, norm);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-            vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0);
-
-            // Final color
-            vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);
-            color = vec4(result, 1.0);
-        }
-    )glsl";
-    const std::unordered_map<std::string, glm::vec4> colorMap = {
-        {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
-        {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
-        {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
-        {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
-        {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
-        {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
-        {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
-        {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
-    };
-
-    // Function to compile a shader
-    GLuint compileShader(const GLenum type, const GLchar *source)
+    Renderer::Renderer(float WINDOW_WIDTH, float WINDOW_HEIGHT) : WINDOW_WIDTH(WINDOW_WIDTH), WINDOW_HEIGHT(WINDOW_HEIGHT)
     {
-        GLuint shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, nullptr);
-        glCompileShader(shader);
-
-        GLint status;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-        if (!status)
-        {
-            GLchar infoLog[512];
-            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            std::cerr << "Failed to compile shader: " << infoLog << std::endl;
-        }
-
-        return shader;
-    }
-
-    // Function to create a shader program
-    GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource)
-    {
-        GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
-        GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
-
-        GLuint program = glCreateProgram();
-        glAttachShader(program, vertexShader);
-        glAttachShader(program, fragmentShader);
-        glLinkProgram(program);
-
-        GLint status;
-        glGetProgramiv(program, GL_LINK_STATUS, &status);
-        if (!status)
-        {
-            GLchar infoLog[512];
-            glGetProgramInfoLog(program, 512, nullptr, infoLog);
-            std::cerr << "Failed to link shader program: " << infoLog << std::endl;
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        return program;
-    }
-
-    void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) 
-    {
-        GLuint shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
-
-        // Set up vertex array and buffer objects
-        GLuint VAO, VBO, EBO;
+        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource);
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
+    }
 
-        // Loop through the meshes in the object
+    Renderer::~Renderer() 
+    {
+        // Clean up shaderProgram, VAO, VBO, EBO
+        glDeleteProgram(shaderProgram);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
+    void Renderer::drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix)
+    {
         for (const Mesh& mesh : object) 
         {
             glBindVertexArray(VAO);
@@ -185,15 +68,9 @@ namespace renderer
             glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
         }
-
-        // Clean up
-        glDeleteProgram(shaderProgram);
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
     }
 
-    void onYawPitch(float dx, float dy) 
+    void Renderer::onYawPitch(float dx, float dy) 
     {
         // Update camera yaw and pitch
         cameraYaw += dx;
@@ -220,7 +97,7 @@ namespace renderer
         targetPos = cameraPos + lookDir;
     }
 
-    void onKeys(const int& key) 
+    void Renderer::onKeys(const int& key) 
     {
         glm::vec3 front = lookDir;
         glm::vec3 right = glm::normalize(glm::cross(cameraUp, front));
@@ -248,29 +125,7 @@ namespace renderer
         }
     }
 
-    std::vector<std::string> getObjFiles(const std::string& folderName) 
-    {
-        std::vector<std::string> objFiles;
-
-        try 
-        {
-            for (const auto& entry : std::filesystem::directory_iterator(folderName)) 
-            {
-                if (entry.is_regular_file() && entry.path().extension() == ".obj") 
-                {
-                    objFiles.push_back(entry.path().string());
-                }
-            }
-        } 
-        catch (const std::filesystem::filesystem_error& e) 
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-        }
-
-        return objFiles;
-    }
-
-    std::vector<Mesh> getTargetObj() 
+    std::vector<Mesh> Renderer::getTargetObj() 
     {
         objl::Loader loader;
         if (loader.LoadFile(OBJ_PATH + "/" + targetFile) == 0) 
@@ -284,7 +139,7 @@ namespace renderer
         return objlMeshToCustomMesh(loader.LoadedMeshes);
     }
 
-    void nextTargetObj()
+    void Renderer::nextTargetObj()
     {
         RENDERER_STATE = RENDERER_PAUSE; // Probably not necessary here
 
@@ -313,5 +168,72 @@ namespace renderer
         targetObj = getTargetObj();
 
         RENDERER_STATE = RENDERER_RUN;
+    }
+
+    // Function to compile a shader, helper method to createShaderProgram
+    GLuint compileShader(const GLenum type, const GLchar *source)
+    {
+        GLuint shader = glCreateShader(type);
+        glShaderSource(shader, 1, &source, nullptr);
+        glCompileShader(shader);
+
+        GLint status;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+        if (!status)
+        {
+            GLchar infoLog[512];
+            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+            std::cerr << "Failed to compile shader: " << infoLog << std::endl;
+        }
+
+        return shader;
+    }
+
+    // Function to create a shader program
+    GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource)
+    {
+        GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
+        GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+
+        GLuint program = glCreateProgram();
+        glAttachShader(program, vertexShader);
+        glAttachShader(program, fragmentShader);
+        glLinkProgram(program);
+
+        GLint status;
+        glGetProgramiv(program, GL_LINK_STATUS, &status);
+        if (!status)
+        {
+            GLchar infoLog[512];
+            glGetProgramInfoLog(program, 512, nullptr, infoLog);
+            std::cerr << "Failed to link shader program: " << infoLog << std::endl;
+        }
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        return program;
+    }
+
+    std::vector<std::string> getObjFiles(const std::string& folderName) 
+    {
+        std::vector<std::string> objFiles;
+
+        try 
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(folderName)) 
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".obj") 
+                {
+                    objFiles.push_back(entry.path().string());
+                }
+            }
+        } 
+        catch (const std::filesystem::filesystem_error& e) 
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+
+        return objFiles;
     }
 }

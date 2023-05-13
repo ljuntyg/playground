@@ -4,8 +4,10 @@
 
 #include "obj_loader.h"
 
-namespace structs {
-    struct Vertex {
+namespace structs 
+{
+    struct Vertex 
+    {
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 textureCoordinate;
@@ -14,7 +16,8 @@ namespace structs {
             : position(position), normal(normal), textureCoordinate(textureCoordinate) {}
     };
 
-    struct Material {
+    struct Material 
+    {
         Material() : ns(0.0f), ni(0.0f), d(0.0f), illum(0) {}
 
         std::string name;
@@ -33,7 +36,8 @@ namespace structs {
         std::string bumpMap;
     };
 
-    struct Mesh {
+    struct Mesh 
+    {
         Mesh() = default;
         Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
             : vertices(vertices), indices(indices) {}

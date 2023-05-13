@@ -24,90 +24,115 @@ namespace renderer
         RENDERER_PAUSE,
         renderStateCount
     };
-    extern RenderState RENDERER_STATE;
 
-    const float WINDOW_WIDTH = 1280.0f;
-    const float WINDOW_HEIGHT = 720.0f;
-    const float NEAR_DIST = 0.1f;
-    const float FAR_DIST = 10000.0f;
-    const float FOV = M_PI_2;
-
-    const std::string OBJ_PATH = "res/obj"; // Must be in working directory
-    extern std::vector<std::string> allObjNames;
-    extern std::string targetFile;
-    extern std::vector<Mesh> targetObj;
-
-    extern glm::vec3 cameraPos;
-    extern glm::vec3 targetPos;
-    extern glm::vec3 cameraUp;
-    extern glm::vec3 lookDir;
-    extern glm::vec3 lightPos;
-
-    extern float cameraYaw;
-    extern float cameraPitch;
-    const float cameraSpeed = 1.0f;
-    const float mouseSensitivity = 0.05f;
-
-    const std::vector<Vertex> cubeVertices {
-        // Front face
-        Vertex(glm::vec3(-0.5, -0.5,  0.5), glm::vec3(0, 0, 1), glm::vec2(0, 0)),
-        Vertex(glm::vec3( 0.5, -0.5,  0.5), glm::vec3(0, 0, 1), glm::vec2(1, 0)),
-        Vertex(glm::vec3( 0.5,  0.5,  0.5), glm::vec3(0, 0, 1), glm::vec2(1, 1)),
-        Vertex(glm::vec3(-0.5,  0.5,  0.5), glm::vec3(0, 0, 1), glm::vec2(0, 1)),
-        // Back face
-        Vertex(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0, 0, -1), glm::vec2(0, 0)),
-        Vertex(glm::vec3( 0.5, -0.5, -0.5), glm::vec3(0, 0, -1), glm::vec2(1, 0)),
-        Vertex(glm::vec3( 0.5,  0.5, -0.5), glm::vec3(0, 0, -1), glm::vec2(1, 1)),
-        Vertex(glm::vec3(-0.5,  0.5, -0.5), glm::vec3(0, 0, -1), glm::vec2(0, 1)),
-        // Left face
-        Vertex(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(-1, 0, 0), glm::vec2(0, 0)),
-        Vertex(glm::vec3(-0.5, -0.5,  0.5), glm::vec3(-1, 0, 0), glm::vec2(1, 0)),
-        Vertex(glm::vec3(-0.5,  0.5,  0.5), glm::vec3(-1, 0, 0), glm::vec2(1, 1)),
-        Vertex(glm::vec3(-0.5,  0.5, -0.5), glm::vec3(-1, 0, 0), glm::vec2(0, 1)),
-        // Right face
-        Vertex(glm::vec3( 0.5, -0.5, -0.5), glm::vec3(1, 0, 0), glm::vec2(0, 0)),
-        Vertex(glm::vec3( 0.5, -0.5,  0.5), glm::vec3(1, 0, 0), glm::vec2(1, 0)),
-        Vertex(glm::vec3( 0.5,  0.5,  0.5), glm::vec3(1, 0, 0), glm::vec2(1, 1)),
-        Vertex(glm::vec3( 0.5,  0.5, -0.5), glm::vec3(1, 0, 0), glm::vec2(0, 1)),
-        // Bottom face
-        Vertex(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0, -1, 0), glm::vec2(0, 0)),
-        Vertex(glm::vec3( 0.5, -0.5, -0.5), glm::vec3(0, -1, 0), glm::vec2(1, 0)),
-        Vertex(glm::vec3( 0.5, -0.5,  0.5), glm::vec3(0, -1, 0), glm::vec2(1, 1)),
-        Vertex(glm::vec3(-0.5, -0.5,  0.5), glm::vec3(0, -1, 0), glm::vec2(0, 1)),
-        // Top face
-        Vertex(glm::vec3(-0.5,  0.5, -0.5), glm::vec3(0, 1, 0), glm::vec2(0, 0)),
-        Vertex(glm::vec3( 0.5,  0.5, -0.5), glm::vec3(0, 1, 0), glm::vec2(1, 0)),
-        Vertex(glm::vec3( 0.5,  0.5,  0.5), glm::vec3(0, 1, 0), glm::vec2(1, 1)),
-        Vertex(glm::vec3(-0.5,  0.5,  0.5), glm::vec3(0, 1, 0), glm::vec2(0, 1))
-    };
-    const std::vector<unsigned int> cubeIndices {
-        // Front face
-        0, 1, 2, 0, 2, 3,
-        // Back face
-        4, 5, 6, 4, 6, 7,
-        // Left face
-        8, 9, 10, 8, 10, 11,
-        // Right face
-        12, 13, 14, 12, 14, 15,
-        // Bottom face
-        16, 17, 18, 16, 18, 19,
-        // Top face
-        20, 21, 22, 20, 22, 23
-    };
-    extern Mesh cube;
-
-    extern const GLchar *vertexShaderSource;
-    extern const GLchar *fragmentShaderSource;
-    extern const std::unordered_map<std::string, glm::vec4> colorMap;
-    
     GLuint compileShader(const GLenum type, const GLchar *source);
     GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);
 
-    void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
-    void onYawPitch(float dx, float dy);
-    void onKeys(const int& key);
-
     std::vector<std::string> getObjFiles(const std::string& folderName);
-    std::vector<Mesh> getTargetObj();
-    void nextTargetObj();
+
+    class Renderer
+    {
+    public:
+        Renderer(float WINDOW_WIDTH, float WINDOW_HEIGHT);
+        ~Renderer();
+
+        void drawObject(const std::vector<Mesh>& object, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
+        void onYawPitch(float dx, float dy);
+        void onKeys(const int& key);
+
+        std::vector<Mesh> getTargetObj();
+        void nextTargetObj();
+
+        RenderState RENDERER_STATE = RENDERER_RUN;;
+
+        float WINDOW_WIDTH;
+        float WINDOW_HEIGHT;
+        const float NEAR_DIST = 0.1f;
+        const float FAR_DIST = 10000.0f;
+        const float FOV = M_PI_2;
+
+        const std::string OBJ_PATH = "res/obj"; // Must be in working directory
+        std::vector<std::string> allObjNames = getObjFiles(OBJ_PATH);
+        std::string targetFile = "apartment building.obj";;
+        std::vector<Mesh> targetObj = getTargetObj();
+
+        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+        glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
+        glm::vec3 lightPos = glm::vec3(0.0f, -1000.0f, -1000.0f);
+
+        float cameraYaw = -M_PI_2; // -90 degrees
+        float cameraPitch = 0.0f;
+        const float cameraSpeed = 1.0f;
+        const float mouseSensitivity = 0.05f;
+
+        const std::unordered_map<std::string, glm::vec4> colorMap = {
+            {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+            {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+            {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+            {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
+            {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
+            {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
+            {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
+            {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
+        };
+
+        private:
+            GLuint shaderProgram, VAO, VBO, EBO;
+
+            const GLchar *rendererVertexShaderSource = R"glsl(
+            #version 330 core
+            layout (location = 0) in vec3 position;
+            layout (location = 1) in vec3 normal; // Add this line
+
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            out vec3 FragPos; // Add this line
+            out vec3 Normal;  // Add this line
+
+            void main()
+            {
+                gl_Position = projection * view * model * vec4(position, 1.0);
+                FragPos = vec3(model * vec4(position, 1.0)); // Add this line
+                Normal = mat3(transpose(inverse(model))) * normal; // Add this line
+            }
+        )glsl";
+        const GLchar *rendererFragmentShaderSource = R"glsl(
+            #version 330 core
+            in vec3 FragPos;
+            in vec3 Normal;
+
+            out vec4 color;
+
+            uniform vec3 lightPos;
+            uniform vec3 viewPos;
+
+            void main()
+            {
+                // Ambient
+                float ambientStrength = 0.1;
+                vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
+
+                // Diffuse
+                vec3 norm = normalize(Normal);
+                vec3 lightDir = normalize(lightPos - FragPos);
+                float diff = max(dot(norm, lightDir), 0.0);
+                vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);
+
+                // Specular
+                float specularStrength = 0.5;
+                vec3 viewDir = normalize(viewPos - FragPos);
+                vec3 reflectDir = reflect(lightDir, norm);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+                vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0);
+
+                // Final color
+                vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);
+                color = vec4(result, 1.0);
+            }
+        )glsl";
+    };
 };

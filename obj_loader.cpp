@@ -1,5 +1,3 @@
-// OBJ_Loader.h - A Single Header OBJ Model Loader
-
 // COURTESY OF, MADE BY, BLY7 (ROBERT SMITH)
 
 // Iostream - STD I/O Library

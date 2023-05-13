@@ -1,6 +1,7 @@
 #include "structs.h"
 
-namespace structs {
+namespace structs 
+{
     std::vector<Mesh> objlMeshToCustomMesh(const std::vector<objl::Mesh>& objlMeshes) 
     {
         std::vector<Mesh> customMeshes;

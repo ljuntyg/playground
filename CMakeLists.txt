@@ -4,7 +4,7 @@ project(reground VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-add_executable(reground main.cpp renderer.cpp obj_loader.cpp structs.cpp ui.cpp text.cpp)
+add_executable(reground main.cpp obj_loader.cpp renderer.cpp structs.cpp ui.cpp text.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

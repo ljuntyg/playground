@@ -1,9 +1,10 @@
 #include "ui.h"
 #include "renderer.h"
+#include "text.h"
 
 namespace ui
 {
-    UIManager::UIManager(std::shared_ptr<UIRenderer> renderer) : renderer(renderer) {}
+    UIManager::UIManager(std::shared_ptr<UIRenderer> uiRenderer) : uiRenderer(uiRenderer) {}
     
     UIManager::~UIManager() {}
 
@@ -24,38 +25,11 @@ namespace ui
     {
         for (const auto& element : elements)
         {
-            element->render(*renderer);
+            element->render(*uiRenderer);
         }
     }
 
-    UIRenderer::UIRenderer()
-    {
-        vertexShaderSource = R"(
-            #version 330 core
-            layout (location = 0) in vec3 aPos;
-
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
-
-            void main()
-            {
-                gl_Position = projection * view * model * vec4(aPos, 1.0);
-            }
-        )";
-
-        fragmentShaderSource = R"(
-            #version 330 core
-            out vec4 FragColor;
-
-            uniform vec4 color;
-
-            void main()
-            {
-                FragColor = color;
-            }
-        )";
-    }
+    UIRenderer::UIRenderer(std::shared_ptr<renderer::Renderer> RENDERER) : RENDERER(RENDERER) {}
 
     UIRenderer::~UIRenderer()
     {
@@ -65,8 +39,94 @@ namespace ui
 
     void UIRenderer::render(UIElement& element)
     {
-        shaderProgram = renderer::createShaderProgram(vertexShaderSource, fragmentShaderSource);
+        shaderProgram = renderer::createShaderProgram(UIVertexShaderSource, UIFragmentShaderSource);
 
+        // Set up the model, view, and projection matrices
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(element.x, element.y, 0.0f)); // Translate ui element
+        model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui element
+        glm::mat4 projection = glm::ortho(0.0f, this->RENDERER->WINDOW_WIDTH, 0.0f, this->RENDERER->WINDOW_HEIGHT);
+
+        // Use the shader program
+        glUseProgram(shaderProgram);
+
+        // Pass the matrices and color to the shader
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(shaderProgram, "color"), 1, glm::value_ptr(element.color));
+
+        // Bind the VAO
+        glBindVertexArray(element.VAO);
+
+        // Draw the square
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // Unbind the VAO
+        glBindVertexArray(0);
+
+        glDeleteProgram(shaderProgram);
+
+        // Render children here at bottom so they are rendered on top of parent
+        if (!element.children.empty())
+        {
+            for (const auto& child : element.children)
+            {
+                child->render(*this); // Call render method through specific child, in case there exists an overloaded render method in UIRenderer which the child uses
+            }
+        }
+    }
+
+    void UIRenderer::render(UIText& textElement)
+    {
+        shaderProgram = renderer::createShaderProgram(textVertexShaderSource, textFragmentShaderSource);
+        glUseProgram(shaderProgram);
+
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(textElement.x, textElement.y, 0.0f)); // Translate ui element
+        model = glm::scale(model, glm::vec3(textElement.width, textElement.height, 1.0f)); // Scale ui element
+        glm::mat4 projection = glm::ortho(0.0f, this->RENDERER->WINDOW_WIDTH, 0.0f, this->RENDERER->WINDOW_HEIGHT);
+
+        // Set the projection matrix in the shader
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(shaderProgram, "textColor"), 1, glm::value_ptr(textElement.color));
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(textElement.VAO);
+
+        // Iterate through all characters
+        for (auto& ch : textElement.text->characters)
+        {
+            // Set the character's texture
+            glBindTexture(GL_TEXTURE_2D, ch.font.textureID);
+
+            // Update VBO for each character
+            GLfloat vertices[6][4];
+            for (int i = 0; i < 6; ++i)
+            {
+                vertices[i][0] = ch.vertices[i*2];
+                vertices[i][1] = ch.vertices[i*2+1];
+                vertices[i][2] = ch.texCoords[i*2];
+                vertices[i][3] = ch.texCoords[i*2+1];
+            }
+
+            // Render glyph texture over quad
+            glBindBuffer(GL_ARRAY_BUFFER, textElement.VBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+            // Render quad
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+
+    UIElement::UIElement(int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<ui::UIManager> uiManager)
+        : x(x), y(y), width(width), height(height), color(color), uiManager(uiManager)
+    {
         // Define 1x1 square with bottom-left square corner at origin
         float vertices[] = {
             0.0f, 0.0f, 0.0f,
@@ -80,8 +140,6 @@ namespace ui
             0, 1, 2,
             2, 3, 0
         };
-
-        GLuint VAO, VBO, EBO;
 
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
@@ -98,49 +156,16 @@ namespace ui
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        // Set up the model, view, and projection matrices
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(element.x, element.y, 0.0f)); // Translate ui element
-        model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui element
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::ortho(0.0f, renderer::WINDOW_WIDTH, 0.0f, renderer::WINDOW_HEIGHT);
-
-        // Use the shader program
-        glUseProgram(shaderProgram);
-
-        // Pass the matrices and color to the shader
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniform4fv(glGetUniformLocation(shaderProgram, "color"), 1, glm::value_ptr(element.color));
-
-        // Draw the square
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        // Clean up
-        glDisableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        // Unbind the VAO
         glBindVertexArray(0);
+    }
+
+    UIElement::~UIElement() 
+    {
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
         glDeleteVertexArrays(1, &VAO);
-        glDeleteProgram(shaderProgram);
-
-        // Render children here at bottom so they are rendered on top of parent
-        if (!element.children.empty())
-        {
-            for (const auto& child : element.children)
-            {
-                render(*child);
-            }
-        }
     }
-
-    UIElement::UIElement(int x, int y, int width, int height, const glm::vec4& color)
-        : x(x), y(y), width(width), height(height), color(color) {}
-
-    UIElement::~UIElement() {}
 
     void UIElement::addChild(std::shared_ptr<UIElement> element)
     {
@@ -154,9 +179,9 @@ namespace ui
 
     void UIBox::handleInput(const SDL_Event& event) {}
 
-    void UIBox::render(UIRenderer& renderer)
+    void UIBox::render(UIRenderer& uiRenderer)
     {
-        renderer.render(*this);
+        uiRenderer.render(*this);
     }
 
     UIButton::~UIButton() {}
@@ -170,7 +195,7 @@ namespace ui
             int mouseY = event.button.y;
 
             // SDL coordinates are centered at top left with Y pointing down, OpenGL is centered at bottom left with Y up, adjust Y
-            mouseY = renderer::WINDOW_HEIGHT - mouseY;
+            mouseY = this->uiManager->uiRenderer->RENDERER->WINDOW_HEIGHT - mouseY;
 
             // Check if the click is within the range of the UI window
             if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height)
@@ -183,11 +208,39 @@ namespace ui
 
     void UIButton::handleClick(int mouseX, int mouseY)
     {
-        renderer::nextTargetObj();
+        this->uiManager->uiRenderer->RENDERER->nextTargetObj();
     }
 
-    void UIButton::render(UIRenderer& renderer)
+    void UIButton::render(UIRenderer& uiRenderer)
     {
-        renderer.render(*this);
+        uiRenderer.render(*this);
+    }
+
+    UIText::UIText(std::shared_ptr<text::Text> text, int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<UIManager> uiManager) 
+        : text(text), UIElement(x, y, width, height, color, uiManager) 
+    {
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    UIText::~UIText() 
+    {
+        glDeleteBuffers(1, &VBO);
+        glDeleteVertexArrays(1, &VAO);
+    }
+
+    void UIText::handleInput(const SDL_Event& event) {}
+
+    void UIText::render(UIRenderer& uiRenderer)
+    {
+        uiRenderer.render(*this);
     }
 }

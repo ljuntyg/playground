@@ -19,12 +19,22 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    SDL_DisplayMode DM;
+    if (SDL_GetDesktopDisplayMode(0, &DM) != 0)
+    {
+        std::cerr << "Failed to get display mode: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+
+    float windowWidth = DM.w / 2;
+    float windowHeight = DM.h / 2;
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24); // Request a 24-bit depth buffer
 
-    SDL_Window *window = SDL_CreateWindow("Playground - FPS: ", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderer::WINDOW_WIDTH, renderer::WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("Playground - FPS: ", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN); // Fix fixed resolution
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -52,20 +62,24 @@ int main(int argc, char *argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    std::shared_ptr<text::TextManager> textManager = std::make_shared<text::TextManager>();
-    text::Text text1 = text::Text("testing!", textManager);
+    std::shared_ptr<renderer::Renderer> RENDERER = std::make_shared<renderer::Renderer>(windowWidth, windowHeight); // Renderer to be used throughout program
 
-    std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer());
-    ui::UIManager uiManager = ui::UIManager(uiRenderer);
+    std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer(RENDERER));
+    std::shared_ptr<ui::UIManager> uiManager = std::make_shared<ui::UIManager>(uiRenderer);
 
-    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, renderer::colorMap.at("RED"));
-    uiManager.addElement(uiWindow1);
+    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, RENDERER->colorMap.at("RED"), uiManager);
+    uiManager->addElement(uiWindow1);
 
-    std::shared_ptr<ui::UIBox> uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, renderer::colorMap.at("BLUE"));
+    std::shared_ptr<ui::UIBox> uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, RENDERER->colorMap.at("BLUE"), uiManager);
     uiWindow1->addChild(uiBox1);
 
-    std::shared_ptr<ui::UIBox> uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, renderer::colorMap.at("GREEN"));
+    std::shared_ptr<ui::UIBox> uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, RENDERER->colorMap.at("GREEN"), uiManager);
     uiBox1->addChild(uiBox2);
+
+    std::shared_ptr<text::TextManager> textManager = std::make_shared<text::TextManager>();
+    std::shared_ptr<text::Text> text1 = std::make_shared<text::Text>("wow. text!!!!!", textManager);
+    std::shared_ptr<ui::UIText> uiText1 = std::make_shared<ui::UIText>(text1, 10, 500, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+    uiWindow1->addChild(uiText1);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -76,7 +90,7 @@ int main(int argc, char *argv[])
 
     while (!quit)
     {
-        if (renderer::RENDERER_STATE == renderer::RENDERER_PAUSE)
+        if (RENDERER->RENDERER_STATE == renderer::RENDERER_PAUSE)
         {
             continue;
         }
@@ -98,20 +112,20 @@ int main(int argc, char *argv[])
                     float dx = 0.0f;
                     float dy = 0.0f;
 
-                    dx += mouseX * renderer::mouseSensitivity;
-                    dy -= mouseY * renderer::mouseSensitivity;
+                    dx += mouseX * RENDERER->mouseSensitivity;
+                    dy -= mouseY * RENDERER->mouseSensitivity;
 
                     // Call function to update camera based on mouse motion
-                    renderer::onYawPitch(dx, dy);
+                    RENDERER->onYawPitch(dx, dy);
                 }
             }
             
-            uiManager.handleInput(event);
+            uiManager->handleInput(event);
         }
 
         if (firstMouseMotion) { // When updateCamera is called first time the lookDir will change, call it pre-emptively to avoid visible snap
             firstMouseMotion = false;
-            renderer::onYawPitch(0, 0);
+            RENDERER->onYawPitch(0, 0);
         }
 
         const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
@@ -119,27 +133,27 @@ int main(int argc, char *argv[])
         // Update camera and target position based on key input
         if (keyboardState[SDL_SCANCODE_W])
         {
-            renderer::onKeys(0);
+            RENDERER->onKeys(0);
         }
         if (keyboardState[SDL_SCANCODE_S])
         {
-            renderer::onKeys(1);
+            RENDERER->onKeys(1);
         }
         if (keyboardState[SDL_SCANCODE_A])
         {
-            renderer::onKeys(2);
+            RENDERER->onKeys(2);
         }
         if (keyboardState[SDL_SCANCODE_D])
         {
-            renderer::onKeys(3);
+            RENDERER->onKeys(3);
         }
         if (keyboardState[SDL_SCANCODE_LSHIFT])
         {
-            renderer::onKeys(4);
+            RENDERER->onKeys(4);
         }
         if (keyboardState[SDL_SCANCODE_LCTRL])
         {
-            renderer::onKeys(5);
+            RENDERER->onKeys(5);
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -148,24 +162,27 @@ int main(int argc, char *argv[])
         // Create the model, view, and projection matrices
         glm::mat4 modelMatrix = glm::mat4(1.0f);
         glm::mat4 viewMatrix = glm::lookAt(
-            renderer::cameraPos, // Camera position
-            renderer::targetPos, // Target position
-            renderer::cameraUp  // Up vector
+            RENDERER->cameraPos, // Camera position
+            RENDERER->targetPos, // Target position
+            RENDERER->cameraUp  // Up vector
         );
         glm::mat4 projectionMatrix = glm::perspective(
-            renderer::FOV, // Field of view
-            renderer::WINDOW_WIDTH / renderer::WINDOW_HEIGHT, // Aspect ratio
-            renderer::NEAR_DIST, // Near plane
-            renderer::FAR_DIST // Far plane
+            RENDERER->FOV, // Field of view
+            RENDERER->WINDOW_WIDTH / RENDERER->WINDOW_HEIGHT, // Aspect ratio
+            RENDERER->NEAR_DIST, // Near plane
+            RENDERER->FAR_DIST // Far plane
         );
 
         // Render OpenGL content here
-        renderer::drawObject(renderer::targetObj, modelMatrix, viewMatrix, projectionMatrix);
+        RENDERER->drawObject(RENDERER->targetObj, modelMatrix, viewMatrix, projectionMatrix);
 
         // Draw all elements in ui manager
+        glEnable(GL_BLEND); // Or else the transparent parts of the texture will be rendered white
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
-        uiManager.render();
+        uiManager->render();
         glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
 
         SDL_GL_SwapWindow(window);
 
