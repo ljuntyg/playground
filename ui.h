@@ -154,9 +154,12 @@ namespace ui
 
         void handleInput(const SDL_Event& event) override;
         void render(UIRenderer& uiRenderer) override; // Use overloaded method in UIRenderer made for UIText
+
+        void changeFont();
     private:
         friend class UIRenderer;
 
         std::shared_ptr<text::Text> text;
+        bool escPressed = false;
     };
 }

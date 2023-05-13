@@ -10,19 +10,41 @@
 
 namespace text
 {
-    Text::Text(const std::string& text, std::shared_ptr<TextManager> textManager) : text(text), textManager(textManager)
+    Text::Text(const std::wstring& text, float scale, std::shared_ptr<TextManager> textManager)
+        : text(text), scale(scale), textManager(textManager)
+    {
+        calculateVertices();
+
+        textManager->texts.emplace_back(*this);
+    }
+
+    Text::~Text() {}
+
+    void Text::calculateVertices()
     {
         GLfloat x = 0, y = 0; // Initialize x and y to the starting position of the text
+        GLfloat baseline = 0;
 
-        for (char c : text)
+        characters.clear(); // Clear the previous characters
+
+        for (wchar_t c : text)
         {
+            if (textManager->idCharacterMap.find(c) == textManager->idCharacterMap.end()) 
+            {
+                std::wcout << "Character not found: " << c << '\n';
+                continue;
+            }
+        
             Character ch = textManager->idCharacterMap.at(c);
 
-            GLfloat xpos = x + ch.xOffset;
-            GLfloat ypos = y - ch.yOffset;
+            // Update font of Character to new selectedFont
+            ch.font = this->textManager->selectedFont.value();
 
-            GLfloat w = ch.width;
-            GLfloat h = ch.height;
+            GLfloat xpos = x + ch.xOffset * scale;
+            GLfloat ypos = y + (baseline - ch.yOffset - ch.height) * scale;
+
+            GLfloat w = ch.width * scale;
+            GLfloat h = ch.height * scale;
 
             ch.vertices = {
                 xpos,     ypos + h, // Bottom left
@@ -37,11 +59,9 @@ namespace text
             characters.emplace_back(ch);
 
             // Advance cursor for next glyph
-            x += ch.xAdvance;
+            x += ch.xAdvance * scale;
         }
     }
-
-    Text::~Text() {}
 
     TextManager::TextManager()
     {
@@ -60,7 +80,7 @@ namespace text
             if (entry.is_directory())
             {
                 std::filesystem::path fontFile;
-                std::filesystem::path textureFile;
+                std::vector<std::filesystem::path> textureFiles;
 
                 for (const auto& fontEntry : std::filesystem::directory_iterator(entry))
                 {
@@ -70,14 +90,14 @@ namespace text
                     }
                     else if (fontEntry.path().extension() == ".png")
                     {
-                        textureFile = fontEntry.path();
+                        textureFiles.emplace_back(fontEntry.path());
                     }
                 }
 
-                if (!fontFile.empty() && !textureFile.empty())
+                if (!fontFile.empty() && !textureFiles.empty())
                 {
                     std::string fontName = entry.path().filename().string();
-                    fonts.push_back(Font(fontFile, textureFile, fontName));
+                    fonts.push_back(Font(fontFile, textureFiles, fontName));
                 }
             }
         }
@@ -92,39 +112,43 @@ namespace text
         idCharacterMap.clear();
 
         // Load the font texture
-        int width, height, nrChannels;
-        unsigned char *data = stbi_load(font.textureFile.string().c_str(), &width, &height, &nrChannels, 0);
-        if (data)
+        for (const auto& textureFile : font.textureFiles)
         {
-            GLuint textureID;
-            glGenTextures(1, &textureID);
-            glBindTexture(GL_TEXTURE_2D, textureID);
+            int width, height, nrChannels;
+            unsigned char *data = stbi_load(textureFile.string().c_str(), &width, &height, &nrChannels, 0);
+            if (data)
+            {
+                GLuint textureID;
+                glGenTextures(1, &textureID);
+                glBindTexture(GL_TEXTURE_2D, textureID);
 
-            // set the texture wrapping/filtering options
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                // set the texture wrapping/filtering options
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            // load and generate the texture
-            if(nrChannels == 3)
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            else if(nrChannels == 4)
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
+                // load and generate the texture
+                if(nrChannels == 3)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                else if(nrChannels == 4)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                glGenerateMipmap(GL_TEXTURE_2D);
 
-            stbi_image_free(data);
+                stbi_image_free(data);
 
-            font.textureID = textureID; // Assign the textureID to the font
+                font.textureIDs.push_back(textureID);
 
-            // Set the texture dimensions in the font
-            font.textureWidth = width;
-            font.textureHeight = height;
-        }
-        else
-        {
-            std::cerr << "Failed to load texture file: " << font.textureFile << '\n';
-            return;
+                // Set the texture dimensions in the font
+                // Note: This assumes all textures have the same dimensions
+                font.textureWidth = width;
+                font.textureHeight = height;
+            }
+            else
+            {
+                std::cerr << "Failed to load texture file: " << textureFile << '\n';
+                return;
+            }
         }
 
         std::ifstream fontFile(font.fontFile);
@@ -156,8 +180,22 @@ namespace text
                     }
                 }
 
-                idCharacterMap.emplace(charMap["id"], Character(font, charMap["id"], charMap["x"], charMap["y"], charMap["width"], charMap["height"], charMap["xoffset"], charMap["yoffset"], charMap["xadvance"]));
+                idCharacterMap.emplace(charMap["id"], Character(font, charMap["id"], charMap["x"], charMap["y"], charMap["width"], charMap["height"], charMap["xoffset"], charMap["yoffset"], charMap["xadvance"], charMap["page"]));
             }
         }
+    }
+
+    void TextManager::nextFont()
+    {
+        int objIx = std::find(fonts.begin(), fonts.end(), selectedFont.value()) - fonts.begin();
+        assert(objIx != fonts.size()); // Means file name not found
+
+        if (objIx == fonts.size() - 1)
+        {
+            objIx = 0;
+        }
+
+        selectedFont = fonts[objIx+1];
+        parseFont(selectedFont.value());
     }
 }

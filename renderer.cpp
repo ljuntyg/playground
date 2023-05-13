@@ -141,8 +141,6 @@ namespace renderer
 
     void Renderer::nextTargetObj()
     {
-        RENDERER_STATE = RENDERER_PAUSE; // Probably not necessary here
-
         std::vector<std::string> fileNames = allObjNames;
 
         // Remove file directory prefix from file names
@@ -166,8 +164,6 @@ namespace renderer
 
         targetFile = fileNames[objIx+1];
         targetObj = getTargetObj();
-
-        RENDERER_STATE = RENDERER_RUN;
     }
 
     // Function to compile a shader, helper method to createShaderProgram

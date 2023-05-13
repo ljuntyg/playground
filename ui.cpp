@@ -98,7 +98,7 @@ namespace ui
         for (auto& ch : textElement.text->characters)
         {
             // Set the character's texture
-            glBindTexture(GL_TEXTURE_2D, ch.font.textureID);
+            glBindTexture(GL_TEXTURE_2D, ch.font.textureIDs[ch.page]); // Find corresponding texture (in case there is more than 1 texture for the font)
 
             // Update VBO for each character
             GLfloat vertices[6][4];
@@ -121,8 +121,16 @@ namespace ui
         }
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-    }
 
+        // Render children here at bottom so they are rendered on top of parent
+        if (!textElement.children.empty())
+        {
+            for (const auto& child : textElement.children)
+            {
+                child->render(*this); // Call render method through specific child, in case there exists an overloaded render method in UIRenderer which the child uses
+            }
+        }
+    }
 
     UIElement::UIElement(int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<ui::UIManager> uiManager)
         : x(x), y(y), width(width), height(height), color(color), uiManager(uiManager)
@@ -237,7 +245,14 @@ namespace ui
         glDeleteVertexArrays(1, &VAO);
     }
 
-    void UIText::handleInput(const SDL_Event& event) {}
+    void UIText::handleInput(const SDL_Event& event)
+    {
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+        {
+            text->textManager->nextFont();
+            text->calculateVertices();
+        }
+    }
 
     void UIText::render(UIRenderer& uiRenderer)
     {

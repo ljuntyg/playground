@@ -21,20 +21,20 @@ namespace text
     struct Font
     {
         std::filesystem::path fontFile;
-        std::filesystem::path textureFile;
+        std::vector<std::filesystem::path> textureFiles;
         
         float textureWidth;
         float textureHeight;
 
-        GLuint textureID;
+        std::vector<GLuint> textureIDs; // Vector in case a font requires multiple textures
         std::string name;
 
-        Font(const std::filesystem::path& fontFile, const std::filesystem::path& textureFile, const std::string& name) // Destructor?
-            : fontFile(fontFile), textureFile(textureFile), name(name) {}
+        Font(const std::filesystem::path& fontFile, const std::vector<std::filesystem::path>& textureFiles, const std::string& name) // Destructor?
+            : fontFile(fontFile), textureFiles(textureFiles), name(name) {}
 
         bool operator==(const Font& other) const 
         {
-            return fontFile == other.fontFile && textureFile == other.textureFile && name == other.name;
+            return fontFile == other.fontFile && textureFiles == other.textureFiles && name == other.name;
         }
     };
 
@@ -49,12 +49,13 @@ namespace text
         int xOffset;
         int yOffset;
         int xAdvance;
+        int page;
 
         std::vector<GLfloat> vertices;
         std::vector<GLfloat> texCoords;
 
-        Character(Font font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance) 
-            : font(font), id(id), x(x), y(y), width(width), height(height), xOffset(xOffset), yOffset(yOffset), xAdvance(xAdvance) 
+        Character(Font font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance, int page) 
+            : font(font), id(id), x(x), y(y), width(width), height(height), xOffset(xOffset), yOffset(yOffset), xAdvance(xAdvance), page(page) 
         {
             // Texture coordinates
             float texX = x / static_cast<float>(font.textureWidth);
@@ -76,11 +77,14 @@ namespace text
     class Text
     {
     public:
-        Text(const std::string& text, std::shared_ptr<TextManager> textManager); // Convert text to Character vector in constructor
+        Text(const std::wstring& text, float scale, std::shared_ptr<TextManager> textManager); // Convert text to Character vector in constructor, wstring for Chinese characters etc.
         ~Text();
 
+        void calculateVertices();
+
+        std::wstring text;
+        float scale;
         std::shared_ptr<TextManager> textManager;
-        std::string text;
         std::vector<Character> characters;
     };
 
@@ -92,6 +96,7 @@ namespace text
 
         void loadFonts(const std::string& fontPath);
         void parseFont(Font& font);
+        void nextFont();
     private:
         friend class Text;
 

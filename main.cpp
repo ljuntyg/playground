@@ -62,24 +62,24 @@ int main(int argc, char *argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    std::shared_ptr<renderer::Renderer> RENDERER = std::make_shared<renderer::Renderer>(windowWidth, windowHeight); // Renderer to be used throughout program
+    auto RENDERER = std::make_shared<renderer::Renderer>(windowWidth, windowHeight); // Renderer to be used throughout program
 
-    std::shared_ptr<ui::UIRenderer> uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer(RENDERER));
-    std::shared_ptr<ui::UIManager> uiManager = std::make_shared<ui::UIManager>(uiRenderer);
+    auto uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer(RENDERER));
+    auto uiManager = std::make_shared<ui::UIManager>(uiRenderer);
 
-    std::shared_ptr<ui::UIButton> uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, RENDERER->colorMap.at("RED"), uiManager);
+    auto uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, RENDERER->colorMap.at("RED"), uiManager);
     uiManager->addElement(uiWindow1);
 
-    std::shared_ptr<ui::UIBox> uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, RENDERER->colorMap.at("BLUE"), uiManager);
+    auto uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, RENDERER->colorMap.at("BLUE"), uiManager);
     uiWindow1->addChild(uiBox1);
 
-    std::shared_ptr<ui::UIBox> uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, RENDERER->colorMap.at("GREEN"), uiManager);
+    auto uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, RENDERER->colorMap.at("GREEN"), uiManager);
     uiBox1->addChild(uiBox2);
 
-    std::shared_ptr<text::TextManager> textManager = std::make_shared<text::TextManager>();
-    std::shared_ptr<text::Text> text1 = std::make_shared<text::Text>("wow. text!!!!!", textManager);
-    std::shared_ptr<ui::UIText> uiText1 = std::make_shared<ui::UIText>(text1, 10, 500, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
-    uiWindow1->addChild(uiText1);
+    auto textManager = std::make_shared<text::TextManager>();
+    auto text1 = std::make_shared<text::Text>(L"PLAYGROUND!!", 0.25, textManager);
+    auto uiText1 = std::make_shared<ui::UIText>(text1, 80, 65, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+    uiManager->addElement(uiText1);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
     {
         if (RENDERER->RENDERER_STATE == renderer::RENDERER_PAUSE)
         {
+            std::cout << "paused" << std::endl;
             continue;
         }
 
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
                     RENDERER->onYawPitch(dx, dy);
                 }
             }
-            
+
             uiManager->handleInput(event);
         }
 
