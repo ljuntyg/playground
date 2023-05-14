@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ui.h"
 #include "renderer.h"
 #include "text.h"
@@ -13,33 +15,73 @@ namespace ui
         elements.push_back(element);
     }
 
-    void UIManager::handleInput(const SDL_Event& event)
+    bool UIManager::handleInput(const SDL_Event& event)
     {
         for (const auto& element : elements)
         {
-            element->handleInput(event);
+            if (recursiveHandleInput(event, element))
+            {
+                return true;
+            }
         }
+
+        return false; // Event was not handled by any element of the uiManager
+    }
+
+
+    bool UIManager::recursiveHandleInput(const SDL_Event& event, std::shared_ptr<UIElement> element)
+    {
+        if (element->handleInput(event))
+        {
+            return true;
+        }
+
+        // Check if any of the children handled the input
+        for (const auto& child : element->children)
+        {
+            if (recursiveHandleInput(event, child))  // Recursively check input for children
+            {
+                return true;
+            }
+        }
+
+        return false; // No child handled the input
     }
 
     void UIManager::render()
     {
         for (const auto& element : elements)
         {
-            element->render(*uiRenderer);
+            recursiveRender(element);
         }
     }
 
-    UIRenderer::UIRenderer(std::shared_ptr<renderer::Renderer> RENDERER) : RENDERER(RENDERER) {}
+    void UIManager::recursiveRender(std::shared_ptr<UIElement> element)
+    {
+        element->render(*uiRenderer);
+
+        // Render children after parent so they are rendered on top of parent
+        for (const auto& child : element->children)
+        {
+            recursiveRender(child); // Recursively render children
+        }
+    }
+
+    UIRenderer::UIRenderer(std::shared_ptr<renderer::Renderer> RENDERER) : RENDERER(RENDERER)
+    {
+        uiShaderProgram = renderer::createShaderProgram(UIVertexShaderSource, UIFragmentShaderSource);
+        textShaderProgram = renderer::createShaderProgram(textVertexShaderSource, textFragmentShaderSource);
+    }
 
     UIRenderer::~UIRenderer()
     {
-        // Clean up OpenGL resources
-        glDeleteProgram(shaderProgram);
+        glDeleteProgram(uiShaderProgram);
+        glDeleteProgram(textShaderProgram);
     }
 
     void UIRenderer::render(UIElement& element)
     {
-        shaderProgram = renderer::createShaderProgram(UIVertexShaderSource, UIFragmentShaderSource);
+        glUseProgram(uiShaderProgram);
 
         // Set up the model, view, and projection matrices
         glm::mat4 model = glm::mat4(1.0f);
@@ -47,13 +89,10 @@ namespace ui
         model = glm::scale(model, glm::vec3(element.width, element.height, 1.0f)); // Scale ui element
         glm::mat4 projection = glm::ortho(0.0f, this->RENDERER->WINDOW_WIDTH, 0.0f, this->RENDERER->WINDOW_HEIGHT);
 
-        // Use the shader program
-        glUseProgram(shaderProgram);
-
         // Pass the matrices and color to the shader
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniform4fv(glGetUniformLocation(shaderProgram, "color"), 1, glm::value_ptr(element.color));
+        glUniformMatrix4fv(glGetUniformLocation(uiShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(uiShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(uiShaderProgram, "color"), 1, glm::value_ptr(element.color));
 
         // Bind the VAO
         glBindVertexArray(element.VAO);
@@ -63,23 +102,11 @@ namespace ui
 
         // Unbind the VAO
         glBindVertexArray(0);
-
-        glDeleteProgram(shaderProgram);
-
-        // Render children here at bottom so they are rendered on top of parent
-        if (!element.children.empty())
-        {
-            for (const auto& child : element.children)
-            {
-                child->render(*this); // Call render method through specific child, in case there exists an overloaded render method in UIRenderer which the child uses
-            }
-        }
     }
 
     void UIRenderer::render(UIText& textElement)
     {
-        shaderProgram = renderer::createShaderProgram(textVertexShaderSource, textFragmentShaderSource);
-        glUseProgram(shaderProgram);
+        glUseProgram(textShaderProgram);
 
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(textElement.x, textElement.y, 0.0f)); // Translate ui element
@@ -87,9 +114,9 @@ namespace ui
         glm::mat4 projection = glm::ortho(0.0f, this->RENDERER->WINDOW_WIDTH, 0.0f, this->RENDERER->WINDOW_HEIGHT);
 
         // Set the projection matrix in the shader
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniform4fv(glGetUniformLocation(shaderProgram, "textColor"), 1, glm::value_ptr(textElement.color));
+        glUniformMatrix4fv(glGetUniformLocation(textShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(textShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(textShaderProgram, "textColor"), 1, glm::value_ptr(textElement.color));
 
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(textElement.VAO);
@@ -121,15 +148,6 @@ namespace ui
         }
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Render children here at bottom so they are rendered on top of parent
-        if (!textElement.children.empty())
-        {
-            for (const auto& child : textElement.children)
-            {
-                child->render(*this); // Call render method through specific child, in case there exists an overloaded render method in UIRenderer which the child uses
-            }
-        }
     }
 
     UIElement::UIElement(int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<ui::UIManager> uiManager)
@@ -185,7 +203,7 @@ namespace ui
 
     UIBox::~UIBox() {}
 
-    void UIBox::handleInput(const SDL_Event& event) {}
+    bool UIBox::handleInput(const SDL_Event& event) { return false; }
 
     void UIBox::render(UIRenderer& uiRenderer)
     {
@@ -194,7 +212,7 @@ namespace ui
 
     UIButton::~UIButton() {}
 
-    void UIButton::handleInput(const SDL_Event& event)
+    bool UIButton::handleInput(const SDL_Event& event)
     {
         if (event.type == SDL_MOUSEBUTTONDOWN)
         {
@@ -210,8 +228,11 @@ namespace ui
             {
                 // Handle the mouse click event here
                 handleClick(mouseX, mouseY);
+                return true; // Only return input handled if click handled (click was within element area)
             }
         }
+
+        return false;
     }
 
     void UIButton::handleClick(int mouseX, int mouseY)
@@ -245,13 +266,19 @@ namespace ui
         glDeleteVertexArrays(1, &VAO);
     }
 
-    void UIText::handleInput(const SDL_Event& event)
+    bool UIText::handleInput(const SDL_Event& event)
     {
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
         {
             text->textManager->nextFont();
-            text->calculateVertices();
+            for (auto& t : text->textManager->texts)
+            {
+                t->calculateVertices();
+            }
+            return true;
         }
+
+        return false;
     }
 
     void UIText::render(UIRenderer& uiRenderer)

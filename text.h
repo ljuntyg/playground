@@ -97,12 +97,12 @@ namespace text
         void loadFonts(const std::string& fontPath);
         void parseFont(Font& font);
         void nextFont();
+
+        std::vector<std::shared_ptr<Text>> texts;
     private:
         friend class Text;
 
         std::vector<Font> fonts;
-        std::vector<Text> texts;
-
         std::optional<Font> selectedFont; // If this is changed, then idCharacterMap needs to be updated for the new font, use parseFont
         std::unordered_map<int, Character> idCharacterMap;
     };

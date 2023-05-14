@@ -25,8 +25,10 @@ namespace ui
         ~UIManager();
 
         void addElement(std::shared_ptr<UIElement> element);
-        void handleInput(const SDL_Event& event);
+        bool handleInput(const SDL_Event& event);
+        bool recursiveHandleInput(const SDL_Event& event, std::shared_ptr<UIElement> element);
         void render();
+        void recursiveRender(std::shared_ptr<UIElement> element);
 
         std::shared_ptr<UIRenderer> uiRenderer;
     private:
@@ -96,7 +98,8 @@ namespace ui
                 color = textColor * sampled;
             }   
         )glsl";
-        GLuint shaderProgram; // TODO: dont initialize in render method
+        GLuint uiShaderProgram;
+        GLuint textShaderProgram; // TODO: dont initialize in render method
     };
     
     class UIElement : public std::enable_shared_from_this<UIElement> // Abstract class, enable_shared_from_this required for when adding self as parent to child when addChild called
@@ -105,12 +108,13 @@ namespace ui
         UIElement(int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<UIManager> uiManager);
         virtual ~UIElement();
 
-        virtual void handleInput(const SDL_Event& event) = 0;
+        virtual bool handleInput(const SDL_Event& event) = 0;
         virtual void render(UIRenderer& uiRenderer) = 0;
 
         void addChild(std::shared_ptr<UIElement> element);
     protected:
         friend class UIRenderer;
+        friend class UIManager;
         std::shared_ptr<UIManager> uiManager;
 
         int x, y, width, height;
@@ -129,7 +133,7 @@ namespace ui
             : UIElement(x, y, width, height, color, uiManager) {}
         ~UIBox() override;
 
-        void handleInput(const SDL_Event& event) override;
+        bool handleInput(const SDL_Event& event) override;
         void render(UIRenderer& uiRenderer) override;
     };
 
@@ -140,7 +144,7 @@ namespace ui
             : UIElement(x, y, width, height, color, uiManager) {}
         ~UIButton() override;
 
-        void handleInput(const SDL_Event& event) override;
+        bool handleInput(const SDL_Event& event) override;
         void render(UIRenderer& uiRenderer) override;
 
         void handleClick(int mouseX, int mouseY);
@@ -152,14 +156,11 @@ namespace ui
         UIText(std::shared_ptr<text::Text> text, int x, int y, int width, int height, const glm::vec4& color, std::shared_ptr<UIManager> uiManager);
         ~UIText() override;
 
-        void handleInput(const SDL_Event& event) override;
+        bool handleInput(const SDL_Event& event) override;
         void render(UIRenderer& uiRenderer) override; // Use overloaded method in UIRenderer made for UIText
-
-        void changeFont();
     private:
         friend class UIRenderer;
 
         std::shared_ptr<text::Text> text;
-        bool escPressed = false;
     };
 }

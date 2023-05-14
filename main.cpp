@@ -64,22 +64,31 @@ int main(int argc, char *argv[])
 
     auto RENDERER = std::make_shared<renderer::Renderer>(windowWidth, windowHeight); // Renderer to be used throughout program
 
-    auto uiRenderer = std::make_shared<ui::UIRenderer>(ui::UIRenderer(RENDERER));
+    auto uiRenderer = std::make_shared<ui::UIRenderer>(RENDERER);
     auto uiManager = std::make_shared<ui::UIManager>(uiRenderer);
 
-    auto uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 50, 50, RENDERER->colorMap.at("RED"), uiManager);
+    auto uiWindow1 = std::make_shared<ui::UIButton>(10, 10, 75, 75, RENDERER->colorMap.at("GREEN"), uiManager);
     uiManager->addElement(uiWindow1);
 
-    auto uiBox1 = std::make_shared<ui::UIBox>(5, 5, 20, 20, RENDERER->colorMap.at("BLUE"), uiManager);
+    auto uiBox1 = std::make_shared<ui::UIBox>(5, 5, 75, 75, RENDERER->colorMap.at("RED"), uiManager);
     uiWindow1->addChild(uiBox1);
 
-    auto uiBox2 = std::make_shared<ui::UIBox>(5, 5, 10, 10, RENDERER->colorMap.at("GREEN"), uiManager);
+    auto uiBox2 = std::make_shared<ui::UIBox>(5, 5, 75, 75, RENDERER->colorMap.at("BLUE"), uiManager);
     uiBox1->addChild(uiBox2);
 
     auto textManager = std::make_shared<text::TextManager>();
     auto text1 = std::make_shared<text::Text>(L"PLAYGROUND!!", 0.25, textManager);
-    auto uiText1 = std::make_shared<ui::UIText>(text1, 80, 65, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+    auto uiText1 = std::make_shared<ui::UIText>(text1, 95, 65, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+
+    auto text2 = std::make_shared<text::Text>(L"", 0.15, textManager);
+    auto uiText2 = std::make_shared<ui::UIText>(text2, 15, RENDERER->WINDOW_HEIGHT - 10, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+
+    auto text3 = std::make_shared<text::Text>(L"Change\nScene", 0.1, textManager);
+    auto uiText3 = std::make_shared<ui::UIText>(text3, 5, 60, 1, 1, RENDERER->colorMap.at("WHITE"), uiManager);
+
     uiManager->addElement(uiText1);
+    uiManager->addElement(uiText2);
+    uiBox2->addChild(uiText3);
 
     Uint32 frameCounter = 0;
     Uint32 timerFPS = SDL_GetTicks();
@@ -90,6 +99,9 @@ int main(int argc, char *argv[])
 
     while (!quit)
     {
+        text2->text = std::to_wstring(RENDERER->cameraPos.x) + L"\n" + std::to_wstring(RENDERER->cameraPos.y) + L"\n" + std::to_wstring(RENDERER->cameraPos.z);
+        text2->calculateVertices();
+
         if (RENDERER->RENDERER_STATE == renderer::RENDERER_PAUSE)
         {
             std::cout << "paused" << std::endl;

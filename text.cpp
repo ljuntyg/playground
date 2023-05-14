@@ -15,7 +15,7 @@ namespace text
     {
         calculateVertices();
 
-        textManager->texts.emplace_back(*this);
+        textManager->texts.emplace_back(this);
     }
 
     Text::~Text() {}
@@ -24,11 +24,20 @@ namespace text
     {
         GLfloat x = 0, y = 0; // Initialize x and y to the starting position of the text
         GLfloat baseline = 0;
+        GLfloat lineHeight = textManager->idCharacterMap.at('A').height * 1.1f;
 
         characters.clear(); // Clear the previous characters
 
         for (wchar_t c : text)
         {
+            if (c == '\n') 
+            {
+                // Handle newline
+                x = 0; // Reset x
+                y -= lineHeight * scale; // Move to next line
+                continue;
+            }
+
             if (textManager->idCharacterMap.find(c) == textManager->idCharacterMap.end()) 
             {
                 std::wcout << "Character not found: " << c << '\n';
@@ -63,11 +72,12 @@ namespace text
         }
     }
 
+
     TextManager::TextManager()
     {
         loadFonts(FONTS_PATH);
         assert(!fonts.empty()); // Handle case with no fonts found
-        selectedFont = fonts[0];
+        selectedFont = fonts[7]; // DotGothic 16 for now
         parseFont(*selectedFont);
     }
 
