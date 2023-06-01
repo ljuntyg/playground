@@ -33,7 +33,7 @@ namespace renderer {
         {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
     };
 
-    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context);
+    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT);
     GLuint compileShader(const GLenum type, const GLchar *source);
     GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);
 
@@ -62,6 +62,7 @@ namespace renderer {
     private:
         void run();
         void drawObject();
+        void handleInput(const SDL_Event* event, const Uint8* keyboardState);
         void onYawPitch(float dx, float dy);
         void onKeys(const int& key);
 
@@ -71,7 +72,7 @@ namespace renderer {
 
         Camera camera;
         std::string OBJ_PATH = "res/obj"; // Must be in working directory
-        std::string targetFile = "apartment building.obj"; // Must be in OBJ_PATH
+        std::string targetFile = "mountains.obj"; // Must be in OBJ_PATH
         std::vector<std::string> allObjNames;
         std::vector<objl::Mesh> targetObj;
 
@@ -85,58 +86,7 @@ namespace renderer {
         const float FOV = M_PI_2;
 
         GLuint shaderProgram, VAO, VBO, EBO;
-        const GLchar *rendererVertexShaderSource = R"glsl(
-            #version 330 core
-            layout (location = 0) in vec3 position;
-            layout (location = 1) in vec3 normal; // Add this line
-
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
-
-            out vec3 FragPos; // Add this line
-            out vec3 Normal;  // Add this line
-
-            void main()
-            {
-                gl_Position = projection * view * model * vec4(position, 1.0);
-                FragPos = vec3(model * vec4(position, 1.0)); // Add this line
-                Normal = mat3(transpose(inverse(model))) * normal; // Add this line
-            }
-        )glsl";
-        const GLchar *rendererFragmentShaderSource = R"glsl(
-            #version 330 core
-            in vec3 FragPos;
-            in vec3 Normal;
-
-            out vec4 color;
-
-            uniform vec3 lightPos;
-            uniform vec3 viewPos;
-
-            void main()
-            {
-                // Ambient
-                float ambientStrength = 0.1;
-                vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
-
-                // Diffuse
-                vec3 norm = normalize(Normal);
-                vec3 lightDir = normalize(lightPos - FragPos);
-                float diff = max(dot(norm, lightDir), 0.0);
-                vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);
-
-                // Specular
-                float specularStrength = 0.5;
-                vec3 viewDir = normalize(viewPos - FragPos);
-                vec3 reflectDir = reflect(lightDir, norm);
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-                vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0);
-
-                // Final color
-                vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);
-                color = vec4(result, 1.0);
-            }
-        )glsl";
+        const GLchar *rendererVertexShaderSource = ""; // Create
+        const GLchar *rendererFragmentShaderSource = ""; // Create
     };
 };

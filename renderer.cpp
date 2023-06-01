@@ -6,7 +6,7 @@
 
 namespace renderer
 {
-    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context) 
+    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT) 
     {
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
         {
@@ -21,11 +21,14 @@ namespace renderer
             return 1;
         }
 
+        *WINDOW_WIDTH = DM.w;
+        *WINDOW_HEIGHT = DM.h;
+
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
         window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            DM.w, DM.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+            DM.w, DM.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
         if (window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -102,7 +105,7 @@ namespace renderer
     {
         window = nullptr;
         context = nullptr;
-        if (SDL_GLAD_init(window, &context) != 0) 
+        if (SDL_GLAD_init(window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) != 0) 
         {
             RENDERER_STATE = RENDERER_CREATE_ERROR;
             return;
@@ -151,15 +154,68 @@ namespace renderer
                 {
                     running = false;
                 }
+
+                handleInput(&event, SDL_GetKeyboardState(NULL));
             }
 
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             drawObject();
+
+            SDL_GL_SwapWindow(window);
         }
     }
 
     void Renderer::drawObject()
     {
-       
+        
+    }
+
+    void Renderer::handleInput(const SDL_Event* event, const Uint8* keyboardState)
+    {
+        if (event->type == SDL_MOUSEMOTION) 
+        {
+            if (event->motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) 
+            {
+                int mouseX = event->motion.xrel;
+                int mouseY = event->motion.yrel;
+
+                float dx = 0.0f;
+                float dy = 0.0f;
+
+                dx += mouseX * camera.mouseSensitivity;
+                dy -= mouseY * camera.mouseSensitivity;
+
+                onYawPitch(dx, dy);
+            }
+        }
+
+        // Update camera and target position based on key input
+        if (keyboardState[SDL_SCANCODE_W])
+        {
+            onKeys(0);
+        }
+        if (keyboardState[SDL_SCANCODE_S])
+        {
+            onKeys(1);
+        }
+        if (keyboardState[SDL_SCANCODE_A])
+        {
+            onKeys(2);
+        }
+        if (keyboardState[SDL_SCANCODE_D])
+        {
+            onKeys(3);
+        }
+        if (keyboardState[SDL_SCANCODE_LSHIFT])
+        {
+            onKeys(4);
+        }
+        if (keyboardState[SDL_SCANCODE_LCTRL])
+        {
+            onKeys(5);
+        }
     }
 
     void Renderer::onYawPitch(float dx, float dy) 
