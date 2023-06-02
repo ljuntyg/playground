@@ -45,7 +45,7 @@ namespace renderer {
         glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 lightPos = glm::vec3(0.0f, -1000.0f, -1000.0f);
 
-        float cameraYaw = -M_PI_2;
+        float cameraYaw = (float)-M_PI_2;
         float cameraPitch = 0.0f;
         const float cameraSpeed = 1.0f;
         const float mouseSensitivity = 0.05f;
@@ -66,8 +66,8 @@ namespace renderer {
         void onYawPitch(float dx, float dy);
         void onKeys(const int& key);
 
-        std::vector<std::string> getObjFileNames(const std::string& folderName);
-        std::vector<objl::Mesh> getTargetObjMesh();
+        std::vector<std::string> getObjFilePaths(const std::string& folderName);
+        std::vector<objl::Mesh> getTargetObjMeshes();
         void nextTargetObj();
 
         Camera camera;
@@ -83,7 +83,7 @@ namespace renderer {
         float WINDOW_HEIGHT;
         const float NEAR_DIST = 0.1f;
         const float FAR_DIST = 10000.0f;
-        const float FOV = M_PI_2;
+        const float FOV = (float)M_PI_2;
 
         GLuint shaderProgram, VAO, VBO, EBO;
         const GLchar *rendererVertexShaderSource = ""; // Create

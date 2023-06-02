@@ -21,8 +21,8 @@ namespace renderer
             return 1;
         }
 
-        *WINDOW_WIDTH = DM.w;
-        *WINDOW_HEIGHT = DM.h;
+        *WINDOW_WIDTH = (float)DM.w;
+        *WINDOW_HEIGHT = (float)DM.h;
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -105,7 +105,7 @@ namespace renderer
     {
         window = nullptr;
         context = nullptr;
-        if (SDL_GLAD_init(window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) != 0) 
+        if (SDL_GLAD_init(window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) != 0) // TODO: change init to bool, check alongside new init object function and init shader function
         {
             RENDERER_STATE = RENDERER_CREATE_ERROR;
             return;
@@ -115,10 +115,10 @@ namespace renderer
             RENDERER_STATE = RENDERER_CREATED;
         }
 
-        allObjNames = getObjFileNames(OBJ_PATH);
-        targetObj = getTargetObjMesh();
+        allObjNames = getObjFilePaths(OBJ_PATH); // TODO: create function for initializing object, collect functions, return bool
+        targetObj = getTargetObjMeshes();
 
-        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource);
+        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource); // TODO: create function for initializing shaders and related, return bool
         glUseProgram(shaderProgram);
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -251,7 +251,7 @@ namespace renderer
         glm::vec3 right = glm::normalize(glm::cross(camera.cameraUp, front));
         glm::vec3 up = camera.cameraUp;
 
-        float sign = std::pow(-1, key);
+        float sign = (float)std::pow(-1, key);
 
         if (key == 0 || key == 1) // Forward/backward
         {
@@ -273,13 +273,30 @@ namespace renderer
         }
     }
 
-    std::vector<std::string> Renderer::getObjFileNames(const std::string& folderName) 
+    std::vector<std::string> Renderer::getObjFilePaths(const std::string& folderName) 
     {
         std::vector<std::string> objFiles;
+        std::filesystem::path searchPath(folderName);
+
+        // Check if the folder exists in the current directory
+        if (!std::filesystem::exists(searchPath)) 
+        {
+            // If not, check the parent directory
+            searchPath = std::filesystem::current_path().parent_path() / folderName;
+            
+            if (std::filesystem::exists(searchPath))
+            {
+                // Change the working directory to the parent directory
+                std::filesystem::current_path(std::filesystem::current_path().parent_path());
+
+                std::cout << "Changed working directory to: "
+                        << std::filesystem::current_path() << std::endl;
+            }
+        }
 
         try 
         {
-            for (const auto& entry : std::filesystem::directory_iterator(folderName)) 
+            for (const auto& entry : std::filesystem::directory_iterator(searchPath)) 
             {
                 if (entry.is_regular_file() && entry.path().extension() == ".obj") 
                 {
@@ -295,10 +312,10 @@ namespace renderer
         return objFiles;
     }
 
-    std::vector<objl::Mesh> Renderer::getTargetObjMesh() 
+    std::vector<objl::Mesh> Renderer::getTargetObjMeshes() 
     {
         objl::Loader loader;
-        if (loader.LoadFile(OBJ_PATH + "/" + targetFile) == 0) 
+        if (loader.LoadFile(OBJ_PATH + "\\" + targetFile) == 0) 
         {
             std::cout << "Failed to load object file" << std::endl;
         } 
@@ -324,7 +341,7 @@ namespace renderer
             }
         }
 
-        int objIx = std::find(fileNames.begin(), fileNames.end(), targetFile) - fileNames.begin();
+        int64_t objIx = std::find(fileNames.begin(), fileNames.end(), targetFile) - fileNames.begin();
         assert(objIx != fileNames.size()); // Means file name not found
 
         if (objIx == fileNames.size() - 1)
@@ -333,6 +350,6 @@ namespace renderer
         }
 
         targetFile = fileNames[objIx+1];
-        targetObj = getTargetObjMesh();
+        targetObj = getTargetObjMeshes();
     }
 }

@@ -22,8 +22,6 @@
 
 namespace objl 
 {
-    using objl::Vector2, objl::Vector3, objl::Vertex, objl::Mesh, objl::Material;
-
     namespace math 
     {
         // Vector3 Cross Product
@@ -737,7 +735,7 @@ namespace objl
                 }
 
                 // If Vertex is not an interior vertex
-                float angle = math::AngleBetweenV3(pPrev.Position - pCur.Position, pNext.Position - pCur.Position) * (180 / 3.14159265359);
+                float angle = math::AngleBetweenV3(pPrev.Position - pCur.Position, pNext.Position - pCur.Position) * (float)(180 / 3.14159265359);
                 if (angle <= 0 && angle >= 180)
                     continue;
 
