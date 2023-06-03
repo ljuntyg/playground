@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <glad/glad.h>
+
 // Iostream - STD I/O Library
 #include <iostream>
 
@@ -222,6 +224,9 @@ namespace objl
 			Vertices = _Vertices;
 			Indices = _Indices;
 		}
+
+		// For OpenGL
+		GLuint VAO;
 
 		// Mesh Name
 		std::string MeshName;

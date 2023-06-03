@@ -33,9 +33,9 @@ namespace renderer {
         {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
     };
 
-    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT);
+    bool SDL_GLAD_init(SDL_Window** window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT);
     GLuint compileShader(const GLenum type, const GLchar *source);
-    GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource);
+    GLuint createShaderProgram(const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource);
 
     struct Camera
     {
@@ -60,11 +60,12 @@ namespace renderer {
         ~Renderer();
 
     private:
+        bool initializeObject();
+        bool initializeShaders(); 
         void run();
         void drawObject();
-        void handleInput(const SDL_Event* event, const Uint8* keyboardState);
-        void onYawPitch(float dx, float dy);
-        void onKeys(const int& key);
+        void onYawPitch(const SDL_Event* event);
+        void onKeys(const Uint8* keyboardState);
 
         std::vector<std::string> getObjFilePaths(const std::string& folderName);
         std::vector<objl::Mesh> getTargetObjMeshes();
@@ -72,8 +73,8 @@ namespace renderer {
 
         Camera camera;
         std::string OBJ_PATH = "res/obj"; // Must be in working directory
-        std::string targetFile = "mountains.obj"; // Must be in OBJ_PATH
-        std::vector<std::string> allObjNames;
+        std::string targetFile = "cessna.obj"; // Must be in OBJ_PATH
+        std::vector<std::string> allObjPaths;
         std::vector<objl::Mesh> targetObj;
 
         SDL_Window* window;
@@ -85,8 +86,48 @@ namespace renderer {
         const float FAR_DIST = 10000.0f;
         const float FOV = (float)M_PI_2;
 
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, objectColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
-        const GLchar *rendererVertexShaderSource = ""; // Create
-        const GLchar *rendererFragmentShaderSource = ""; // Create
+        const GLchar *rendererVertexShaderSource = R"glsl(
+            #version 330 core
+            layout (location = 0) in vec3 aPos;
+            layout (location = 1) in vec3 aNormal;
+            layout (location = 2) in vec2 aTexCoords;
+
+            out vec2 TexCoords;
+
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            void main()
+            {
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
+                TexCoords = aTexCoords;
+            }
+        )glsl";
+
+        const GLchar *rendererFragmentShaderSource = R"glsl(
+            #version 330 core
+            out vec4 FragColor;
+
+            in vec2 TexCoords;
+
+            uniform sampler2D texture_diffuse1;
+            uniform vec3 objectColor;
+            uniform bool useTexture;
+
+            void main()
+            {    
+                if (useTexture)
+                {
+                    FragColor = texture(texture_diffuse1, TexCoords);
+                }
+                else
+                {
+                    FragColor = vec4(objectColor, 1.0);
+                }
+            }
+        )glsl";
     };
 };

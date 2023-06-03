@@ -6,19 +6,19 @@
 
 namespace renderer
 {
-    int SDL_GLAD_init(SDL_Window* window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT) 
+    bool SDL_GLAD_init(SDL_Window** window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT) 
     {
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
         {
             std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
-            return -1;
+            return false;
         }
 
         SDL_DisplayMode DM;
         if (SDL_GetDesktopDisplayMode(0, &DM) != 0)
         {
             std::cerr << "Failed to get display mode: " << SDL_GetError() << std::endl;
-            return 1;
+            return false;
         }
 
         *WINDOW_WIDTH = (float)DM.w;
@@ -27,25 +27,25 @@ namespace renderer
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-        window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+        *window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
             DM.w, DM.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
-        if (window == nullptr)
+        if (*window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
-            return -1;
+            return false;
         }
 
-        *context = SDL_GL_CreateContext(window);
-        if (context == nullptr)
+        *context = SDL_GL_CreateContext(*window);
+        if (*context == nullptr)
         {
             std::cerr << "Failed to create OpenGL context: " << SDL_GetError() << std::endl;
-            return -1;
+            return false;
         }
 
         if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         {
             std::cerr << "Failed to initialize GLAD" << std::endl;
-            return -1;
+            return false;
         }
 
         glEnable(GL_DEPTH_TEST);
@@ -53,7 +53,7 @@ namespace renderer
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
-        return 0;
+        return true;
     }
 
     // Function to compile a shader, helper method to createShaderProgram
@@ -76,7 +76,7 @@ namespace renderer
     }
 
     // Function to create a shader program
-    GLuint createShaderProgram(const GLchar *vertexShaderSource, const GLchar *fragmentShaderSource)
+    GLuint createShaderProgram(const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource)
     {
         GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
         GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
@@ -93,6 +93,11 @@ namespace renderer
             GLchar infoLog[512];
             glGetProgramInfoLog(program, 512, nullptr, infoLog);
             std::cerr << "Failed to link shader program: " << infoLog << std::endl;
+
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+
+            return 0;
         }
 
         glDeleteShader(vertexShader);
@@ -105,24 +110,17 @@ namespace renderer
     {
         window = nullptr;
         context = nullptr;
-        if (SDL_GLAD_init(window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) != 0) // TODO: change init to bool, check alongside new init object function and init shader function
+        if (SDL_GLAD_init(&window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) &&
+            initializeObject() &&
+            initializeShaders())
         {
-            RENDERER_STATE = RENDERER_CREATE_ERROR;
-            return;
+            RENDERER_STATE = RENDERER_CREATED;
         } 
         else 
         {
-            RENDERER_STATE = RENDERER_CREATED;
+            RENDERER_STATE = RENDERER_CREATE_ERROR;
+            return;
         }
-
-        allObjNames = getObjFilePaths(OBJ_PATH); // TODO: create function for initializing object, collect functions, return bool
-        targetObj = getTargetObjMeshes();
-
-        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource); // TODO: create function for initializing shaders and related, return bool
-        glUseProgram(shaderProgram);
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
 
         run();
     }
@@ -141,6 +139,83 @@ namespace renderer
         SDL_Quit();
     }
 
+    bool Renderer::initializeObject()
+    {
+        allObjPaths = getObjFilePaths(OBJ_PATH);
+        if (allObjPaths.size() == 0)
+        {
+            std::cerr << "No obj files found" << std::endl;
+            return false;
+        }
+
+        targetObj = getTargetObjMeshes();
+        if (targetObj.size() == 0)
+        {
+            std::cerr << "Object meshes failed to load" << std::endl;
+            return false;
+        }
+
+        for (auto& mesh : targetObj) 
+        {
+            // Generate and bind a VAO for the mesh
+            GLuint VAO;
+            glGenVertexArrays(1, &VAO);
+            glBindVertexArray(VAO);
+
+            // Upload vertex data
+            GLuint VBO;
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, mesh.Vertices.size() * sizeof(objl::Vertex), &mesh.Vertices[0], GL_STATIC_DRAW);
+
+            // Upload index data
+            GLuint EBO;
+            glGenBuffers(1, &EBO);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.Indices.size() * sizeof(unsigned int), &mesh.Indices[0], GL_STATIC_DRAW);
+
+            // Position attribute
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)0);
+            glEnableVertexAttribArray(0);
+
+            // Normal attribute
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)offsetof(objl::Vertex, Normal));
+            glEnableVertexAttribArray(1);
+
+            // Texture Coordinate attribute
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)offsetof(objl::Vertex, TextureCoordinate));
+            glEnableVertexAttribArray(2);
+
+            // Store the VAO in the mesh
+            mesh.VAO = VAO;
+        }
+
+        return true;
+    }
+
+    bool Renderer::initializeShaders()
+    {
+        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource);
+        if (shaderProgram == 0)
+        {
+            std::cerr << "Failed to create shader program" << std::endl;
+            return false;
+        }
+
+        modelLoc = glGetUniformLocation(shaderProgram, "model");
+        viewLoc = glGetUniformLocation(shaderProgram, "view");
+        projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
+        objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
+
+        glUseProgram(shaderProgram);
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        return true;
+    }
+
     void Renderer::run()
     {
         // Event loop
@@ -155,8 +230,10 @@ namespace renderer
                     running = false;
                 }
 
-                handleInput(&event, SDL_GetKeyboardState(NULL));
+                onYawPitch(&event);
             }
+
+            onKeys(SDL_GetKeyboardState(NULL));
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -167,13 +244,46 @@ namespace renderer
         }
     }
 
-    void Renderer::drawObject()
+    void Renderer::drawObject() 
     {
-        
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::lookAt(camera.cameraPos, camera.targetPos, camera.cameraUp);
+        glm::mat4 projection = glm::perspective(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR_DIST, FAR_DIST);
+
+        // Use the shader program
+        glUseProgram(shaderProgram);
+
+        // Set uniforms
+        glUniform1i(useTextureLoc, GL_FALSE);
+        glUniform3f(objectColorLoc, 1.0f, 1.0f, 1.0f); // White color
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        // Loop over each mesh in the target object
+        for (const auto& mesh : targetObj) 
+        {
+            // Bind the mesh's VAO
+            glBindVertexArray(mesh.VAO);
+
+            // Draw the object
+            glDrawElements(GL_TRIANGLES, (GLsizei)mesh.Indices.size(), GL_UNSIGNED_INT, 0);
+
+            // Check for OpenGL errors
+            GLenum error = glGetError();
+            if (error != GL_NO_ERROR)
+            {
+                std::cerr << "OpenGL error: " << error << std::endl;
+            }
+        }
+
+        // Unbind the Vertex Array Object
+        glBindVertexArray(0);
     }
 
-    void Renderer::handleInput(const SDL_Event* event, const Uint8* keyboardState)
+    void Renderer::onYawPitch(const SDL_Event* event) 
     {
+        float dx = 0, dy = 0;
         if (event->type == SDL_MOUSEMOTION) 
         {
             if (event->motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) 
@@ -181,45 +291,11 @@ namespace renderer
                 int mouseX = event->motion.xrel;
                 int mouseY = event->motion.yrel;
 
-                float dx = 0.0f;
-                float dy = 0.0f;
-
                 dx += mouseX * camera.mouseSensitivity;
                 dy -= mouseY * camera.mouseSensitivity;
-
-                onYawPitch(dx, dy);
             }
         }
 
-        // Update camera and target position based on key input
-        if (keyboardState[SDL_SCANCODE_W])
-        {
-            onKeys(0);
-        }
-        if (keyboardState[SDL_SCANCODE_S])
-        {
-            onKeys(1);
-        }
-        if (keyboardState[SDL_SCANCODE_A])
-        {
-            onKeys(2);
-        }
-        if (keyboardState[SDL_SCANCODE_D])
-        {
-            onKeys(3);
-        }
-        if (keyboardState[SDL_SCANCODE_LSHIFT])
-        {
-            onKeys(4);
-        }
-        if (keyboardState[SDL_SCANCODE_LCTRL])
-        {
-            onKeys(5);
-        }
-    }
-
-    void Renderer::onYawPitch(float dx, float dy) 
-    {
         // Update camera yaw and pitch
         camera.cameraYaw += dx;
         camera.cameraPitch += dy;
@@ -245,31 +321,48 @@ namespace renderer
         camera.targetPos = camera.cameraPos + camera.lookDir;
     }
 
-    void Renderer::onKeys(const int& key) 
+    void Renderer::onKeys(const Uint8* keyboardState) 
     {
         glm::vec3 front = camera.lookDir;
         glm::vec3 right = glm::normalize(glm::cross(camera.cameraUp, front));
         glm::vec3 up = camera.cameraUp;
 
-        float sign = (float)std::pow(-1, key);
-
-        if (key == 0 || key == 1) // Forward/backward
+        // Update camera and target position based on key input
+        if (keyboardState[SDL_SCANCODE_W])
         {
             front *= camera.cameraSpeed;
-            camera.cameraPos += sign * front;
-            camera.targetPos += sign * front;
+            camera.cameraPos += front;
+            camera.targetPos += front;
         }
-        if (key == 2 || key == 3) // Right/left
+        if (keyboardState[SDL_SCANCODE_S])
+        {
+            front *= camera.cameraSpeed;
+            camera.cameraPos -= front;
+            camera.targetPos -= front;
+        }
+        if (keyboardState[SDL_SCANCODE_A])
         {
             right *= camera.cameraSpeed;
-            camera.cameraPos += sign * right;
-            camera.targetPos += sign * right;
+            camera.cameraPos += right;
+            camera.targetPos += right;
         }
-        if (key == 4 || key == 5) // Up/down
+        if (keyboardState[SDL_SCANCODE_D])
+        {
+            right *= camera.cameraSpeed;
+            camera.cameraPos -= right;
+            camera.targetPos -= right;
+        }
+        if (keyboardState[SDL_SCANCODE_LSHIFT])
         {
             up *= camera.cameraSpeed;
-            camera.cameraPos += sign * up;
-            camera.targetPos += sign * up;
+            camera.cameraPos += up;
+            camera.targetPos += up;
+        }
+        if (keyboardState[SDL_SCANCODE_LCTRL])
+        {
+            up *= camera.cameraSpeed;
+            camera.cameraPos -= up;
+            camera.targetPos -= up;
         }
     }
 
@@ -328,7 +421,7 @@ namespace renderer
 
     void Renderer::nextTargetObj()
     {
-        std::vector<std::string> fileNames = allObjNames;
+        std::vector<std::string> fileNames = allObjPaths;
 
         // Remove file directory prefix from file names
         for (auto& file : fileNames) 
