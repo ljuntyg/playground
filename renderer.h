@@ -12,7 +12,8 @@
 
 #include "obj_loader.h"
 
-namespace renderer {
+namespace renderer 
+{
     enum RendererState
     {
         RENDERER_CREATED,
@@ -106,7 +107,6 @@ namespace renderer {
                 TexCoords = aTexCoords;
             }
         )glsl";
-
         const GLchar *rendererFragmentShaderSource = R"glsl(
             #version 330 core
             out vec4 FragColor;

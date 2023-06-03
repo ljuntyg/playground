@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "renderer.h"
+#include "text.h"
 
 namespace renderer
 {
@@ -121,6 +122,8 @@ namespace renderer
             RENDERER_STATE = RENDERER_CREATE_ERROR;
             return;
         }
+
+        text::Font testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
 
         run();
     }
