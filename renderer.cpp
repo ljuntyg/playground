@@ -124,6 +124,7 @@ namespace renderer
         }
 
         text::Font testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
+        std::vector<text::Character*> testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
 
         run();
     }
