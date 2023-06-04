@@ -39,7 +39,7 @@ namespace gui
     {
         if (elements.find(element) == elements.end())
         {
-            std::cerr << "Element to render not present in GUIHandler, unable to handle input for element" << std::endl;
+            std::cerr << "Element to render not present in GUIHandler, unable to render element" << std::endl;
             return false;
         }
 
