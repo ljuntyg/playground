@@ -15,9 +15,6 @@ namespace gui
         GUIHandler();
         ~GUIHandler();
 
-        void addElement(GUIElement* element);
-        void removeElement(GUIElement* element);
-
         bool renderGUIElement(GUIElement* element) const;
         bool handleGUIElementInput(GUIElement* element, const SDL_Event* event);
 
@@ -28,6 +25,12 @@ namespace gui
         bool handleInputWholeQueue(const SDL_Event* event);
 
     private:
+        friend class GUIElement;
+
+        // These methods should only be accessed automatically on creation/deletion of elements using handler
+        void addElement(GUIElement* element);
+        void removeElement(GUIElement* element);
+
         std::unordered_set<GUIElement*> elements;
 
         std::queue<GUIElement*> renderQueue;
@@ -38,11 +41,16 @@ namespace gui
     class GUIElement 
     {
     public:
-        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isVisible = true, bool takesInput = false);
+        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isVisible = true, bool takesInput = true);
         virtual ~GUIElement();
 
-        virtual bool render() const = 0;
-        virtual bool handleInput(const SDL_Event* event) = 0;
+        // Override to return respective shader for each GUIElement subtype
+        virtual const char* getGuiVertexShader(); 
+        virtual const char* getGuiFragmentShader();
+        bool initializeShaders();
+
+        virtual bool render() const;
+        virtual bool handleInput(const SDL_Event* event);
 
         void addChild(GUIElement* child);
         void removeChild(GUIElement* child);
@@ -54,7 +62,10 @@ namespace gui
         std::vector<GUIElement*> children;
         int xPos, yPos;
         int width, height;
-        bool isVisible, takesInput;
+        bool isMovable, isVisible, takesInput;
+
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, objectColorLoc;
+        GLuint shaderProgram, VAO, VBO, EBO;
     };
 
     class GUIButton : public GUIElement 
@@ -66,5 +77,4 @@ namespace gui
         bool render() const override;
         bool handleInput(const SDL_Event* event) override;
     };
-
 }

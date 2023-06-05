@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "gui.h"
+#include "shaders.h"
 
 namespace gui
 {
@@ -112,15 +113,65 @@ namespace gui
         return result;
     }
 
-    GUIElement::GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isVisible, bool takesInput)
-        : handler(handler), xPos(xPos), yPos(yPos), width(width), height(height), isVisible(isVisible), takesInput(takesInput) {}
-    
+    GUIElement::GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isVisible, bool takesInput)
+        : handler(handler), xPos(xPos), yPos(yPos), width(width), height(height), isMovable(isMovable), isVisible(isVisible), takesInput(takesInput)
+    {
+        if (isMovable && !takesInput)
+        {
+            std::cerr << "Attempt to create movable GUIElement that does not take input, element made immovable" << std::endl;
+            isMovable = false;
+        }
+
+        if (!initializeShaders())
+        {
+            std::cerr << "Shaders for GUIElement not initialized correctly" << std::endl;
+        }
+
+        handler->addElement(this);
+    }
+
     GUIElement::~GUIElement()
     {
+        // OpenGL clean-up
+        glDeleteProgram(shaderProgram);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+
+        handler->removeElement(this);
+
         for (auto child : children)
         {
             delete child;
         }
+    }
+
+    const char* GUIElement::getGuiVertexShader()
+    {
+        return shaders::guiVertexShaderSource;
+    }
+
+    const char* GUIElement::getGuiFragmentShader()
+    {
+        return shaders::guiFragmentShaderSource;
+    }
+
+    bool GUIElement::initializeShaders()
+    {
+        shaderProgram = shaders::createShaderProgram(getGuiVertexShader(), getGuiFragmentShader());
+        if (shaderProgram == 0)
+        {
+            return false;
+        }
+
+        // Get uniform locations
+        modelLoc = glGetUniformLocation(shaderProgram, "model");
+        viewLoc = glGetUniformLocation(shaderProgram, "view");
+        projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
+        objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
+
+        return true;
     }
 
     void GUIElement::addChild(GUIElement* child)
@@ -141,7 +192,13 @@ namespace gui
         delete child;
     }
 
-    bool GUIButton::render() const { return true; };
+    bool GUIElement::render() const
+    {
+        // Initialize vertices/buffers in separate function? Depends on if movable or not
+    }
 
-    bool GUIButton::handleInput(const SDL_Event* event) { return true; }
+    bool GUIElement::handleInput(const SDL_Event* event)
+    {
+        // Basic GUIElement should handle input if and only if movable
+    }
 }

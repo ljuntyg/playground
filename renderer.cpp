@@ -4,6 +4,7 @@
 
 #include "renderer.h"
 #include "text.h"
+#include "shaders.h"
 
 namespace renderer
 {
@@ -29,7 +30,7 @@ namespace renderer
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
         *window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            DM.w, DM.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
+            (int)(DM.w / 1.5), (int)(DM.h / 1.5), SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
         if (*window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -55,56 +56,6 @@ namespace renderer
         glFrontFace(GL_CCW);
 
         return true;
-    }
-
-    // Function to compile a shader, helper method to createShaderProgram
-    GLuint compileShader(const GLenum type, const GLchar *source)
-    {
-        GLuint shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, nullptr);
-        glCompileShader(shader);
-
-        GLint status;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-        if (!status)
-        {
-            GLchar infoLog[512];
-            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            std::cerr << "Failed to compile shader: " << infoLog << std::endl;
-        }
-
-        return shader;
-    }
-
-    // Function to create a shader program
-    GLuint createShaderProgram(const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource)
-    {
-        GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
-        GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
-
-        GLuint program = glCreateProgram();
-        glAttachShader(program, vertexShader);
-        glAttachShader(program, fragmentShader);
-        glLinkProgram(program);
-
-        GLint status;
-        glGetProgramiv(program, GL_LINK_STATUS, &status);
-        if (!status)
-        {
-            GLchar infoLog[512];
-            glGetProgramInfoLog(program, 512, nullptr, infoLog);
-            std::cerr << "Failed to link shader program: " << infoLog << std::endl;
-
-            glDeleteShader(vertexShader);
-            glDeleteShader(fragmentShader);
-
-            return 0;
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        return program;
     }
 
     Renderer::Renderer()
@@ -199,7 +150,7 @@ namespace renderer
 
     bool Renderer::initializeShaders()
     {
-        shaderProgram = createShaderProgram(rendererVertexShaderSource, rendererFragmentShaderSource);
+        shaderProgram = shaders::createShaderProgram(shaders::rendererVertexShaderSource, shaders::rendererFragmentShaderSource);
         if (shaderProgram == 0)
         {
             std::cerr << "Failed to create shader program" << std::endl;
