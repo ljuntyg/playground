@@ -23,17 +23,6 @@ namespace renderer
         renderStateCount
     };
 
-    const std::unordered_map<std::string, glm::vec4> colorMap = {
-        {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
-        {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
-        {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
-        {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
-        {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
-        {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
-        {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
-        {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
-    };
-
     bool SDL_GLAD_init(SDL_Window** window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT);
 
     struct Camera

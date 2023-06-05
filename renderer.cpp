@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include "text.h"
 #include "shaders.h"
+#include "gui.h"
 
 namespace renderer
 {
@@ -73,9 +74,6 @@ namespace renderer
             RENDERER_STATE = RENDERER_CREATE_ERROR;
             return;
         }
-
-        text::Font testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
-        std::vector<text::Character*> testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
 
         run();
     }
@@ -173,6 +171,12 @@ namespace renderer
 
     void Renderer::run()
     {
+        text::Font testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
+        std::vector<text::Character*> testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
+
+        gui::GUIHandler testHandler = gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
+        gui::GUIElement testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50);
+
         // Event loop
         bool running = true;
         while (running) 
@@ -194,6 +198,13 @@ namespace renderer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             drawObject();
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDisable(GL_DEPTH_TEST);
+            testHandler.renderWholeVector();
+            glEnable(GL_DEPTH_TEST);
+            glDisable(GL_BLEND);
 
             SDL_GL_SwapWindow(window);
         }
@@ -228,7 +239,7 @@ namespace renderer
             GLenum error = glGetError();
             if (error != GL_NO_ERROR)
             {
-                std::cerr << "OpenGL error: " << error << std::endl;
+                std::cerr << "Error when drawing object, OpenGL error: " << error << std::endl;
             }
         }
 

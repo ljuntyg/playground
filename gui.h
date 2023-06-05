@@ -4,37 +4,54 @@
 #include <glad/glad.h>
 #include <queue>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace gui
 {
     class GUIElement;
 
+    const std::unordered_map<std::string, glm::vec4> colorMap = {
+        {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+        {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+        {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+        {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
+        {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
+        {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
+        {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
+        {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
+    };
+
     class GUIHandler 
     {
     public:
-        GUIHandler();
+        GUIHandler(float WINDOW_WIDTH, float WINDOW_HEIGHT);
         ~GUIHandler();
 
         bool renderGUIElement(GUIElement* element) const;
         bool handleGUIElementInput(GUIElement* element, const SDL_Event* event);
 
-        void addToRenderQueue(GUIElement* element);
-        void addToHandleInputQueue(GUIElement* element);
+        void addToRenderVector(GUIElement* element);
+        void addToHandleInputVector(GUIElement* element);
 
-        bool renderWholeQueue();
-        bool handleInputWholeQueue(const SDL_Event* event);
+        bool renderWholeVector();
+        bool handleInputWholeVector(const SDL_Event* event);
 
     private:
         friend class GUIElement;
 
+        float WINDOW_WIDTH;
+        float WINDOW_HEIGHT;
+
         // These methods should only be accessed automatically on creation/deletion of elements using handler
+        // In particular, removeElement is only ever be called through "delete element", do not call externally
+        // "delete element" is called on handler destruction, but can also be called externally
         void addElement(GUIElement* element);
         void removeElement(GUIElement* element);
 
         std::unordered_set<GUIElement*> elements;
 
-        std::queue<GUIElement*> renderQueue;
-        std::queue<GUIElement*> handleInputQueue;
+        std::vector<GUIElement*> renderVector;
+        std::vector<GUIElement*> handleInputVector;
     };
 
 
@@ -47,7 +64,9 @@ namespace gui
         // Override to return respective shader for each GUIElement subtype
         virtual const char* getGuiVertexShader(); 
         virtual const char* getGuiFragmentShader();
+
         bool initializeShaders();
+        bool initializeBuffers();
 
         virtual bool render() const;
         virtual bool handleInput(const SDL_Event* event);
@@ -64,7 +83,7 @@ namespace gui
         int width, height;
         bool isMovable, isVisible, takesInput;
 
-        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, objectColorLoc;
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
     };
 

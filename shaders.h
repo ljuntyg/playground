@@ -4,7 +4,7 @@
 
 namespace shaders
 {
-    GLuint compileShader(const GLenum type, const GLchar *source);
+    GLuint compileShader(const GLenum type, const GLchar* source);
     GLuint createShaderProgram(const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource);
 
     extern const GLchar *rendererVertexShaderSource;
