@@ -171,33 +171,49 @@ namespace renderer
 
     void Renderer::run()
     {
-        text::Font testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
-        std::vector<text::Character*> testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
+        auto testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
+        auto testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
 
-        gui::GUIHandler testHandler = gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
-        gui::GUIElement testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
-        gui::GUIElement testChild = gui::GUIElement(&testHandler, 10, 10, 10, 10, gui::colorMap.at("RED"), false);
+        auto testHandler = gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
+        auto testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
+        auto testChild = gui::GUIElement(&testHandler, 10, 10, 30, 30, gui::colorMap.at("RED"), false);
+        auto testChild2 = gui::GUIElement(&testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false);
+        auto testButton = gui::GUIButton(&testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
+        auto testButtonQuit = gui::GUIButton(&testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
+
         testElement.addChild(&testChild);
+        testChild.addChild(&testChild2);
 
         MouseState mouseState = CameraControl;
 
+        float dxMouse = 0, dyMouse = 0;
         // Event loop
         bool running = true;
         while (running) 
         {
             SDL_Event event;
             while (SDL_PollEvent(&event))
-            {
+            {   
                 if (event.type == SDL_QUIT) 
                 {
                     running = false;
                 }
 
-                onYawPitch(&event, &mouseState);
+                if (event.type == SDL_MOUSEMOTION) 
+                {
+                    if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
+                    {
+                        dxMouse += event.motion.xrel;
+                        dyMouse -= event.motion.yrel;
+                    }
+                }
+
                 testHandler.handleInputWholeVector(&event, &mouseState);
             }
 
+            onYawPitch(dxMouse, dyMouse, &mouseState);
             onKeys(SDL_GetKeyboardState(NULL));
+            dxMouse = 0, dyMouse = 0;
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -213,7 +229,7 @@ namespace renderer
 
             SDL_GL_SwapWindow(window);
         }
-    }
+    }   
 
     void Renderer::drawObject() 
     {
@@ -252,29 +268,19 @@ namespace renderer
         glBindVertexArray(0);
     }
 
-    void Renderer::onYawPitch(const SDL_Event* event, MouseState* mouseState) 
+    void Renderer::onYawPitch(float dx, float dy, MouseState* mouseState) 
     {
         if (*mouseState != CameraControl)
         {
             return;
         }
 
-        float dx = 0, dy = 0;
-        if (event->type == SDL_MOUSEMOTION) 
-        {
-            if (event->motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) 
-            {
-                int mouseX = event->motion.xrel;
-                int mouseY = event->motion.yrel;
-
-                dx += mouseX * camera.mouseSensitivity;
-                dy -= mouseY * camera.mouseSensitivity;
-            }
-        }
+        float dxAccum = dx * camera.mouseSensitivity;
+        float dyAccum = dy * camera.mouseSensitivity;
 
         // Update camera yaw and pitch
-        camera.cameraYaw += dx;
-        camera.cameraPitch += dy;
+        camera.cameraYaw += dxAccum;
+        camera.cameraPitch += dyAccum;
 
         // Clamp pitch between -89 and 89 degrees
         if (camera.cameraPitch > glm::radians(89.0f)) 

@@ -5,6 +5,8 @@
 #include <queue>
 #include <unordered_set>
 #include <unordered_map>
+#include <functional>   
+#include <string>
 
 #include "mouse_state.h"
 
@@ -26,8 +28,15 @@ namespace gui
     class GUIHandler 
     {
     public:
-        GUIHandler(float WINDOW_WIDTH, float WINDOW_HEIGHT);
+        GUIHandler(float windowWidth, float windowHeight);
         ~GUIHandler();
+
+        float getWindowHeight() const;
+        float getWindowWidth() const;
+
+        // Do not access removeElement externally, only indirectly through "delete element"
+        void addElement(GUIElement* element);
+        void removeElement(GUIElement* element);
 
         bool renderGUIElement(GUIElement* element) const;
         bool handleGUIElementInput(GUIElement* element, const SDL_Event* event, MouseState* mouseState);
@@ -39,20 +48,14 @@ namespace gui
         bool handleInputWholeVector(const SDL_Event* event, MouseState* mouseState);
 
     private:
-        friend class GUIElement;
-
-        float WINDOW_WIDTH;
-        float WINDOW_HEIGHT;
-
-        void addElement(GUIElement* element);
-        void removeElement(GUIElement* element);
+        float windowWidth;
+        float windowHeight;
 
         std::unordered_set<GUIElement*> elements;
 
         std::vector<GUIElement*> renderVector;
         std::vector<GUIElement*> handleInputVector;
     };
-
 
     class GUIElement 
     {
@@ -75,7 +78,9 @@ namespace gui
 
         virtual bool render() const;
         virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
-
+    
+    protected:
+        void move(const SDL_Event* event, MouseState* mouseState);
         void offsetChildren(int xOffset, int yOffset);
 
         GUIHandler* handler;
@@ -94,11 +99,18 @@ namespace gui
     class GUIButton : public GUIElement 
     {
     public:
-        GUIButton();
+        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+                std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
         ~GUIButton() override;
 
-        bool render() const override;
         bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+
+        // These are functions that can be passed to the constructor
+        static void randomColor(GUIButton* button);
+        static void quitApplication(GUIButton* button);
+
+    private:
+        std::function<void(GUIButton*)> onClick;
     };
 
     class GUIText : public GUIElement
@@ -106,6 +118,9 @@ namespace gui
     public:
         GUIText();
         ~GUIText() override;
+
+        const char* getGuiVertexShader() override; 
+        const char* getGuiFragmentShader() override;
 
         bool render() const override;
         bool handleInput(const SDL_Event* event, MouseState* mouseState) override;

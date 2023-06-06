@@ -52,7 +52,7 @@ namespace renderer
         bool initializeShaders(); 
         void run();
         void drawObject();
-        void onYawPitch(const SDL_Event* event, MouseState* mouseState);
+        void onYawPitch(float dx, float dy, MouseState* mouseState);
         void onKeys(const Uint8* keyboardState);
 
         std::vector<std::string> getObjFilePaths(const std::string& folderName);

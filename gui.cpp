@@ -1,13 +1,14 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include <random>
 
 #include "gui.h"
 #include "shaders.h"
 
 namespace gui
 {
-    GUIHandler::GUIHandler(float WINDOW_WIDTH, float WINDOW_HEIGHT)
-        : WINDOW_WIDTH(WINDOW_WIDTH), WINDOW_HEIGHT(WINDOW_HEIGHT) {}
+    GUIHandler::GUIHandler(float windowWidth, float windowHeight)
+        : windowWidth(windowWidth), windowHeight(windowHeight) {}
 
     // GUIElement lifetime bound to GUIHandler
     // Seems like GUIElement members will be deleted (and removed from elements) before GUIHandler
@@ -25,6 +26,16 @@ namespace gui
                 }
             }
         }
+    }
+
+    float GUIHandler::getWindowWidth() const
+    {
+        return windowWidth;
+    }
+
+    float GUIHandler::getWindowHeight() const
+    {
+        return windowHeight;
     }
 
     void GUIHandler::addElement(GUIElement* element)
@@ -269,7 +280,7 @@ namespace gui
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f)); // Translate ui element
         model = glm::scale(model, glm::vec3(width, height, 1.0f)); // Scale ui element
-        glm::mat4 projection = glm::ortho(0.0f, handler->WINDOW_WIDTH, 0.0f, handler->WINDOW_HEIGHT);
+        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
 
         // Pass the matrices and color to the shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -291,24 +302,28 @@ namespace gui
     bool GUIElement::handleInput(const SDL_Event* event, MouseState* mouseState)
     {
         // Only GUIElement that isMovable should be movable
-        if (isMovable == false)
+        if (isMovable)
         {
-            std::cerr << "Attempt to move GUIElement with isMovable = false" << std::endl;
-            return false;
+            move(event, mouseState);
         }
 
+        return true;
+    }
+
+    void GUIElement::move(const SDL_Event* event, MouseState* mouseState)
+    {
         switch (event->type)
         {
         case SDL_MOUSEBUTTONDOWN:
             if (event->button.button == SDL_BUTTON_LEFT)
             {
                 int mouseX = event->button.x;
-                int mouseY = (int)(handler->WINDOW_HEIGHT - event->button.y); // Conversion from top-left to bottom-left system
-                if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
+                int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
+                if (mouseX >= xPos && mouseX <= xPos + width &&
+                    mouseY >= yPos && mouseY <= yPos + height)
                 {
                     isBeingDragged = true;
                     *mouseState = GUIControl;
-                    return true;
                 }
             }
             break;
@@ -318,7 +333,6 @@ namespace gui
             {
                 isBeingDragged = false;
                 *mouseState = CameraControl;
-                return true;
             }
             break;
 
@@ -332,13 +346,9 @@ namespace gui
                 yPos -= yOffset; // Conversion from top-left to bottom-left system
 
                 offsetChildren(xOffset, yOffset);
-
-                return true;
             }
             break;
         }
-
-        return true;
     }
 
     void GUIElement::offsetChildren(int xOffset, int yOffset)
@@ -350,5 +360,60 @@ namespace gui
 
             child->offsetChildren(xOffset, yOffset);
         }
+    }
+
+    GUIButton::GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+                     std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput)
+    : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), onClick(onClick) 
+    {
+    }
+
+    GUIButton::~GUIButton()
+    {
+    }
+
+    bool GUIButton::handleInput(const SDL_Event* event, MouseState* mouseState) 
+    {
+        if (isMovable)
+        {
+            move(event, mouseState);
+        }
+
+        if (event->type == SDL_MOUSEBUTTONUP) 
+        {
+            if (event->button.button == SDL_BUTTON_LEFT) 
+            {
+                int mouseX = event->button.x;
+                int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
+                if (mouseX >= xPos && mouseX < xPos + width && 
+                    mouseY >= yPos && mouseY < yPos + height) 
+                {
+                    onClick(this);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    void GUIButton::randomColor(GUIButton* button)
+    {
+        // Mersenne Twister pseudo-random number generator
+        static std::mt19937 rng(std::random_device{}());
+
+        // Uniform distribution between 0.0 and 1.0
+        static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+        float r = distribution(rng);
+        float g = distribution(rng);
+        float b = distribution(rng);
+
+        button->color = glm::vec4(r, g, b, 1.0f);
+    }
+
+    void GUIButton::quitApplication(GUIButton* button)
+    {
+        std::cerr << "Quit application button method not implemented" << std::endl;
     }
 }
