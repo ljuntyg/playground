@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include "obj_loader.h"
+#include "mouse_state.h"
 
 namespace renderer 
 {
@@ -31,7 +32,6 @@ namespace renderer
         glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::vec3 lookDir = glm::vec3(0.0f, 0.0f, 1.0f);
-        glm::vec3 lightPos = glm::vec3(0.0f, -1000.0f, -1000.0f);
 
         float cameraYaw = (float)-M_PI_2;
         float cameraPitch = 0.0f;
@@ -52,7 +52,7 @@ namespace renderer
         bool initializeShaders(); 
         void run();
         void drawObject();
-        void onYawPitch(const SDL_Event* event);
+        void onYawPitch(const SDL_Event* event, MouseState* mouseState);
         void onKeys(const Uint8* keyboardState);
 
         std::vector<std::string> getObjFilePaths(const std::string& folderName);

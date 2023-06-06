@@ -24,14 +24,14 @@ namespace renderer
             return false;
         }
 
-        *WINDOW_WIDTH = (float)DM.w;
-        *WINDOW_HEIGHT = (float)DM.h;
+        *WINDOW_WIDTH = (float)(DM.w / 1.5);
+        *WINDOW_HEIGHT = (float)(DM.h / 1.5);
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
         *window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            (int)(DM.w / 1.5), (int)(DM.h / 1.5), SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            (int)*WINDOW_WIDTH, (int)*WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
         if (*window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -175,7 +175,11 @@ namespace renderer
         std::vector<text::Character*> testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
 
         gui::GUIHandler testHandler = gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
-        gui::GUIElement testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50);
+        gui::GUIElement testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
+        gui::GUIElement testChild = gui::GUIElement(&testHandler, 10, 10, 10, 10, gui::colorMap.at("RED"), false);
+        testElement.addChild(&testChild);
+
+        MouseState mouseState = CameraControl;
 
         // Event loop
         bool running = true;
@@ -189,7 +193,8 @@ namespace renderer
                     running = false;
                 }
 
-                onYawPitch(&event);
+                onYawPitch(&event, &mouseState);
+                testHandler.handleInputWholeVector(&event, &mouseState);
             }
 
             onKeys(SDL_GetKeyboardState(NULL));
@@ -247,8 +252,13 @@ namespace renderer
         glBindVertexArray(0);
     }
 
-    void Renderer::onYawPitch(const SDL_Event* event) 
+    void Renderer::onYawPitch(const SDL_Event* event, MouseState* mouseState) 
     {
+        if (*mouseState != CameraControl)
+        {
+            return;
+        }
+
         float dx = 0, dy = 0;
         if (event->type == SDL_MOUSEMOTION) 
         {

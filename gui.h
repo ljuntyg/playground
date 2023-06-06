@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include "mouse_state.h"
+
 namespace gui
 {
     class GUIElement;
@@ -28,13 +30,13 @@ namespace gui
         ~GUIHandler();
 
         bool renderGUIElement(GUIElement* element) const;
-        bool handleGUIElementInput(GUIElement* element, const SDL_Event* event);
+        bool handleGUIElementInput(GUIElement* element, const SDL_Event* event, MouseState* mouseState);
 
         void addToRenderVector(GUIElement* element);
         void addToHandleInputVector(GUIElement* element);
 
         bool renderWholeVector();
-        bool handleInputWholeVector(const SDL_Event* event);
+        bool handleInputWholeVector(const SDL_Event* event, MouseState* mouseState);
 
     private:
         friend class GUIElement;
@@ -42,9 +44,6 @@ namespace gui
         float WINDOW_WIDTH;
         float WINDOW_HEIGHT;
 
-        // These methods should only be accessed automatically on creation/deletion of elements using handler
-        // In particular, removeElement is only ever be called through "delete element", do not call externally
-        // "delete element" is called on handler destruction, but can also be called externally
         void addElement(GUIElement* element);
         void removeElement(GUIElement* element);
 
@@ -58,8 +57,14 @@ namespace gui
     class GUIElement 
     {
     public:
-        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
         virtual ~GUIElement();
+
+        void addChild(GUIElement* child);
+        void removeChild(GUIElement* child);
+
+    private:
+        friend class GUIHandler;
 
         // Override to return respective shader for each GUIElement subtype
         virtual const char* getGuiVertexShader(); 
@@ -69,19 +74,18 @@ namespace gui
         bool initializeBuffers();
 
         virtual bool render() const;
-        virtual bool handleInput(const SDL_Event* event);
+        virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
 
-        void addChild(GUIElement* child);
-        void removeChild(GUIElement* child);
-
-    private:
-        friend class GUIHandler;
+        void offsetChildren(int xOffset, int yOffset);
 
         GUIHandler* handler;
         std::vector<GUIElement*> children;
+
         int xPos, yPos;
         int width, height;
+        glm::vec4 color;
         bool isMovable, isVisible, takesInput;
+        bool isBeingDragged = false;
 
         GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
@@ -94,6 +98,16 @@ namespace gui
         ~GUIButton() override;
 
         bool render() const override;
-        bool handleInput(const SDL_Event* event) override;
+        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+    };
+
+    class GUIText : public GUIElement
+    {
+    public:
+        GUIText();
+        ~GUIText() override;
+
+        bool render() const override;
+        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
     };
 }
