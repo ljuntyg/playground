@@ -35,7 +35,7 @@ namespace renderer
 
         float cameraYaw = (float)-M_PI_2;
         float cameraPitch = 0.0f;
-        const float cameraSpeed = 0.1f;
+        const float cameraSpeed = 1.0f;
         const float mouseSensitivity = 0.05f;
     };
 
@@ -73,6 +73,7 @@ namespace renderer
         const float NEAR_DIST = 0.1f;
         const float FAR_DIST = 10000.0f;
         const float FOV = (float)M_PI_2;
+        const int LOGIC_FREQ_HZ = 0; // Set to 0 for 60Hz, not for capping FPS
 
         GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, objectColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;

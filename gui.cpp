@@ -79,7 +79,7 @@ namespace gui
 
     void GUIHandler::addToRenderVector(GUIElement* element)
     {
-        if (!element->isVisible)
+        if (!element->getIsVisible())
         {
             std::cerr << "Attempt to add non-visible GUIElement to GUIHandler render vector, element not added to vector" << std::endl;
             return;
@@ -90,11 +90,12 @@ namespace gui
 
     void GUIHandler::addToHandleInputVector(GUIElement* element)
     {
-        if (!element->takesInput)
+        if (!element->getTakesInput())
         {
             std::cerr << "Attempt to add GUIElement not accepting input to GUIHandler handle input vector, element not added to vector" << std::endl;
             return;
         }
+        
         handleInputVector.emplace_back(element);
     }
 
@@ -173,19 +174,34 @@ namespace gui
         handler->removeElement(this);
     }
 
-    const char* GUIElement::getGuiVertexShader()
+    bool GUIElement::getIsMovable()
+    {
+        return isMovable;
+    }
+
+    bool GUIElement::getIsVisible()
+    {
+        return isVisible;
+    }
+
+    bool GUIElement::getTakesInput()
+    {
+        return takesInput;
+    }
+
+    const char* GUIElement::getVertexShader()
     {
         return shaders::guiVertexShaderSource;
     }
 
-    const char* GUIElement::getGuiFragmentShader()
+    const char* GUIElement::getFragmentShader()
     {
         return shaders::guiFragmentShaderSource;
     }
 
     bool GUIElement::initializeShaders()
     {
-        shaderProgram = shaders::createShaderProgram(getGuiVertexShader(), getGuiFragmentShader());
+        shaderProgram = shaders::createShaderProgram(getVertexShader(), getFragmentShader());
         if (shaderProgram == 0)
         {
             return false;
@@ -197,6 +213,7 @@ namespace gui
         projectionLoc = glGetUniformLocation(shaderProgram, "projection");
         useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
         colorLoc = glGetUniformLocation(shaderProgram, "color");
+        textLoc = glGetUniformLocation(shaderProgram, "text");
 
         return true;
     }
@@ -363,14 +380,10 @@ namespace gui
     }
 
     GUIButton::GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-                     std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput)
-    : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), onClick(onClick) 
-    {
-    }
+        std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput)
+        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), onClick(onClick) {}
 
-    GUIButton::~GUIButton()
-    {
-    }
+    GUIButton::~GUIButton() {}
 
     bool GUIButton::handleInput(const SDL_Event* event, MouseState* mouseState) 
     {
@@ -392,9 +405,11 @@ namespace gui
                     return true;
                 }
             }
+
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     void GUIButton::randomColor(GUIButton* button)
@@ -415,5 +430,131 @@ namespace gui
     void GUIButton::quitApplication(GUIButton* button)
     {
         std::cerr << "Quit application button method not implemented" << std::endl;
+    }
+
+    GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+        std::vector<text::Character*>* text, bool isMovable, bool isVisible, bool takesInput)
+        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text)
+    {
+        if (!generateVertices())
+        {
+            std::cerr << "Failed to render vertices for text provided to GUIText";
+        }
+
+        if (!loadFontTextures())
+        {
+            std::cerr << "Failed to load textures for a font belonging to text provided to GUIText" << std::endl;
+        }
+    }
+
+    GUIText::~GUIText() 
+    {
+        // TODO: Do something with text pointer
+        for (auto &pair : fontTextures)
+        {
+            for (GLuint textureID : pair.second)
+            {
+                glDeleteTextures(1, &textureID);
+            }
+        }
+    }
+
+    const char* GUIText::getVertexShader()
+    {
+        return shaders::textVertexShaderSource;
+    }
+
+    const char* GUIText::getFragmentShader()
+    {
+        return shaders::textFragmentShaderSource;
+    }
+
+    bool GUIText::render() const
+    {
+        return true;
+    }
+
+    bool GUIText::handleInput(const SDL_Event* event, MouseState* mouseState)
+    {
+        return true;
+    }
+
+    bool GUIText::generateVertices()
+    {
+        return true;
+    }
+
+    bool GUIText::loadFontTextures()
+    {
+        std::vector<text::Font*> fonts;
+        for (text::Character* ch : *text)
+        {
+            if (std::find(fonts.begin(), fonts.end(), ch->font) == fonts.end())
+            {
+                fonts.emplace_back(ch->font);
+            }
+        }
+
+        for (text::Font* font : fonts) 
+        {
+            std::vector<GLuint> textureIDs;
+            for (auto& texture : font->getTextures()) 
+            {
+                if (!texture)
+                {
+                    std::cerr << "Invalid texture in loadFontTexture" << std::endl;
+                }
+
+                // Load the texture into OpenGL and store the texture ID
+                GLuint textureID;
+                glGenTextures(1, &textureID);
+                glBindTexture(GL_TEXTURE_2D, textureID);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                if(font->getTextureNbrChannels() == 3)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
+                else if(font->getTextureNbrChannels() == 4)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+                glGenerateMipmap(GL_TEXTURE_2D);
+
+                textureIDs.push_back(textureID);
+            }
+
+            fontTextures[font] = textureIDs;
+        }
+
+        return true;
+    }
+
+    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) {
+        GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput);
+        if (element->initializeShaders() && element->initializeBuffers()) {
+            return element;
+        } else {
+            delete element;
+            return nullptr;
+        }
+    }
+
+    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput) {
+        GUIButton* buttonElement = new GUIButton(handler, xPos, yPos, width, height, color, onClick, isMovable, isVisible, takesInput);
+        if (buttonElement->initializeShaders() && buttonElement->initializeBuffers()) {
+            return buttonElement;
+        } else {
+            delete buttonElement;
+            return nullptr;
+        }
+    }
+
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::vector<text::Character*>* text, bool isMovable, bool isVisible, bool takesInput) {
+        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, isMovable, isVisible, takesInput);
+        if (textElement->initializeShaders() && textElement->initializeBuffers() && textElement->generateVertices() && textElement->loadFontTextures()) {
+            return textElement;
+        } else {
+            delete textElement;
+            return nullptr;
+        }
     }
 }

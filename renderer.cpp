@@ -171,26 +171,37 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = text::Font("bungee", "res/fonts/Bungee_Inline");
-        auto testText = text::createText(L"WOWW哈哈哈WW", &testFont); 
+        auto testFont = new text::Font("bungee", "res/fonts/Bungee_Inline");
+        auto testText = text::createText(L"WOWW哈哈哈WW", testFont); 
 
-        auto testHandler = gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
-        auto testElement = gui::GUIElement(&testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
-        auto testChild = gui::GUIElement(&testHandler, 10, 10, 30, 30, gui::colorMap.at("RED"), false);
-        auto testChild2 = gui::GUIElement(&testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false);
-        auto testButton = gui::GUIButton(&testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
-        auto testButtonQuit = gui::GUIButton(&testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
+        auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
+        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
+        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, gui::colorMap.at("RED"), false, true, false);
+        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
+        auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
+        auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 10, 100, 50, 50, gui::colorMap.at("BLUE"), &testText);
 
-        testElement.addChild(&testChild);
-        testChild.addChild(&testChild2);
+        testElement->addChild(testChild);
+        testChild->addChild(testChild2);
 
         MouseState mouseState = CameraControl;
 
+        const float MS_PER_UPDATE = (LOGIC_FREQ_HZ != 0 ? 
+                                    1000.0f / LOGIC_FREQ_HZ 
+                                    : 1000.0f / 60);
+        Uint32 previous = SDL_GetTicks();
+        float lag = 0.0;
+
         float dxMouse = 0, dyMouse = 0;
-        // Event loop
         bool running = true;
         while (running) 
         {
+            Uint32 current = SDL_GetTicks();
+            Uint32 elapsed = current - previous;
+            previous = current;
+            lag += elapsed;
+
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {   
@@ -208,12 +219,16 @@ namespace renderer
                     }
                 }
 
-                testHandler.handleInputWholeVector(&event, &mouseState);
+                testHandler->handleInputWholeVector(&event, &mouseState);
             }
 
-            onYawPitch(dxMouse, dyMouse, &mouseState);
-            onKeys(SDL_GetKeyboardState(NULL));
-            dxMouse = 0, dyMouse = 0;
+            while (lag >= MS_PER_UPDATE)
+            {
+                onYawPitch(dxMouse, dyMouse, &mouseState);
+                onKeys(SDL_GetKeyboardState(NULL));
+                dxMouse = 0, dyMouse = 0;
+                lag -= MS_PER_UPDATE;
+            }
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -223,13 +238,13 @@ namespace renderer
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDisable(GL_DEPTH_TEST);
-            testHandler.renderWholeVector();
+            testHandler->renderWholeVector();
             glEnable(GL_DEPTH_TEST);
             glDisable(GL_BLEND);
 
             SDL_GL_SwapWindow(window);
         }
-    }   
+    }
 
     void Renderer::drawObject() 
     {

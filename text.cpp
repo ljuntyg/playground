@@ -93,9 +93,35 @@ namespace text
 
     std::filesystem::path text::Font::defaultFontPath;
 
-    Font& Font::getDefaultFont() {
+    Font& Font::getDefaultFont() 
+    {
         static Font defaultFont(defaultFontPath.string(), defaultFontPath);
         return defaultFont;
+    }
+
+    std::unordered_map<int, Character> Font::getIdCharacterMap()
+    {
+        return idCharacterMap;
+    }
+
+    std::vector<unsigned char*> Font::getTextures()
+    {
+        return textures;
+    }
+
+    int Font::getTextureNbrChannels()
+    {
+        return textureNbrChannels;
+    }
+
+    float Font::getTextureWidth()
+    {
+        return textureWidth;
+    }
+
+    float Font::getTextureHeight()
+    {
+        return textureHeight;
     }
 
     bool Font::loadFontPaths(std::filesystem::path fontFolderPath)
@@ -185,6 +211,7 @@ namespace text
             textures.emplace_back(texture);
         }
 
+        textureNbrChannels = channels;
         textureWidth = (float)width;
         textureHeight = (float)height;
         

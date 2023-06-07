@@ -9,10 +9,12 @@
 #include <string>
 
 #include "mouse_state.h"
+#include "text.h"
 
 namespace gui
 {
     class GUIElement;
+    class GUIElementFactory;
 
     const std::unordered_map<std::string, glm::vec4> colorMap = {
         {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
@@ -59,27 +61,31 @@ namespace gui
 
     class GUIElement 
     {
+        friend class GUIElementFactory;
     public:
-        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
         virtual ~GUIElement();
 
         void addChild(GUIElement* child);
         void removeChild(GUIElement* child);
 
-    private:
-        friend class GUIHandler;
+        virtual bool render() const;
+        virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
 
+        bool getIsMovable();
+        bool getIsVisible();
+        bool getTakesInput();
+
+    private:
         // Override to return respective shader for each GUIElement subtype
-        virtual const char* getGuiVertexShader(); 
-        virtual const char* getGuiFragmentShader();
+        virtual const char* getVertexShader(); 
+        virtual const char* getFragmentShader();
 
         bool initializeShaders();
         bool initializeBuffers();
-
-        virtual bool render() const;
-        virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
     
     protected:
+        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
         void move(const SDL_Event* event, MouseState* mouseState);
         void offsetChildren(int xOffset, int yOffset);
 
@@ -92,15 +98,14 @@ namespace gui
         bool isMovable, isVisible, takesInput;
         bool isBeingDragged = false;
 
-        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc;
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
     };
 
     class GUIButton : public GUIElement 
     {
+        friend class GUIElementFactory;
     public:
-        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-                std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
         ~GUIButton() override;
 
         bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
@@ -109,20 +114,42 @@ namespace gui
         static void randomColor(GUIButton* button);
         static void quitApplication(GUIButton* button);
 
-    private:
+    protected:
+        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+            std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
         std::function<void(GUIButton*)> onClick;
     };
 
     class GUIText : public GUIElement
     {
+        friend class GUIElementFactory;
     public:
-        GUIText();
         ~GUIText() override;
-
-        const char* getGuiVertexShader() override; 
-        const char* getGuiFragmentShader() override;
 
         bool render() const override;
         bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+    
+    protected:
+        GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+            std::vector<text::Character*>* text, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
+        const char* getVertexShader() override; 
+        const char* getFragmentShader() override;
+
+        bool generateVertices();
+        bool loadFontTextures();
+
+        std::vector<text::Character*>* text;
+        std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
+    };
+
+    class GUIElementFactory {
+    public:
+        static GUIElement* createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
+        static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
+        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::vector<text::Character*>* text, bool isMovable = true, bool isVisible = true, bool takesInput = true);
     };
 }
