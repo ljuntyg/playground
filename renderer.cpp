@@ -180,7 +180,7 @@ namespace renderer
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 10, 100, 50, 50, gui::colorMap.at("BLUE"), &testText);
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 10, 100, 50, 50, gui::colorMap.at("BLUE"), L"WOWW哈哈哈WW", testFont);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);

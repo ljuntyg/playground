@@ -63,10 +63,9 @@ namespace text
         int yOffset;
         int xAdvance;
         int page;
-        float scale;
 
-        Character(Font* font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance, int page, float scale = 1) 
-            : font(font), id(id), x(x), y(y), width(width), height(height), xOffset(xOffset), yOffset(yOffset), xAdvance(xAdvance), page(page), scale(scale) 
+        Character(Font* font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance, int page) 
+            : font(font), id(id), x(x), y(y), width(width), height(height), xOffset(xOffset), yOffset(yOffset), xAdvance(xAdvance), page(page) 
         {
             if (font == nullptr) 
             {

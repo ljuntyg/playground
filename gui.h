@@ -80,8 +80,8 @@ namespace gui
         virtual const char* getVertexShader(); 
         virtual const char* getFragmentShader();
 
-        bool initializeShaders();
-        bool initializeBuffers();
+        virtual bool initializeShaders();
+        virtual bool initializeBuffers();
     
     protected:
         GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
@@ -98,7 +98,7 @@ namespace gui
         bool isMovable, isVisible, takesInput;
         bool isBeingDragged = false;
 
-        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc;
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc, textColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
     };
 
@@ -132,16 +132,25 @@ namespace gui
     
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::vector<text::Character*>* text, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+            std::wstring text, text::Font* font, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
         const char* getVertexShader() override; 
         const char* getFragmentShader() override;
 
-        bool generateVertices();
-        bool loadFontTextures();
+        bool initializeShaders() override;
+        bool initializeBuffers() override;
+    
+    private:
+        bool GUIText::loadFontTextures();
 
-        std::vector<text::Character*>* text;
+        std::wstring text;
+        text::Font* font;
+        float textScale;
+        std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
+
+        std::vector<GLuint> characterVAOs;
+        GLint projectionLoc, modelLoc, textLoc, textColorLoc;
     };
 
     class GUIElementFactory {
@@ -150,6 +159,6 @@ namespace gui
 
         static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
-        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::vector<text::Character*>* text, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale = 1, bool isMovable = true, bool isVisible = true, bool takesInput = true);
     };
 }

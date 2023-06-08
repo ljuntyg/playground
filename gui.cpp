@@ -150,16 +150,6 @@ namespace gui
             handler->addToRenderVector(this);
         }
 
-        if (!initializeShaders())
-        {
-            std::cerr << "Shaders for GUIElement not initialized correctly" << std::endl;
-        }
-
-        if (!initializeBuffers())
-        {
-            std::cerr << "Buffers for GUIElement failed to initialize" << std::endl;
-        }
-
         handler->addElement(this);
     }
 
@@ -213,7 +203,6 @@ namespace gui
         projectionLoc = glGetUniformLocation(shaderProgram, "projection");
         useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
         colorLoc = glGetUniformLocation(shaderProgram, "color");
-        textLoc = glGetUniformLocation(shaderProgram, "text");
 
         return true;
     }
@@ -433,13 +422,16 @@ namespace gui
     }
 
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::vector<text::Character*>* text, bool isMovable, bool isVisible, bool takesInput)
-        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text)
+        std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput)
+        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), textScale(textScale)
     {
-        if (!generateVertices())
+        if (font == nullptr)
         {
-            std::cerr << "Failed to render vertices for text provided to GUIText";
+            std::cerr << "Null font passed to GUIText constructor" << std::endl;
+            return;
         }
+
+        characters = text::createText(text, font);
 
         if (!loadFontTextures())
         {
@@ -450,6 +442,7 @@ namespace gui
     GUIText::~GUIText() 
     {
         // TODO: Do something with text pointer
+        // TODO: OpenGL cleanup
         for (auto &pair : fontTextures)
         {
             for (GLuint textureID : pair.second)
@@ -469,8 +462,135 @@ namespace gui
         return shaders::textFragmentShaderSource;
     }
 
+    bool GUIText::initializeShaders()
+    {
+        shaderProgram = shaders::createShaderProgram(getVertexShader(), getFragmentShader());
+        if (shaderProgram == 0)
+        {
+            return false;
+        }
+
+        // Get uniform locations
+        projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        modelLoc = glGetUniformLocation(shaderProgram, "model");
+        textLoc = glGetUniformLocation(shaderProgram, "text");
+        textColorLoc = glGetUniformLocation(shaderProgram, "textColor");
+
+        return true;
+    }
+
+    bool GUIText::initializeBuffers()
+    {
+        // Variables to keep track of where to position each character
+        float x = (float)xPos;
+        float y = (float)yPos;
+
+        // Iterate over each character in the text
+        for (auto& character : characters)
+        {
+            float textureRes = character->font->getTextureWidth();
+
+            // Get character dimensions and offsets from the Character struct
+            float width = (float)character->width / textureRes;
+            float height = (float)character->height / textureRes;
+            float xOffset = (float)character->xOffset / textureRes;
+            float yOffset = (float)character->yOffset / textureRes;
+            float xAdvance = (float)character->xAdvance / textureRes;
+            float characterX = (float)character->x / textureRes;
+            float characterY = (float)character->y / textureRes;
+
+            // Calculate the vertex positions and texture coordinates for this character
+            float vertices[6][4] = {
+                { x + xOffset,         y + yOffset - height,   characterX,               characterY + height },
+                { x + xOffset,         y + yOffset,            characterX,               characterY },
+                { x + xOffset + width, y + yOffset,            characterX + width,       characterY },
+                { x + xOffset,         y + yOffset - height,   characterX,               characterY + height },
+                { x + xOffset + width, y + yOffset,            characterX + width,       characterY },
+                { x + xOffset + width, y + yOffset - height,   characterX + width,       characterY + height }
+            };
+
+            // Generate a VAO and VBO for this character
+            GLuint VAO, VBO;
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+            glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+            // Position attribute
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+
+            // Texture coordinates attribute
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+
+            // Unbind
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+
+            // Store this character's VAO for rendering later
+            characterVAOs.push_back(VAO);
+
+            // Move along the x-axis by the advance width to prepare for the next character
+            x += xAdvance;
+
+            // Check for OpenGL errors
+            GLenum error = glGetError();
+            if (error != GL_NO_ERROR)
+            {
+                std::cerr << "Error when initializing GUIText buffers, OpenGL error: " << error << std::endl;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     bool GUIText::render() const
     {
+        glUseProgram(shaderProgram);
+
+        // Set the color uniform
+        glUniform4f(textColorLoc, color.r, color.g, color.b, color.a);
+
+        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        // Render each character
+        for (int i = 0; i < characters.size(); ++i)
+        {
+            auto& character = characters[i];
+            auto& VAO = characterVAOs[i];
+            auto& fontTexture = fontTextures.at(character->font).at(character->page);
+
+            // Set the texture uniform
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, fontTexture);
+            glUniform1i(textLoc, 0);
+
+            // Calculate and set the model matrix uniform
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, 0.0f));
+            model = glm::scale(model, glm::vec3(character->width, character->height, 1.0f));
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+            // Draw the character
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+
+            // Check for OpenGL errors
+            GLenum error = glGetError();
+            if (error != GL_NO_ERROR)
+            {
+                std::cerr << "Error when drawing GUIText, OpenGL error: " << error << std::endl;
+                return false;
+            }
+        }
+
+        // Unbind the shader program
+        glUseProgram(0);
+
         return true;
     }
 
@@ -479,15 +599,10 @@ namespace gui
         return true;
     }
 
-    bool GUIText::generateVertices()
-    {
-        return true;
-    }
-
     bool GUIText::loadFontTextures()
     {
         std::vector<text::Font*> fonts;
-        for (text::Character* ch : *text)
+        for (text::Character* ch : characters)
         {
             if (std::find(fonts.begin(), fonts.end(), ch->font) == fonts.end())
             {
@@ -503,14 +618,15 @@ namespace gui
                 if (!texture)
                 {
                     std::cerr << "Invalid texture in loadFontTexture" << std::endl;
+                    return false;
                 }
 
                 // Load the texture into OpenGL and store the texture ID
                 GLuint textureID;
                 glGenTextures(1, &textureID);
                 glBindTexture(GL_TEXTURE_2D, textureID);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 if(font->getTextureNbrChannels() == 3)
@@ -518,7 +634,7 @@ namespace gui
                 else if(font->getTextureNbrChannels() == 4)
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
                 glGenerateMipmap(GL_TEXTURE_2D);
-
+                
                 textureIDs.push_back(textureID);
             }
 
@@ -548,9 +664,9 @@ namespace gui
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::vector<text::Character*>* text, bool isMovable, bool isVisible, bool takesInput) {
-        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, isMovable, isVisible, takesInput);
-        if (textElement->initializeShaders() && textElement->initializeBuffers() && textElement->generateVertices() && textElement->loadFontTextures()) {
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput) {
+        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, textScale, isMovable, isVisible, takesInput);
+        if (textElement->initializeShaders() && textElement->initializeBuffers()) {
             return textElement;
         } else {
             delete textElement;

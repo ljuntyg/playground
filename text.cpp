@@ -202,6 +202,7 @@ namespace text
         int width, height, channels;
         for (auto& path : pngPaths)
         {
+            std::cout << "Loading texture from: " << path.string().c_str() << std::endl;
             unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
             if (texture == NULL)
             {
