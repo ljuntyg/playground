@@ -9,6 +9,8 @@
 
 namespace text
 {
+    // TODO: Texts created with this (actually, everywhere) aren't being registered to Font's characters
+    // TODO: Replace non-found characters with question marks
     std::vector<Character*> createText(std::wstring text, Font* font)
     {
         std::vector<Character*> characters;
@@ -18,7 +20,13 @@ namespace text
             Character* character = font->getCharacter(wc, &charFound);
             if (charFound == false)
             {
-                std::cerr << "Character not found in ID-character map" << std::endl;
+                std::wcerr << "Character not found in ID-character map, wide char: " << wc << std::endl;
+                character = font->getCharacter(L'?', &charFound);
+                if (charFound == false)
+                {
+                    std::wcerr << "Replacement character '?' not found in ID-character map" << std::endl;
+                    continue;
+                }
             }
 
             characters.emplace_back(character);

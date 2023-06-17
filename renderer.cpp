@@ -171,16 +171,14 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = new text::Font("bungee", "res/fonts/Bungee_Inline");
-        auto testText = text::createText(L"WOWW哈哈哈WW", testFont); 
-
+        auto testFont = new text::Font("Geo", "res/fonts/Geo");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
         auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
         auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, gui::colorMap.at("RED"), false, true, false);
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 10, 100, 50, 50, gui::colorMap.at("BLUE"), L"WOWW哈哈哈WW", testFont);
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 50, 400, 400, 50, gui::colorMap.at("BLUE"), L"text loL", testFont, 0.15f);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
@@ -426,7 +424,8 @@ namespace renderer
             std::string prefix = OBJ_PATH + "\\";
             std::size_t found = file.find(prefix);
             
-            if (found != std::string::npos) {
+            if (found != std::string::npos) 
+            {
                 file = file.substr(found + prefix.length());
             }
         }

@@ -128,7 +128,6 @@ namespace gui
         ~GUIText() override;
 
         bool render() const override;
-        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
     
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,

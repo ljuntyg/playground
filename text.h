@@ -61,7 +61,7 @@ namespace text
         int height;
         int xOffset;
         int yOffset;
-        int xAdvance;
+        int xAdvance;   
         int page;
 
         Character(Font* font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance, int page) 

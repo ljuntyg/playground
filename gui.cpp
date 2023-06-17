@@ -441,8 +441,7 @@ namespace gui
 
     GUIText::~GUIText() 
     {
-        // TODO: Do something with text pointer
-        // TODO: OpenGL cleanup
+        // TODO: Do something with Font pointer?
         for (auto &pair : fontTextures)
         {
             for (GLuint textureID : pair.second)
@@ -450,6 +449,14 @@ namespace gui
                 glDeleteTextures(1, &textureID);
             }
         }
+
+        // OpenGL cleanup
+        for (GLuint VAO : characterVAOs)
+        {
+            glDeleteVertexArrays(1, &VAO);
+        }
+
+        glDeleteProgram(shaderProgram);
     }
 
     const char* GUIText::getVertexShader()
@@ -481,121 +488,124 @@ namespace gui
 
     bool GUIText::initializeBuffers()
     {
-        // Variables to keep track of where to position each character
-        float x = (float)xPos;
-        float y = (float)yPos;
+        characterVAOs.resize(characters.size());
 
-        // Iterate over each character in the text
-        for (auto& character : characters)
+        float x = 0, y = 0; // Initialize x and y to the starting position of the text
+        float baseline = 0;
+        float lineHeight = font->getIdCharacterMap().at('A').height * 1.1f;
+
+        // Iterate through all characters to find the maximum yOffset
+        for (auto &pair : font->getIdCharacterMap()) {
+            if (pair.second.yOffset > baseline) {
+                baseline = (float)pair.second.yOffset;
+            }
+        }
+
+        for (size_t i = 0; i < characters.size(); ++i)
         {
-            float textureRes = character->font->getTextureWidth();
+            text::Character* ch = characters[i];
 
-            // Get character dimensions and offsets from the Character struct
-            float width = (float)character->width / textureRes;
-            float height = (float)character->height / textureRes;
-            float xOffset = (float)character->xOffset / textureRes;
-            float yOffset = (float)character->yOffset / textureRes;
-            float xAdvance = (float)character->xAdvance / textureRes;
-            float characterX = (float)character->x / textureRes;
-            float characterY = (float)character->y / textureRes;
+            if (ch->id == '\n') // TODO: This doesn't work like it should, duh
+            {
+                // Handle newline
+                x = 0; // Reset x
+                y -= lineHeight * textScale; // Move to next line
+                continue;
+            }
 
-            // Calculate the vertex positions and texture coordinates for this character
-            float vertices[6][4] = {
-                { x + xOffset,         y + yOffset - height,   characterX,               characterY + height },
-                { x + xOffset,         y + yOffset,            characterX,               characterY },
-                { x + xOffset + width, y + yOffset,            characterX + width,       characterY },
-                { x + xOffset,         y + yOffset - height,   characterX,               characterY + height },
-                { x + xOffset + width, y + yOffset,            characterX + width,       characterY },
-                { x + xOffset + width, y + yOffset - height,   characterX + width,       characterY + height }
+            float xpos = x + ch->xOffset * textScale;
+            float ypos = y + (baseline - ch->yOffset - ch->height) * textScale;
+
+            float w = ch->width * textScale;
+            float h = ch->height * textScale;
+
+            // Calculate the texture coordinates for this character
+            float xTex = ch->x / font->getTextureWidth();
+            float yTex = (ch->y + ch->height) / font->getTextureHeight();
+            float wTex = ch->width / font->getTextureWidth();
+            float hTex = -ch->height / font->getTextureHeight();
+
+            std::vector<float> vertices = {
+                xpos,     ypos + h, xTex,     yTex + hTex,
+                xpos,     ypos,     xTex,     yTex,
+                xpos + w, ypos,     xTex + wTex, yTex,
+
+                xpos,     ypos + h, xTex,     yTex + hTex,
+                xpos + w, ypos,     xTex + wTex, yTex,
+                xpos + w, ypos + h, xTex + wTex, yTex + hTex
             };
 
-            // Generate a VAO and VBO for this character
-            GLuint VAO, VBO;
+            // Create a VAO for this character
+            GLuint VAO;
             glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
             glBindVertexArray(VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-            // Position attribute
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+            // Create a VBO for this character
+            GLuint VBO;
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+            // Set up the vertex attributes
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
 
-            // Texture coordinates attribute
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-            glEnableVertexAttribArray(1);
+            characterVAOs[i] = VAO;
 
-            // Unbind
+            // Clean up
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
 
-            // Store this character's VAO for rendering later
-            characterVAOs.push_back(VAO);
-
-            // Move along the x-axis by the advance width to prepare for the next character
-            x += xAdvance;
-
-            // Check for OpenGL errors
-            GLenum error = glGetError();
-            if (error != GL_NO_ERROR)
-            {
-                std::cerr << "Error when initializing GUIText buffers, OpenGL error: " << error << std::endl;
-                return false;
-            }
+            // Advance cursor for next glyph
+            x += ch->xAdvance * textScale;
         }
 
         return true;
     }
 
+    // TODO: Text outside of box is being rendered, in order to fix with scissors, 
+    // first text needs to be centered at bottom left which it currently isn't (I think)
     bool GUIText::render() const
     {
         glUseProgram(shaderProgram);
 
-        // Set the color uniform
-        glUniform4f(textColorLoc, color.r, color.g, color.b, color.a);
+        // Set the scissor rectangle to the bounding box of the GUIElement
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(xPos, yPos, width, height);
 
+        // Set the projection matrix
         glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Render each character
-        for (int i = 0; i < characters.size(); ++i)
+        // Set the text and textColor uniforms
+        glUniform1i(textLoc, 0);
+        glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
+
+        // Bind the VAO and texture for each character and draw it
+        for (size_t i = 0; i < characters.size(); ++i)
         {
-            auto& character = characters[i];
-            auto& VAO = characterVAOs[i];
-            auto& fontTexture = fontTextures.at(character->font).at(character->page);
+            text::Character* ch = characters[i];
 
-            // Set the texture uniform
+            // Bind the texture for this character
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, fontTexture);
-            glUniform1i(textLoc, 0);
+            glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(ch->page));
 
-            // Calculate and set the model matrix uniform
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, 0.0f));
-            model = glm::scale(model, glm::vec3(character->width, character->height, 1.0f));
+            // Create the model matrix for this character
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f));
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-            // Draw the character
-            glBindVertexArray(VAO);
+            // Bind the VAO for this character and draw it
+            glBindVertexArray(characterVAOs[i]);
             glDrawArrays(GL_TRIANGLES, 0, 6);
-            glBindVertexArray(0);
-
-            // Check for OpenGL errors
-            GLenum error = glGetError();
-            if (error != GL_NO_ERROR)
-            {
-                std::cerr << "Error when drawing GUIText, OpenGL error: " << error << std::endl;
-                return false;
-            }
         }
 
-        // Unbind the shader program
-        glUseProgram(0);
+        glDisable(GL_SCISSOR_TEST);
 
-        return true;
-    }
+        // Clean up
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-    bool GUIText::handleInput(const SDL_Event* event, MouseState* mouseState)
-    {
         return true;
     }
 
@@ -644,31 +654,43 @@ namespace gui
         return true;
     }
 
-    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) {
+    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 
+    {
         GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput);
-        if (element->initializeShaders() && element->initializeBuffers()) {
+        if (element->initializeShaders() && element->initializeBuffers()) 
+        {
             return element;
-        } else {
+        } 
+        else 
+        {
             delete element;
             return nullptr;
         }
     }
 
-    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput) {
+    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput) 
+    {
         GUIButton* buttonElement = new GUIButton(handler, xPos, yPos, width, height, color, onClick, isMovable, isVisible, takesInput);
-        if (buttonElement->initializeShaders() && buttonElement->initializeBuffers()) {
+        if (buttonElement->initializeShaders() && buttonElement->initializeBuffers()) 
+        {
             return buttonElement;
-        } else {
+        } 
+        else 
+        {
             delete buttonElement;
             return nullptr;
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput) {
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput) 
+    {
         GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, textScale, isMovable, isVisible, takesInput);
-        if (textElement->initializeShaders() && textElement->initializeBuffers()) {
+        if (textElement->initializeShaders() && textElement->initializeBuffers()) 
+        {
             return textElement;
-        } else {
+        } 
+        else 
+        {
             delete textElement;
             return nullptr;
         }
