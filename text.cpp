@@ -21,12 +21,6 @@ namespace text
             if (charFound == false)
             {
                 std::wcerr << "Character not found in ID-character map, wide char: " << wc << std::endl;
-                character = font->getCharacter(L'?', &charFound);
-                if (charFound == false)
-                {
-                    std::wcerr << "Replacement character '?' not found in ID-character map" << std::endl;
-                    continue;
-                }
             }
 
             characters.emplace_back(character);
@@ -259,6 +253,12 @@ namespace text
 
                 idCharacterMap.emplace(charMap["id"], Character(this, charMap["id"], charMap["x"], charMap["y"], charMap["width"], charMap["height"], charMap["xoffset"], charMap["yoffset"], charMap["xadvance"], charMap["page"]));
             }
+        }
+
+        // Add Character to represent new-line with id of 10
+        if (!idCharacterMap.empty())
+        {
+            idCharacterMap.emplace(10, Character(this, 10, 0, 0, 0, 0, 0, 0, 0, 0));
         }
 
         return true;

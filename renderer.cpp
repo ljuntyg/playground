@@ -178,7 +178,7 @@ namespace renderer
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 50, 400, 400, 50, gui::colorMap.at("BLUE"), L"text loL", testFont, 0.15f);
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 50, 400, 400, 200, gui::colorMap.at("BLUE"), L"This is some\n text loL, no new LINES NOW", testFont, true);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);

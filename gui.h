@@ -131,7 +131,7 @@ namespace gui
     
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::wstring text, text::Font* font, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
         const char* getVertexShader() override; 
         const char* getFragmentShader() override;
@@ -140,14 +140,17 @@ namespace gui
         bool initializeBuffers() override;
     
     private:
-        bool GUIText::loadFontTextures();
+        bool loadFontTextures();
+        std::vector<float> calculateVertices(text::Character* ch, float x, float y, float baseline);
 
         std::wstring text;
         text::Font* font;
         float textScale;
         std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
+        float baseline;
 
+        bool autoScaleText;
         std::vector<GLuint> characterVAOs;
         GLint projectionLoc, modelLoc, textLoc, textColorLoc;
     };
@@ -158,6 +161,6 @@ namespace gui
 
         static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
-        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale = 1, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
     };
 }

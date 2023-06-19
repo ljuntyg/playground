@@ -422,13 +422,19 @@ namespace gui
     }
 
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput)
-        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), textScale(textScale)
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible, bool takesInput)
+        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale)
     {
         if (font == nullptr)
         {
             std::cerr << "Null font passed to GUIText constructor" << std::endl;
             return;
+        }
+
+        if (autoScaleText == true && textScale != 1.0f)
+        {
+            std::cerr << "autoScaleText set to true but textScale != 1.0f, textScale reverted to 1.0f" << std::endl;
+            textScale = 1.0f;
         }
 
         characters = text::createText(text, font);
@@ -488,11 +494,23 @@ namespace gui
 
     bool GUIText::initializeBuffers()
     {
-        characterVAOs.resize(characters.size());
-
+        baseline = 0;
         float x = 0, y = 0; // Initialize x and y to the starting position of the text
-        float baseline = 0;
-        float lineHeight = font->getIdCharacterMap().at('A').height * 1.1f;
+        float totalWidth = 0, totalHeight = 0;
+
+        for (auto &ch : characters)
+        {
+            totalWidth += ch->xAdvance;
+            totalHeight = std::max(totalHeight, (float)(ch->yOffset + ch->height));
+        }
+
+        float scaleX = width / totalWidth;
+        float scaleY = height / totalHeight;
+
+        if (autoScaleText)
+        {
+            textScale = std::min(scaleX, scaleY);
+        }
 
         // Iterate through all characters to find the maximum yOffset
         for (auto &pair : font->getIdCharacterMap()) {
@@ -501,39 +519,11 @@ namespace gui
             }
         }
 
-        for (size_t i = 0; i < characters.size(); ++i)
+        for (const auto ch : characters)
         {
-            text::Character* ch = characters[i];
+            // TODO: Handle new lines
 
-            if (ch->id == '\n') // TODO: This doesn't work like it should, duh
-            {
-                // Handle newline
-                x = 0; // Reset x
-                y -= lineHeight * textScale; // Move to next line
-                continue;
-            }
-
-            float xpos = x + ch->xOffset * textScale;
-            float ypos = y + (baseline - ch->yOffset - ch->height) * textScale;
-
-            float w = ch->width * textScale;
-            float h = ch->height * textScale;
-
-            // Calculate the texture coordinates for this character
-            float xTex = ch->x / font->getTextureWidth();
-            float yTex = (ch->y + ch->height) / font->getTextureHeight();
-            float wTex = ch->width / font->getTextureWidth();
-            float hTex = -ch->height / font->getTextureHeight();
-
-            std::vector<float> vertices = {
-                xpos,     ypos + h, xTex,     yTex + hTex,
-                xpos,     ypos,     xTex,     yTex,
-                xpos + w, ypos,     xTex + wTex, yTex,
-
-                xpos,     ypos + h, xTex,     yTex + hTex,
-                xpos + w, ypos,     xTex + wTex, yTex,
-                xpos + w, ypos + h, xTex + wTex, yTex + hTex
-            };
+            std::vector<float> vertices = calculateVertices(ch, x, y, baseline);
 
             // Create a VAO for this character
             GLuint VAO;
@@ -550,7 +540,7 @@ namespace gui
             glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
 
-            characterVAOs[i] = VAO;
+            characterVAOs.emplace_back(VAO);
 
             // Clean up
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -563,8 +553,6 @@ namespace gui
         return true;
     }
 
-    // TODO: Text outside of box is being rendered, in order to fix with scissors, 
-    // first text needs to be centered at bottom left which it currently isn't (I think)
     bool GUIText::render() const
     {
         glUseProgram(shaderProgram);
@@ -573,11 +561,9 @@ namespace gui
         glEnable(GL_SCISSOR_TEST);
         glScissor(xPos, yPos, width, height);
 
-        // Set the projection matrix
         glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Set the text and textColor uniforms
         glUniform1i(textLoc, 0);
         glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
 
@@ -654,6 +640,33 @@ namespace gui
         return true;
     }
 
+    std::vector<float> GUIText::calculateVertices(text::Character* ch, float x, float y, float baseline)
+    {
+        float xpos = x + ch->xOffset * textScale;
+        float ypos = y + (baseline - ch->yOffset - ch->height) * textScale;
+
+        float w = ch->width * textScale;
+        float h = ch->height * textScale;
+
+        // Calculate the texture coordinates for this character
+        float xTex = ch->x / font->getTextureWidth();
+        float yTex = (ch->y + ch->height) / font->getTextureHeight();
+        float wTex = ch->width / font->getTextureWidth();
+        float hTex = -ch->height / font->getTextureHeight();
+
+        std::vector<float> retVec = {
+            xpos,     ypos + h, xTex,     yTex + hTex,
+            xpos,     ypos,     xTex,     yTex,
+            xpos + w, ypos,     xTex + wTex, yTex,
+
+            xpos,     ypos + h, xTex,     yTex + hTex,
+            xpos + w, ypos,     xTex + wTex, yTex,
+            xpos + w, ypos + h, xTex + wTex, yTex + hTex
+        };
+
+        return retVec;
+    }
+
     GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 
     {
         GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput);
@@ -663,6 +676,7 @@ namespace gui
         } 
         else 
         {
+            std::cerr << "Failed to create GUIElement" << std::endl;
             delete element;
             return nullptr;
         }
@@ -677,20 +691,22 @@ namespace gui
         } 
         else 
         {
+            std::cerr << "Failed to create GUIButton" << std::endl;
             delete buttonElement;
             return nullptr;
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, float textScale, bool isMovable, bool isVisible, bool takesInput) 
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible, bool takesInput) 
     {
-        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, textScale, isMovable, isVisible, takesInput);
+        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, takesInput);
         if (textElement->initializeShaders() && textElement->initializeBuffers()) 
         {
             return textElement;
         } 
         else 
         {
+            std::cerr << "Failed to create GUIText" << std::endl;
             delete textElement;
             return nullptr;
         }
