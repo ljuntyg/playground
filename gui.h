@@ -46,7 +46,10 @@ namespace gui
         void addToRenderVector(GUIElement* element);
         void addToHandleInputVector(GUIElement* element);
 
-        bool renderWholeVector();
+        void prepareGUIRendering() const;
+        void finishGUIRendering() const;
+
+        bool renderWholeVector() const;
         bool handleInputWholeVector(const SDL_Event* event, MouseState* mouseState);
 
     private:
@@ -141,14 +144,18 @@ namespace gui
     
     private:
         bool loadFontTextures();
-        std::vector<float> calculateVertices(text::Character* ch, float x, float y, float baseline);
+        std::vector<float> calculateVertices(text::Character* ch, float x, float y, int line);
 
         std::wstring text;
         text::Font* font;
         float textScale;
+
         std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
         float baseline;
+        float maxLineHeightIncludingBaseline;
+        int nbrLines;
+        std::vector<std::vector<text::Character*>> lines;
 
         bool autoScaleText;
         std::vector<GLuint> characterVAOs;

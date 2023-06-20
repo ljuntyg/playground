@@ -178,10 +178,12 @@ namespace renderer
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 50, 400, 400, 200, gui::colorMap.at("BLUE"), L"This is some\n text loL, no new LINES NOW", testFont, true);
+        auto tesetGUITextElementBase = gui::GUIElementFactory::createGUIElement(testHandler, 50, 400, 400, 200, gui::colorMap.at("RED"));
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 400, 200, gui::colorMap.at("BLUE"), L"TEXT\nIS\nHERE", testFont, true, 1.0f, false);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
+        tesetGUITextElementBase->addChild(testGUIText);
 
         MouseState mouseState = CameraControl;
 
@@ -233,12 +235,7 @@ namespace renderer
 
             drawObject();
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDisable(GL_DEPTH_TEST);
             testHandler->renderWholeVector();
-            glEnable(GL_DEPTH_TEST);
-            glDisable(GL_BLEND);
 
             SDL_GL_SwapWindow(window);
         }
