@@ -131,6 +131,7 @@ namespace gui
         ~GUIText() override;
 
         bool render() const override;
+        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
     
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
@@ -144,7 +145,7 @@ namespace gui
     
     private:
         bool loadFontTextures();
-        std::vector<float> calculateVertices(text::Character* ch, float x, float y, int line);
+        std::vector<float> calculateVertices(text::Character* ch, float x, float y);
 
         std::wstring text;
         text::Font* font;
@@ -153,9 +154,8 @@ namespace gui
         std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
         float baseline;
-        float maxLineHeightIncludingBaseline;
-        int nbrLines;
-        std::vector<std::vector<text::Character*>> lines;
+        float totalHeight, totalWidth;
+        std::vector<text::Line*> lines;
 
         bool autoScaleText;
         std::vector<GLuint> characterVAOs;

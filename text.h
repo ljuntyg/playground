@@ -83,4 +83,14 @@ namespace text
             }
         }
     };
+
+    struct Line {
+        std::vector<text::Character*> characters;
+        float startX;
+        float endX;
+        float yPosition;
+        float height;
+
+        Line() : startX(0), endX(0), yPosition(0), height(0) {}
+    };
 }

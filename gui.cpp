@@ -319,6 +319,14 @@ namespace gui
         // Unbind the VAO
         glBindVertexArray(0);
 
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when rendering GUIElement, OpenGL error: " << error << std::endl;
+            return false;
+        }
+
         return true;
     }
 
@@ -411,8 +419,6 @@ namespace gui
                     return true;
                 }
             }
-
-            return false;
         }
 
         return true;
@@ -511,49 +517,12 @@ namespace gui
 
     // TODO: totalHeight is not able to be used properly to calculate scaleY,
     // in general, clean up logic for offsetting lines
+
+    // TODO: initialize attributes for lines created
     bool GUIText::initializeBuffers()
     {
         baseline = 0;
-        maxLineHeightIncludingBaseline = 0;
-        nbrLines = 1;
-        lines.resize(nbrLines);
-
-        float x = 0, y = 0; // Initialize x and y to the starting position of the text
-        float totalWidth = 0, totalHeight = 0, lineWidth = 0, lineHeight = 0;
-
-        for (const auto& ch : characters)
-        {
-            if (ch->id == '\n')
-            {
-                ++nbrLines;
-                lines.resize(nbrLines);
-                
-                totalWidth = std::max(totalWidth, lineWidth); // Keep the maximum line width
-                totalHeight += lineHeight; // Accumulate line heights
-
-                lineWidth = 0;
-                lineHeight = 0;
-                continue;
-            }
-
-            lines[nbrLines-1].emplace_back(ch);
-            lineWidth += ch->xAdvance;
-            lineHeight = std::max(lineHeight, (float)(ch->yOffset + ch->height));
-            maxLineHeightIncludingBaseline = std::max(maxLineHeightIncludingBaseline, lineHeight + baseline);
-        }
-        
-        totalWidth = std::max(totalWidth, lineWidth); // Handle the last line
-        totalHeight += lineHeight + baseline; // Handle the last line's height
-
-        totalHeight += (nbrLines - 1) * baseline; // Add space between lines
-
-        float scaleX = width / totalWidth;
-        float scaleY = height / (maxLineHeightIncludingBaseline * nbrLines);
-
-        if (autoScaleText)
-        {
-            textScale = std::min(scaleX, scaleY);
-        }
+        lines.emplace_back(new text::Line());
 
         // Iterate through all characters to find the maximum yOffset
         for (auto &pair : font->getIdCharacterMap()) 
@@ -564,12 +533,51 @@ namespace gui
             }
         }
 
+        float lineWidth = 0, lineHeight = 0;
+        totalWidth = 0, totalHeight = 0;
+
+        for (const auto ch : characters)
+        {
+            if (ch->id == '\n')
+            {
+                lines.back()->height = lineHeight;
+                lines.emplace_back(new text::Line());
+
+                totalWidth = std::max(totalWidth, lineWidth); // Keep the maximum line width
+                totalHeight += lineHeight; // Accumulate line heights
+
+                lineWidth = 0;
+                lineHeight = 0;
+                continue;
+            }
+
+            lines.back()->characters.emplace_back(ch);
+            lineWidth += ch->xAdvance;
+            float characterHeight = (float)(ch->yOffset + ch->height);
+            lineHeight = std::max(lineHeight, characterHeight);
+        }
+
+        // Update totalWidth and totalHeight for last line
+        lines.back()->height = lineHeight;
+        totalWidth = std::max(totalWidth, lineWidth);
+        totalHeight += lineHeight;
+
+        float scaleX = width / totalWidth;
+        float scaleY = height / totalHeight;
+
+        if (autoScaleText)
+        {
+            textScale = std::min(scaleX, scaleY);
+        }
+
+        float xCursor = 0, yCursor = 0; // Initialize x and y to the starting position of the text
+        // For each line, traverse characters and calculate vertices
         for (size_t i = 0; i < lines.size(); ++i)
         {
-            x = 0;
-            for (const auto& ch : lines[i])
+            xCursor = 0;
+            for (const auto ch : lines[i]->characters)
             {
-                std::vector<float> vertices = calculateVertices(ch, x, y, (int)i);
+                std::vector<float> vertices = calculateVertices(ch, xCursor, yCursor);
 
                 // Create a VAO for this character
                 GLuint VAO;
@@ -593,13 +601,24 @@ namespace gui
                 glBindVertexArray(0);
 
                 // Advance cursor for next glyph
-                x += ch->xAdvance * textScale;
+                xCursor += ch->xAdvance * textScale;
             }
+            yCursor -= lines[i]->height * textScale;
+        }
+
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when initializing GUIText, OpenGL error: " << error << std::endl;
+            return false;
         }
 
         return true;
     }
 
+    // TODO: Currently lowest line is rendered at bottom left,
+    // more natural if top line rendered at top left
     bool GUIText::render() const
     {
         glUseProgram(shaderProgram);
@@ -615,14 +634,14 @@ namespace gui
         glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
 
         int charVAOIx = -1;
-        float yLineOffset = (nbrLines - 1) * maxLineHeightIncludingBaseline * textScale;
+        float yLineOffset = totalHeight * textScale - (lines[0]->height * textScale);
         // Bind the VAO and texture for each character and draw it
         for (size_t i = 0; i < lines.size(); ++i)
         {
-            for (size_t j = 0; j < lines[i].size(); j++)
+            for (size_t j = 0; j < lines[i]->characters.size(); j++)
             {
                 ++charVAOIx;
-                text::Character* ch = lines[i][j];
+                text::Character* ch = lines[i]->characters[j];
 
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
@@ -645,6 +664,19 @@ namespace gui
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when rendering GUIText, OpenGL error: " << error << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool GUIText::handleInput(const SDL_Event* event, MouseState* mouseState)
+    {
         return true;
     }
 
@@ -678,10 +710,16 @@ namespace gui
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                if(font->getTextureNbrChannels() == 3)
+
+                if (font->getTextureNbrChannels() == 3)
+                {
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
-                else if(font->getTextureNbrChannels() == 4)
+                }
+                else if (font->getTextureNbrChannels() == 4)
+                {
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+                }
+
                 glGenerateMipmap(GL_TEXTURE_2D);
                 
                 textureIDs.push_back(textureID);
@@ -693,12 +731,10 @@ namespace gui
         return true;
     }
 
-    std::vector<float> GUIText::calculateVertices(text::Character* ch, float x, float y, int line)
+    std::vector<float> GUIText::calculateVertices(text::Character* ch, float x, float y)
     {
-        float lineOffsetY = line * maxLineHeightIncludingBaseline * textScale;
-
         float xpos = x + ch->xOffset * textScale;
-        float ypos = y + (baseline - ch->yOffset - ch->height) * textScale - lineOffsetY;
+        float ypos = y + (baseline - ch->yOffset - ch->height) * textScale;
         
         float w = ch->width * textScale;
         float h = ch->height * textScale;
