@@ -6,9 +6,11 @@
 namespace text
 {
     struct Character;
+    struct Line;
     class Font;
 
     std::vector<Character*> createText(std::wstring text, Font* font);
+    std::vector<Line*> createLines(std::vector<Character*> characters, float* totalWidth, float* totalHeight);
 
     class Font
     {

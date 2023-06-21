@@ -179,7 +179,7 @@ namespace renderer
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
         auto tesetGUITextElementBase = gui::GUIElementFactory::createGUIElement(testHandler, 50, 400, 400, 200, gui::colorMap.at("RED"));
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 400, 200, gui::colorMap.at("BLUE"), L"WHAT THE HELL IS THIS\ntext STUFF all ABOUT!!!\nat least i can\nhave multiple\nLINES\nall OVER the PLACE!!!\n!!!\nline number?\nI'm not sure..\none\ntwo\nthree\neight :)", testFont, true, 1.0f, false);
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 400, 200, gui::colorMap.at("BLUE"), L"Just a lil' text!", testFont, true, 1.0f, false);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);

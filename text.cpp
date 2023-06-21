@@ -29,6 +29,41 @@ namespace text
         return characters;
     }
 
+    std::vector<Line*> createLines(std::vector<Character*> characters, float* totalWidth, float* totalHeight)
+    {
+        float lineWidth = 0, lineHeight = 0;
+        std::vector<text::Line*> lines;
+        lines.emplace_back(new text::Line());
+
+        for (const auto ch : characters)
+        {
+            if (ch->id == '\n')
+            {
+                lines.back()->height = lineHeight;
+                lines.emplace_back(new text::Line());
+
+                *totalWidth = std::max(*totalWidth, lineWidth); // Keep the maximum line width
+                *totalHeight += lineHeight; // Accumulate line heights
+
+                lineWidth = 0;
+                lineHeight = 0;
+                continue;
+            }
+
+            lines.back()->characters.emplace_back(ch);
+            lineWidth += ch->xAdvance;
+            float characterHeight = (float)(ch->yOffset + ch->height);
+            lineHeight = std::max(lineHeight, characterHeight);
+        }
+
+        // Update height totalWidth and totalHeight for last line
+        lines.back()->height = lineHeight;
+        *totalWidth = std::max(*totalWidth, lineWidth);
+        *totalHeight += lineHeight;
+
+        return lines;
+    }
+
     Font::Font(std::string fontName, std::filesystem::path fontFolderPath)
         : fontName(fontName), fontFolderPath(fontFolderPath)
     {

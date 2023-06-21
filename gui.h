@@ -147,6 +147,10 @@ namespace gui
         bool loadFontTextures();
         std::vector<float> calculateVertices(text::Character* ch, float x, float y);
 
+        bool isOnText(int x, int y);
+        bool isOnLine(text::Line* line, int x, int y);
+        bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
+
         std::wstring text;
         text::Font* font;
         float textScale;
