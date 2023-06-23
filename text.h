@@ -90,7 +90,7 @@ namespace text
         std::vector<text::Character*> characters;
         float startX;
         float endX;
-        float yPosition;
+        float yPosition; // yPosition reaches to top of Line, not bottom
         float height;
 
         Line() : startX(0), endX(0), yPosition(0), height(0) {}

@@ -74,6 +74,8 @@ namespace gui
         virtual bool render() const;
         virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
 
+        bool isOnElement(int x, int y);
+
         bool getIsMovable();
         bool getIsVisible();
         bool getTakesInput();
@@ -131,7 +133,6 @@ namespace gui
         ~GUIText() override;
 
         bool render() const override;
-        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
     
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
@@ -142,14 +143,6 @@ namespace gui
 
         bool initializeShaders() override;
         bool initializeBuffers() override;
-    
-    private:
-        bool loadFontTextures();
-        std::vector<float> calculateVertices(text::Character* ch, float x, float y);
-
-        bool isOnText(int x, int y);
-        bool isOnLine(text::Line* line, int x, int y);
-        bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
 
         std::wstring text;
         text::Font* font;
@@ -164,6 +157,28 @@ namespace gui
         bool autoScaleText;
         std::vector<GLuint> characterVAOs;
         GLint projectionLoc, modelLoc, textLoc, textColorLoc;
+    
+    private:
+        bool loadFontTextures();
+        std::vector<float> calculateVertices(text::Character* ch, float x, float y);
+    };
+
+    class GUIEditText : public GUIText
+    {
+        friend class GUIElementFactory;
+    public:
+        ~GUIEditText() override;
+
+        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+
+    protected:
+        GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
+
+    private:
+        bool isOnText(int x, int y);
+        bool isOnLine(text::Line* line, int x, int y);
+        bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
     };
 
     class GUIElementFactory {
@@ -173,5 +188,7 @@ namespace gui
         static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
         static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+
+        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
     };
 }

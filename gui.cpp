@@ -7,6 +7,8 @@
 
 namespace gui
 {
+    // TODO: Use pub-sub to communicate changes in
+    // windowWidth and windoHeight in renderer
     GUIHandler::GUIHandler(float windowWidth, float windowHeight)
         : windowWidth(windowWidth), windowHeight(windowHeight) {}
 
@@ -18,7 +20,7 @@ namespace gui
     {
         if (!elements.empty())
         {
-            for (auto e : elements)
+            for (auto& e : elements)
             {
                 if (e != nullptr)
                 {
@@ -117,7 +119,7 @@ namespace gui
         prepareGUIRendering();
 
         bool result = true;
-        for (auto e : renderVector)
+        for (auto& e : renderVector)
         {
             if (!renderGUIElement(e))
             {
@@ -134,7 +136,7 @@ namespace gui
     bool GUIHandler::handleInputWholeVector(const SDL_Event* event, MouseState* mouseState)
     {
         bool result = true;
-        for (auto e : handleInputVector)
+        for (auto& e : handleInputVector)
         {
             if(!handleGUIElementInput(e, event, mouseState))
             {
@@ -179,6 +181,88 @@ namespace gui
         glDeleteBuffers(1, &EBO);
 
         handler->removeElement(this);
+    }
+
+    void GUIElement::addChild(GUIElement* child)
+    {
+        if (child->handler != handler)
+        {
+            std::cerr << "Child handler is not the same as parent handler, unable to add child GUIElement" << std::endl;
+            return;
+        }
+
+        children.emplace_back(child);
+        child->xPos += xPos; // Offset child x in relation to parent (this)
+        child->yPos += yPos; // Offset child y in relation to parent (this)
+    }
+
+    void GUIElement::removeChild(GUIElement* child)
+    {
+        auto it = std::find(children.begin(), children.end(), child);
+        if(it == children.end())
+        {
+            std::cerr << "Child not a member of children, unable to remove from children" << std::endl;
+            return;
+        }
+
+        children.erase(it);
+        delete child;
+    }
+
+    bool GUIElement::render() const
+    {
+        glUseProgram(shaderProgram);
+
+        // Set up the model, view, and projection matrices
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f)); // Translate ui element
+        model = glm::scale(model, glm::vec3(width, height, 1.0f)); // Scale ui element
+        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
+
+        // Pass the matrices and color to the shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform4fv(colorLoc, 1, glm::value_ptr(color));
+
+        // Bind the VAO
+        glBindVertexArray(VAO);
+
+        // Draw the square
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // Unbind the VAO
+        glBindVertexArray(0);
+
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when rendering GUIElement, OpenGL error: " << error << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool GUIElement::handleInput(const SDL_Event* event, MouseState* mouseState)
+    {
+        // Only GUIElement that isMovable should be movable
+        if (isMovable)
+        {
+            move(event, mouseState);
+        }
+
+        return true;
+    }
+
+    bool GUIElement::isOnElement(int x, int y)
+    {
+        if (x >= xPos && x <= (xPos + width) && y >= yPos && y <= (yPos + height))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     bool GUIElement::getIsMovable()
@@ -269,78 +353,6 @@ namespace gui
         return true;
     }
 
-    void GUIElement::addChild(GUIElement* child)
-    {
-        if (child->handler != handler)
-        {
-            std::cerr << "Child handler is not the same as parent handler, unable to add child GUIElement" << std::endl;
-            return;
-        }
-
-        children.emplace_back(child);
-        child->xPos += xPos; // Offset child x in relation to parent (this)
-        child->yPos += yPos; // Offset child y in relation to parent (this)
-    }
-
-    void GUIElement::removeChild(GUIElement* child)
-    {
-        auto it = std::find(children.begin(), children.end(), child);
-        if(it == children.end())
-        {
-            std::cerr << "Child not a member of children, unable to remove from children" << std::endl;
-            return;
-        }
-
-        children.erase(it);
-        delete child;
-    }
-
-    bool GUIElement::render() const
-    {
-        glUseProgram(shaderProgram);
-
-        // Set up the model, view, and projection matrices
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f)); // Translate ui element
-        model = glm::scale(model, glm::vec3(width, height, 1.0f)); // Scale ui element
-        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
-
-        // Pass the matrices and color to the shader
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniform4fv(colorLoc, 1, glm::value_ptr(color));
-
-        // Bind the VAO
-        glBindVertexArray(VAO);
-
-        // Draw the square
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        // Unbind the VAO
-        glBindVertexArray(0);
-
-        // Check for OpenGL errors
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "Error when rendering GUIElement, OpenGL error: " << error << std::endl;
-            return false;
-        }
-
-        return true;
-    }
-
-    bool GUIElement::handleInput(const SDL_Event* event, MouseState* mouseState)
-    {
-        // Only GUIElement that isMovable should be movable
-        if (isMovable)
-        {
-            move(event, mouseState);
-        }
-
-        return true;
-    }
-
     void GUIElement::move(const SDL_Event* event, MouseState* mouseState)
     {
         switch (event->type)
@@ -384,7 +396,7 @@ namespace gui
 
     void GUIElement::offsetChildren(int xOffset, int yOffset)
     {
-        for (auto child : children)
+        for (auto& child : children)
         {
             child->xPos += xOffset;
             child->yPos -= yOffset; // Conversion from top-left to bottom-left system
@@ -412,8 +424,7 @@ namespace gui
             {
                 int mouseX = event->button.x;
                 int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
-                if (mouseX >= xPos && mouseX < xPos + width && 
-                    mouseY >= yPos && mouseY < yPos + height) 
+                if (mouseX >= xPos && mouseX < xPos + width && mouseY >= yPos && mouseY < yPos + height) 
                 {
                     onClick(this);
                     return true;
@@ -439,6 +450,9 @@ namespace gui
         button->color = glm::vec4(r, g, b, 1.0f);
     }
 
+    // TODO: Implement publish-subscribe system to communicate between
+    // renderer and gui, can here allow to publish "quit" notification
+    // to be passed to renderer which can then quit
     void GUIButton::quitApplication(GUIButton* button)
     {
         std::cerr << "Quit application button method not implemented" << std::endl;
@@ -471,7 +485,7 @@ namespace gui
     GUIText::~GUIText() 
     {
         // TODO: Do something with Font pointer?
-        for (auto &pair : fontTextures)
+        for (auto& pair : fontTextures)
         {
             for (GLuint textureID : pair.second)
             {
@@ -520,7 +534,7 @@ namespace gui
         baseline = 0;
 
         // Iterate through all characters to find the maximum yOffset
-        for (auto &pair : font->getIdCharacterMap()) 
+        for (auto& pair : font->getIdCharacterMap()) 
         {
             if (pair.second.yOffset > baseline) 
             {
@@ -545,7 +559,7 @@ namespace gui
         {
             xCursor = 0;
             lines[i]->startX = xCursor;
-            for (const auto ch : lines[i]->characters)
+            for (const auto& ch : lines[i]->characters)
             {
                 std::vector<float> vertices = calculateVertices(ch, xCursor, yCursor);
 
@@ -605,15 +619,13 @@ namespace gui
         glUniform1i(textLoc, 0);
         glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
 
-        int charVAOIx = -1;
         float yLineOffset = height - (lines[0]->height * textScale);
         // Bind the VAO and texture for each character and draw it
-        for (size_t i = 0; i < lines.size(); ++i)
+        for (const auto& line : lines)
         {
-            for (size_t j = 0; j < lines[i]->characters.size(); j++)
+            for (size_t i = 0; i < line->characters.size(); i++)
             {
-                ++charVAOIx;
-                text::Character* ch = lines[i]->characters[j];
+                text::Character* ch = line->characters[i];
 
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
@@ -625,7 +637,7 @@ namespace gui
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
                 // Bind the VAO for this character and draw it
-                glBindVertexArray(characterVAOs[charVAOIx]);
+                glBindVertexArray(characterVAOs[i]);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
         }
@@ -647,11 +659,6 @@ namespace gui
         return true;
     }
 
-    bool GUIText::handleInput(const SDL_Event* event, MouseState* mouseState)
-    {
-        return true;
-    }
-
     bool GUIText::loadFontTextures()
     {
         std::vector<text::Font*> fonts;
@@ -666,7 +673,7 @@ namespace gui
         for (text::Font* font : fonts) 
         {
             std::vector<GLuint> textureIDs;
-            for (auto& texture : font->getTextures()) 
+            for (const auto& texture : font->getTextures()) 
             {
                 if (!texture)
                 {
@@ -730,6 +737,81 @@ namespace gui
         return retVec;
     }
 
+    GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible)
+        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, true) {}
+
+    GUIEditText::~GUIEditText() {}
+
+    bool GUIEditText::handleInput(const SDL_Event* event, MouseState* mouseState)
+    {
+        if (event->type == SDL_MOUSEBUTTONUP) 
+        {
+            if (event->button.button == SDL_BUTTON_LEFT) 
+            {
+                if (isOnText(event->button.x, event->button.y))
+                {
+                    std::cout << "On text" << std::endl;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool GUIEditText::isOnText(int x, int y)
+    {
+        for (const auto& line : lines)
+        {
+            if (isOnLine(line, x, y))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // TODO: y position not offset correctly, bound detection is wrong
+    bool GUIEditText::isOnLine(text::Line* line, int x, int y)
+    {
+        int lineAbsStartX = (int)line->startX + xPos;
+        int lineAbsEndX = (int)line->endX + xPos;
+        int lineAbsY = (int)line->yPosition + yPos; // Y reaches to top of Line
+
+        if (x >= lineAbsStartX && x <= lineAbsEndX && y <= lineAbsY && y >= (lineAbsY - line->height))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // TODO: y position not offset correctly, bound detection is wrong
+    bool GUIEditText::isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y)
+    {
+        int xCursor = 0;
+        for (const auto& lineCh : line->characters)
+        {
+            if (lineCh == ch)
+            {
+                int startBoundX = xPos + (int)line->startX + xCursor;
+                int endBoundX = startBoundX + (int)(line->endX - line->startX);
+                int topBoundY = (int)line->yPosition;
+                int lowerBoundY = (int)(line->yPosition - line->height);
+
+                if (x >= startBoundX && x <= endBoundX && y <= topBoundY && y >= lowerBoundY)
+                {
+                    return true;
+                }
+            }
+
+            xCursor += lineCh->xAdvance;
+        }
+
+        return false;
+    }
+
     GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 
     {
         GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput);
@@ -771,6 +853,21 @@ namespace gui
         {
             std::cerr << "Failed to create GUIText" << std::endl;
             delete textElement;
+            return nullptr;
+        }
+    }
+
+    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible) 
+    {
+        GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible);
+        if (editTextElement->initializeShaders() && editTextElement->initializeBuffers()) 
+        {
+            return editTextElement;
+        } 
+        else 
+        {
+            std::cerr << "Failed to create GUIEditText" << std::endl;
+            delete editTextElement;
             return nullptr;
         }
     }

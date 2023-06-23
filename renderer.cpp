@@ -171,19 +171,26 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = new text::Font("Geo", "res/fonts/Geo");
+        auto testFont = new text::Font("Mynerve", "res/fonts/Mynerve");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
+
         auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 40, 40, 50, 50, gui::colorMap.at("BLUE"));
         auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, gui::colorMap.at("RED"), false, true, false);
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, gui::colorMap.at("YELLOW"), false, true, false);
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto tesetGUITextElementBase = gui::GUIElementFactory::createGUIElement(testHandler, 50, 400, 400, 200, gui::colorMap.at("RED"));
-        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 400, 200, gui::colorMap.at("BLUE"), L"Just a lil' text!", testFont, true, 1.0f, false);
+
+        auto tesetGUITextElementBase = gui::GUIElementFactory::createGUIElement(testHandler, 50, 400, 200, 100, gui::colorMap.at("RED"));
+        auto testGUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 200, 100, gui::colorMap.at("BLUE"), L"Just a lil' text!", testFont, true, 1.0f, false);
+
+        auto testGUIEditTextBase = gui::GUIElementFactory::createGUIElement(testHandler, 300, 40, 200, 100, gui::colorMap.at("RED"));
+        auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 200, 100, gui::colorMap.at("BLUE"), L"Editable text", testFont, true, 1.0f, false);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
+
         tesetGUITextElementBase->addChild(testGUIText);
+        testGUIEditTextBase->addChild(testGUIEditText);
 
         MouseState mouseState = CameraControl;
 
