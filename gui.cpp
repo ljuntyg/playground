@@ -619,13 +619,15 @@ namespace gui
         glUniform1i(textLoc, 0);
         glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
 
+        int charVAOIx = -1;
         float yLineOffset = height - (lines[0]->height * textScale);
         // Bind the VAO and texture for each character and draw it
-        for (const auto& line : lines)
+        for (size_t i = 0; i < lines.size(); ++i)
         {
-            for (size_t i = 0; i < line->characters.size(); i++)
+            for (size_t j = 0; j < lines[i]->characters.size(); j++)
             {
-                text::Character* ch = line->characters[i];
+                ++charVAOIx;
+                text::Character* ch = lines[i]->characters[j];
 
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
@@ -637,7 +639,7 @@ namespace gui
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
                 // Bind the VAO for this character and draw it
-                glBindVertexArray(characterVAOs[i]);
+                glBindVertexArray(characterVAOs[charVAOIx]);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
         }
@@ -749,9 +751,20 @@ namespace gui
         {
             if (event->button.button == SDL_BUTTON_LEFT) 
             {
-                if (isOnText(event->button.x, event->button.y))
+                for (size_t i = 0; i < lines.size(); ++i)
                 {
-                    std::cout << "On text" << std::endl;
+                    for (size_t j = 0; j < lines[i]->characters.size(); ++j)
+                    {
+                        if (isOnCharacterInLine(lines[i]->characters[j], lines[i], event->button.x, (int)handler->getWindowHeight() - event->button.y))
+                        {
+                            std::cout << "Character " << j+1 << " on line " << i+1 << std::endl;
+                        }
+                    }
+
+                    if (isOnLine(lines[i], event->button.x, (int)handler->getWindowHeight() - event->button.y))
+                    {
+                        std::cout << "Click on line " << i+1 << "\n" << std::endl;
+                    }
                 }
             }
         }
@@ -772,14 +785,15 @@ namespace gui
         return false;
     }
 
-    // TODO: y position not offset correctly, bound detection is wrong
+    // TODO: Not precise for small text, bound stretches above text into text above
     bool GUIEditText::isOnLine(text::Line* line, int x, int y)
     {
-        int lineAbsStartX = (int)line->startX + xPos;
-        int lineAbsEndX = (int)line->endX + xPos;
-        int lineAbsY = (int)line->yPosition + yPos; // Y reaches to top of Line
+        int startBoundX = xPos + (int)line->startX;
+        int endBoundX = xPos + (int)line->endX;
+        int topBoundY = yPos + height + (int)line->yPosition;
+        int lowerBoundY = topBoundY - (int)(line->height * textScale);
 
-        if (x >= lineAbsStartX && x <= lineAbsEndX && y <= lineAbsY && y >= (lineAbsY - line->height))
+        if (x >= startBoundX && x <= endBoundX && y <= topBoundY && y >= lowerBoundY)
         {
             return true;
         }
@@ -787,7 +801,7 @@ namespace gui
         return false;
     }
 
-    // TODO: y position not offset correctly, bound detection is wrong
+    // TODO: Not precise for small text, bound stretches above text into text above
     bool GUIEditText::isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y)
     {
         int xCursor = 0;
@@ -796,17 +810,16 @@ namespace gui
             if (lineCh == ch)
             {
                 int startBoundX = xPos + (int)line->startX + xCursor;
-                int endBoundX = startBoundX + (int)(line->endX - line->startX);
-                int topBoundY = (int)line->yPosition;
-                int lowerBoundY = (int)(line->yPosition - line->height);
+                int endBoundX = startBoundX + (int)(lineCh->width * textScale);
+                int topBoundY = yPos + height + (int)line->yPosition;
+                int lowerBoundY = topBoundY - (int)(line->height * textScale);
 
                 if (x >= startBoundX && x <= endBoundX && y <= topBoundY && y >= lowerBoundY)
                 {
                     return true;
                 }
             }
-
-            xCursor += lineCh->xAdvance;
+            xCursor += (int)(lineCh->xAdvance * textScale);
         }
 
         return false;
