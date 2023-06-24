@@ -753,6 +753,10 @@ namespace gui
 
     GUIEditText::~GUIEditText() {}
 
+    // TODO: Change behavior to disable beingEdited if click off text,
+    // also buggy when multiple texts are clicked at the same time,
+    // only allow one text to be edited at once somehow, pub-sub?
+    // also maybe change text editing to start from specific char clicked?
     bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
         if (beingEdited)
@@ -787,6 +791,34 @@ namespace gui
         }
 
         return true;
+    }
+
+    // TODO: Probably doesn't handle Chinese input
+    bool GUIEditText::handleTextInput(const SDL_Keycode key)
+    {
+        if ((key >= SDLK_a && key <= SDLK_z) || key == SDLK_SPACE)
+        {
+            text += (wchar_t)key; // Cast to wide char
+        }
+        else if (key == SDLK_BACKSPACE && !text.empty())
+        {
+            text.pop_back();
+        }
+        else if (key == SDLK_RETURN)
+        {
+            text += (wchar_t)'\n';
+        }
+
+        return regenerateTextAndBuffers();
+    }
+
+    bool GUIEditText::regenerateTextAndBuffers()
+    {
+        characters = text::createText(text, font);
+
+        // Regenerate buffers
+        cleanupBuffers();
+        return initializeBuffers();
     }
 
     bool GUIEditText::isOnText(int x, int y)
@@ -840,22 +872,6 @@ namespace gui
         }
 
         return false;
-    }
-
-    bool GUIEditText::handleTextInput(const SDL_Keycode key)
-    {
-        if (key >= SDLK_a && key <= SDLK_z)
-        {
-            text += (wchar_t)key; // Cast to wide char
-        }
-        else if (key == SDLK_BACKSPACE && !text.empty())
-        {
-            text.pop_back();
-        }
-
-        // Regenerate buffers
-        cleanupBuffers();
-        return initializeBuffers();
     }
 
     GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 

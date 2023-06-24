@@ -185,7 +185,7 @@ namespace renderer
         auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 200, 100, gui::colorMap.at("BLUE"), L"one\ntwo\nthre3", testFont, true, 1.0f, false);
 
         auto testGUIEditTextBase2 = gui::GUIElementFactory::createGUIElement(testHandler, 100, 400, 150, 250, gui::colorMap.at("RED"));
-        auto testGUIEditText2 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 150, 250, gui::colorMap.at("BLUE"), L"tes1\ntwo0\ntrez o :)\nmore tex1 is fun!\nanother", testFont2, true, 1.0f, false);
+        auto testGUIEditText2 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 150, 250, gui::colorMap.at("BLUE"), L"write here!", testFont2, true, 1.0f, false);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);

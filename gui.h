@@ -178,11 +178,12 @@ namespace gui
             std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
 
     private:
+        bool handleTextInput(const SDL_Keycode key);
+        bool regenerateTextAndBuffers(); 
+
         bool isOnText(int x, int y);
         bool isOnLine(text::Line* line, int x, int y);
         bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
-
-        bool handleTextInput(const SDL_Keycode key);
 
         bool beingEdited;
     };
