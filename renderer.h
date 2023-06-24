@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 #include "obj_loader.h"
-#include "mouse_state.h"
+#include "input_state.h"
 
 namespace renderer 
 {
@@ -52,8 +52,8 @@ namespace renderer
         bool initializeShaders(); 
         void run();
         void drawObject();
-        void onYawPitch(float dx, float dy, MouseState* mouseState);
-        void onKeys(const Uint8* keyboardState);
+        void onYawPitch(float dx, float dy, InputState* inputState);
+        void onKeys(const Uint8* keyboardState, InputState* inputState);
 
         std::vector<std::string> getObjFilePaths(const std::string& folderName);
         std::vector<objl::Mesh> getTargetObjMeshes();

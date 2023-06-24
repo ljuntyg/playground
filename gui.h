@@ -8,7 +8,7 @@
 #include <functional>   
 #include <string>
 
-#include "mouse_state.h"
+#include "input_state.h"
 #include "text.h"
 
 namespace gui
@@ -41,7 +41,7 @@ namespace gui
         void removeElement(GUIElement* element);
 
         bool renderGUIElement(GUIElement* element) const;
-        bool handleGUIElementInput(GUIElement* element, const SDL_Event* event, MouseState* mouseState);
+        bool handleGUIElementInput(GUIElement* element, const SDL_Event* event, InputState* inputState);
 
         void addToRenderVector(GUIElement* element);
         void addToHandleInputVector(GUIElement* element);
@@ -50,7 +50,7 @@ namespace gui
         void finishGUIRendering() const;
 
         bool renderWholeVector() const;
-        bool handleInputWholeVector(const SDL_Event* event, MouseState* mouseState);
+        bool handleInputWholeVector(const SDL_Event* event, InputState* inputState);
 
     private:
         float windowWidth;
@@ -72,7 +72,7 @@ namespace gui
         void removeChild(GUIElement* child);
 
         virtual bool render() const;
-        virtual bool handleInput(const SDL_Event* event, MouseState* mouseState);
+        virtual bool handleInput(const SDL_Event* event, InputState* inputState);
 
         bool isOnElement(int x, int y);
 
@@ -91,7 +91,7 @@ namespace gui
     protected:
         GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
-        void move(const SDL_Event* event, MouseState* mouseState);
+        void move(const SDL_Event* event, InputState* inputState);
         void offsetChildren(int xOffset, int yOffset);
 
         GUIHandler* handler;
@@ -113,7 +113,7 @@ namespace gui
     public:
         ~GUIButton() override;
 
-        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+        bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
         // These are functions that can be passed to the constructor
         static void randomColor(GUIButton* button);
@@ -144,6 +144,8 @@ namespace gui
         bool initializeShaders() override;
         bool initializeBuffers() override;
 
+        void cleanupBuffers();
+
         std::wstring text;
         text::Font* font;
         float textScale;
@@ -169,7 +171,7 @@ namespace gui
     public:
         ~GUIEditText() override;
 
-        bool handleInput(const SDL_Event* event, MouseState* mouseState) override;
+        bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
     protected:
         GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
@@ -179,6 +181,10 @@ namespace gui
         bool isOnText(int x, int y);
         bool isOnLine(text::Line* line, int x, int y);
         bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
+
+        bool handleTextInput(const SDL_Keycode key);
+
+        bool beingEdited;
     };
 
     class GUIElementFactory {

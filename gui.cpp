@@ -68,7 +68,7 @@ namespace gui
         return element->render();
     }
 
-    bool GUIHandler::handleGUIElementInput(GUIElement* element, const SDL_Event* event, MouseState* mouseState)
+    bool GUIHandler::handleGUIElementInput(GUIElement* element, const SDL_Event* event, InputState* inputState)
     {
         if (elements.find(element) == elements.end())
         {
@@ -76,7 +76,7 @@ namespace gui
             return false;
         }
 
-        return element->handleInput(event, mouseState);
+        return element->handleInput(event, inputState);
     }
 
     void GUIHandler::addToRenderVector(GUIElement* element)
@@ -133,12 +133,12 @@ namespace gui
         return result;
     }
 
-    bool GUIHandler::handleInputWholeVector(const SDL_Event* event, MouseState* mouseState)
+    bool GUIHandler::handleInputWholeVector(const SDL_Event* event, InputState* inputState)
     {
         bool result = true;
         for (auto& e : handleInputVector)
         {
-            if(!handleGUIElementInput(e, event, mouseState))
+            if(!handleGUIElementInput(e, event, inputState))
             {
                 std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in handleInputVector" << std::endl;
                 result = false;
@@ -244,12 +244,12 @@ namespace gui
         return true;
     }
 
-    bool GUIElement::handleInput(const SDL_Event* event, MouseState* mouseState)
+    bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
         // Only GUIElement that isMovable should be movable
         if (isMovable)
         {
-            move(event, mouseState);
+            move(event, inputState);
         }
 
         return true;
@@ -353,7 +353,7 @@ namespace gui
         return true;
     }
 
-    void GUIElement::move(const SDL_Event* event, MouseState* mouseState)
+    void GUIElement::move(const SDL_Event* event, InputState* inputState)
     {
         switch (event->type)
         {
@@ -362,11 +362,10 @@ namespace gui
             {
                 int mouseX = event->button.x;
                 int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
-                if (mouseX >= xPos && mouseX <= xPos + width &&
-                    mouseY >= yPos && mouseY <= yPos + height)
+                if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
                 {
                     isBeingDragged = true;
-                    *mouseState = GUIControl;
+                    inputState->setMouseState(InputState::GUIMouseControl);
                 }
             }
             break;
@@ -375,7 +374,7 @@ namespace gui
             if (event->button.button == SDL_BUTTON_LEFT)
             {
                 isBeingDragged = false;
-                *mouseState = CameraControl;
+                inputState->setMouseState(InputState::CameraControl);
             }
             break;
 
@@ -411,11 +410,11 @@ namespace gui
 
     GUIButton::~GUIButton() {}
 
-    bool GUIButton::handleInput(const SDL_Event* event, MouseState* mouseState) 
+    bool GUIButton::handleInput(const SDL_Event* event, InputState* inputState) 
     {
         if (isMovable)
         {
-            move(event, mouseState);
+            move(event, inputState);
         }
 
         if (event->type == SDL_MOUSEBUTTONUP) 
@@ -452,7 +451,7 @@ namespace gui
 
     // TODO: Implement publish-subscribe system to communicate between
     // renderer and gui, can here allow to publish "quit" notification
-    // to be passed to renderer which can then quit
+    // to be passed to renderer which can then quit renderer
     void GUIButton::quitApplication(GUIButton* button)
     {
         std::cerr << "Quit application button method not implemented" << std::endl;
@@ -494,10 +493,7 @@ namespace gui
         }
 
         // OpenGL cleanup
-        for (GLuint VAO : characterVAOs)
-        {
-            glDeleteVertexArrays(1, &VAO);
-        }
+        cleanupBuffers();
 
         glDeleteProgram(shaderProgram);
     }
@@ -603,6 +599,15 @@ namespace gui
         }
 
         return true;
+    }
+
+    void GUIText::cleanupBuffers()
+    {
+        for (GLuint VAO : characterVAOs)
+        {
+            glDeleteVertexArrays(1, &VAO);
+        }
+        characterVAOs.clear();
     }
 
     bool GUIText::render() const
@@ -741,30 +746,42 @@ namespace gui
 
     GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
         std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible)
-        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, true) {}
+        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, true)
+    {
+        beingEdited = false;
+    }
 
     GUIEditText::~GUIEditText() {}
 
-    bool GUIEditText::handleInput(const SDL_Event* event, MouseState* mouseState)
+    bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        if (event->type == SDL_MOUSEBUTTONUP) 
+        if (beingEdited)
         {
-            if (event->button.button == SDL_BUTTON_LEFT) 
+            if (event->type == SDL_KEYDOWN)
             {
-                for (size_t i = 0; i < lines.size(); ++i)
+                return handleTextInput(event->key.keysym.sym);
+            }
+        }
+
+        if (event->type == SDL_MOUSEBUTTONUP)
+        {
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                if (isOnText(event->button.x, (int)handler->getWindowHeight() - event->button.y))
                 {
-                    for (size_t j = 0; j < lines[i]->characters.size(); ++j)
+                    beingEdited = !beingEdited;
+                    std::cout << "beingEdited: " << beingEdited << std::endl;
+
+                    if (beingEdited) 
                     {
-                        if (isOnCharacterInLine(lines[i]->characters[j], lines[i], event->button.x, (int)handler->getWindowHeight() - event->button.y))
-                        {
-                            std::cout << "Character " << j+1 << " on line " << i+1 << std::endl;
-                        }
+                        inputState->setKeyboardState(InputState::KeyboardState::GUIKeyboardControl);
+                    } 
+                    else 
+                    {
+                        inputState->setKeyboardState(InputState::KeyboardState::MovementControl);
                     }
 
-                    if (isOnLine(lines[i], event->button.x, (int)handler->getWindowHeight() - event->button.y))
-                    {
-                        std::cout << "Click on line " << i+1 << "\n" << std::endl;
-                    }
+                    return true; 
                 }
             }
         }
@@ -823,6 +840,22 @@ namespace gui
         }
 
         return false;
+    }
+
+    bool GUIEditText::handleTextInput(const SDL_Keycode key)
+    {
+        if (key >= SDLK_a && key <= SDLK_z)
+        {
+            text += (wchar_t)key; // Cast to wide char
+        }
+        else if (key == SDLK_BACKSPACE && !text.empty())
+        {
+            text.pop_back();
+        }
+
+        // Regenerate buffers
+        cleanupBuffers();
+        return initializeBuffers();
     }
 
     GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 

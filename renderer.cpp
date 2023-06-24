@@ -193,7 +193,7 @@ namespace renderer
         testGUIEditTextBase->addChild(testGUIEditText);
         testGUIEditTextBase2->addChild(testGUIEditText2);
 
-        MouseState mouseState = CameraControl;
+        InputState inputState;
 
         const float MS_PER_UPDATE = (LOGIC_FREQ_HZ != 0 ? 
                                     1000.0f / LOGIC_FREQ_HZ 
@@ -227,13 +227,13 @@ namespace renderer
                     }
                 }
 
-                testHandler->handleInputWholeVector(&event, &mouseState);
+                testHandler->handleInputWholeVector(&event, &inputState);
             }
 
             while (lag >= MS_PER_UPDATE)
             {
-                onYawPitch(dxMouse, dyMouse, &mouseState);
-                onKeys(SDL_GetKeyboardState(NULL));
+                onYawPitch(dxMouse, dyMouse, &inputState);
+                onKeys(SDL_GetKeyboardState(NULL), &inputState);
                 dxMouse = 0, dyMouse = 0;
                 lag -= MS_PER_UPDATE;
             }
@@ -286,9 +286,9 @@ namespace renderer
         glBindVertexArray(0);
     }
 
-    void Renderer::onYawPitch(float dx, float dy, MouseState* mouseState) 
+    void Renderer::onYawPitch(float dx, float dy, InputState* inputState) 
     {
-        if (*mouseState != CameraControl)
+        if (inputState->getMouseState() != InputState::CameraControl)
         {
             return;
         }
@@ -321,8 +321,13 @@ namespace renderer
         camera.targetPos = camera.cameraPos + camera.lookDir;
     }
 
-    void Renderer::onKeys(const Uint8* keyboardState) 
+    void Renderer::onKeys(const Uint8* keyboardState, InputState* inputState) 
     {
+        if (inputState->getKeyboardState() != InputState::MovementControl)
+        {
+            return;
+        }
+
         glm::vec3 front = camera.lookDir;
         glm::vec3 right = glm::normalize(glm::cross(camera.cameraUp, front));
         glm::vec3 up = camera.cameraUp;
