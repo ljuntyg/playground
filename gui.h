@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <functional>   
 #include <string>
+#include <chrono>
 
 #include "input_state.h"
 #include "text.h"
@@ -17,14 +18,17 @@ namespace gui
     class GUIElementFactory;
 
     const std::unordered_map<std::string, glm::vec4> colorMap = {
-        {"RED",     glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
-        {"GREEN",   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
-        {"BLUE",    glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
-        {"YELLOW",  glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
-        {"CYAN",    glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
-        {"MAGENTA", glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
-        {"WHITE",   glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
-        {"BLACK",   glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}
+        {"RED",        glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
+        {"GREEN",      glm::vec4(0.0f, 1.0f, 0.0f, 1.0f)},
+        {"BLUE",       glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)},
+        {"YELLOW",     glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)},
+        {"CYAN",       glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)},
+        {"MAGENTA",    glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)},
+        {"WHITE",      glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)},
+        {"BLACK",      glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)},
+        {"LIGHT GRAY", glm::vec4(0.75f, 0.75f, 0.75f, 1.0f)},
+        {"GRAY",       glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)},
+        {"DARK GRAY",  glm::vec4(0.25f, 0.25f, 0.25f, 1.0f)}
     };
 
     class GUIHandler 
@@ -146,15 +150,18 @@ namespace gui
 
         void cleanupBuffers();
 
+        virtual void prepareTextRendering() const;
+        virtual void finishTextRendering() const;
+        
         std::wstring text;
         text::Font* font;
-        float textScale;
-
         std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
+        std::vector<text::Line*> lines;
+
+        float textScale;
         float baseline;
         float totalHeight, totalWidth;
-        std::vector<text::Line*> lines;
 
         bool autoScaleText;
         std::vector<GLuint> characterVAOs;
@@ -171,6 +178,7 @@ namespace gui
     public:
         ~GUIEditText() override;
 
+        bool render() const override;
         bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
     protected:
@@ -178,14 +186,20 @@ namespace gui
             std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
 
     private:
-        bool handleTextInput(const SDL_Keycode key);
-        bool regenerateTextAndBuffers(); 
+        void startTextInput(InputState* inputState);
+        void stopTextInput(InputState* inputState);
+
+        bool regenCharactersAndBuffers(); 
+        std::wstring cStringToWString(const char* inputText);
 
         bool isOnText(int x, int y);
         bool isOnLine(text::Line* line, int x, int y);
         bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
 
         bool beingEdited;
+        mutable bool lastCharacterVisible;
+        mutable std::chrono::steady_clock::time_point lastBlinkTime;
+        std::chrono::milliseconds blinkDuration = std::chrono::milliseconds(500);
     };
 
     class GUIElementFactory {

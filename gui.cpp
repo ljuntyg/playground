@@ -1,6 +1,10 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <random>
+#include <locale>
+#include <codecvt>
 
 #include "gui.h"
 #include "shaders.h"
@@ -612,17 +616,7 @@ namespace gui
 
     bool GUIText::render() const
     {
-        glUseProgram(shaderProgram);
-
-        // Set the scissor rectangle to the bounding box of the GUIElement
-        glEnable(GL_SCISSOR_TEST);
-        glScissor(xPos, yPos, width, height);
-
-        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-        glUniform1i(textLoc, 0);
-        glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
+        prepareTextRendering();
 
         int charVAOIx = -1;
         float yLineOffset = height - (lines[0]->height * textScale);
@@ -649,11 +643,7 @@ namespace gui
             }
         }
 
-        glDisable(GL_SCISSOR_TEST);
-
-        // Clean up
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        finishTextRendering();
 
         // Check for OpenGL errors
         GLenum error = glGetError();
@@ -744,26 +734,144 @@ namespace gui
         return retVec;
     }
 
+    void GUIText::prepareTextRendering() const
+    {
+        glUseProgram(shaderProgram);
+
+        // Set the scissor rectangle to the bounding box of the GUIElement
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(xPos, yPos, width, height);
+
+        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glUniform1i(textLoc, 0);
+        glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
+    }
+
+    void GUIText::finishTextRendering() const
+    {
+        glDisable(GL_SCISSOR_TEST);
+
+        // Clean up
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
     GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
         std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible)
         : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, true)
     {
         beingEdited = false;
+        lastCharacterVisible = true;
+        lastBlinkTime = std::chrono::steady_clock::now();
     }
 
     GUIEditText::~GUIEditText() {}
 
-    // TODO: Change behavior to disable beingEdited if click off text,
-    // also buggy when multiple texts are clicked at the same time,
-    // only allow one text to be edited at once somehow, pub-sub?
-    // also maybe change text editing to start from specific char clicked?
+    bool GUIEditText::render() const
+    {
+        prepareTextRendering();
+
+        auto now = std::chrono::steady_clock::now();
+        // Ensure that if not beingEdited then lastCharacterVisible is true
+        if (!beingEdited)
+        {
+            lastCharacterVisible = true;
+        }
+        else if (beingEdited && (now - lastBlinkTime > blinkDuration))
+        {
+            lastCharacterVisible = !lastCharacterVisible;
+            lastBlinkTime = now;
+        }
+
+        int charVAOIx = -1;
+        float yLineOffset = height - (lines[0]->height * textScale);
+        // Bind the VAO and texture for each character and draw it
+        for (size_t i = 0; i < lines.size(); ++i)
+        {
+            for (size_t j = 0; j < lines[i]->characters.size(); j++)
+            {
+                ++charVAOIx;
+                text::Character* ch = lines[i]->characters[j];
+
+                if (charVAOIx == characterVAOs.size() - 1 && !lastCharacterVisible) 
+                {
+                    continue;
+                }
+
+                // Bind the texture for this character
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(ch->page));
+
+                // Create the model matrix for this character
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xPos, yPos + yLineOffset, 0.0f));
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+                // Bind the VAO for this character and draw it
+                glBindVertexArray(characterVAOs[charVAOIx]);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+        }
+
+        finishTextRendering();
+
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when rendering GUIText, OpenGL error: " << error << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    // TODO: Maybe change text editing to start from specific char clicked?
+    // add ctrl+c, ctrl+v, ctrl+z, ctrl+y, add cursor after current character
     bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
+        // If GUIKeyboardControl but this element not being edited, it means another GUIEditText is being edited
+        if (inputState->getKeyboardState() == InputState::KeyboardState::GUIKeyboardControl && !beingEdited)
+        {
+            return true;
+        }
+
         if (beingEdited)
         {
-            if (event->type == SDL_KEYDOWN)
+            if (event->type == SDL_TEXTINPUT)
             {
-                return handleTextInput(event->key.keysym.sym);
+                text += cStringToWString(event->text.text);
+                return regenCharactersAndBuffers();
+            }
+            else if (event->type == SDL_KEYDOWN)
+            {
+                // Handle special keys like backspace or enter
+                if (event->key.keysym.sym == SDLK_BACKSPACE && !text.empty())
+                {
+                    if (text.back() == '\n')
+                    {
+                        text.pop_back();
+                        text.pop_back();
+                    }
+                    else
+                    {
+                        text.pop_back();
+                    }
+
+                    return regenCharactersAndBuffers();
+                }
+                else if (event->key.keysym.sym == SDLK_RETURN)
+                {
+                    text += '\n';
+                    return regenCharactersAndBuffers();
+                }
+                else if (event->key.keysym.sym == SDLK_ESCAPE)
+                {
+                    stopTextInput(inputState);
+                    return true;
+                }
             }
         }
 
@@ -773,19 +881,13 @@ namespace gui
             {
                 if (isOnText(event->button.x, (int)handler->getWindowHeight() - event->button.y))
                 {
-                    beingEdited = !beingEdited;
-                    std::cout << "beingEdited: " << beingEdited << std::endl;
-
-                    if (beingEdited) 
-                    {
-                        inputState->setKeyboardState(InputState::KeyboardState::GUIKeyboardControl);
-                    } 
-                    else 
-                    {
-                        inputState->setKeyboardState(InputState::KeyboardState::MovementControl);
-                    }
-
-                    return true; 
+                    startTextInput(inputState);
+                    return true;
+                }
+                else
+                {
+                    stopTextInput(inputState);
+                    return true;
                 }
             }
         }
@@ -793,32 +895,54 @@ namespace gui
         return true;
     }
 
-    // TODO: Probably doesn't handle Chinese input
-    bool GUIEditText::handleTextInput(const SDL_Keycode key)
+    void GUIEditText::startTextInput(InputState* inputState)
     {
-        if ((key >= SDLK_a && key <= SDLK_z) || key == SDLK_SPACE)
-        {
-            text += (wchar_t)key; // Cast to wide char
-        }
-        else if (key == SDLK_BACKSPACE && !text.empty())
-        {
-            text.pop_back();
-        }
-        else if (key == SDLK_RETURN)
-        {
-            text += (wchar_t)'\n';
-        }
+        beingEdited = true;
 
-        return regenerateTextAndBuffers();
+        inputState->setKeyboardState(InputState::KeyboardState::GUIKeyboardControl);
+        SDL_StartTextInput();
     }
 
-    bool GUIEditText::regenerateTextAndBuffers()
+    void GUIEditText::stopTextInput(InputState* inputState)
     {
+        beingEdited = false;
+
+        inputState->setKeyboardState(InputState::KeyboardState::MovementControl);
+        SDL_StopTextInput();
+    }
+
+    bool GUIEditText::regenCharactersAndBuffers()
+    {
+        // Ensure the last character of whatever Character
+        // sequence is generated will be visible
+        lastCharacterVisible = true;
+        lastBlinkTime = std::chrono::steady_clock::now();
+
         characters = text::createText(text, font);
 
         // Regenerate buffers
         cleanupBuffers();
         return initializeBuffers();
+    }
+
+    // Conversion deprecated
+    std::wstring GUIEditText::cStringToWString(const char* inputText)
+    {
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        std::wstring retText;
+    
+        try 
+        {
+            std::wstring wInputText = converter.from_bytes(inputText);
+            retText += wInputText;
+        } 
+        catch (std::range_error& e) 
+        {
+            std::cerr << "Error when converting string: " << e.what() << '\n';
+            return false;
+        }
+
+        return retText;
     }
 
     bool GUIEditText::isOnText(int x, int y)
