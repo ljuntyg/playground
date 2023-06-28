@@ -137,10 +137,10 @@ namespace gui
         ~GUIText() override;
 
         bool render() const override;
-    
+
     protected:
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
         const char* getVertexShader() override; 
         const char* getFragmentShader() override;
@@ -160,7 +160,7 @@ namespace gui
         std::vector<text::Line*> lines;
 
         float textScale;
-        float baseline;
+        float padding;
         float totalHeight, totalWidth;
 
         bool autoScaleText;
@@ -183,7 +183,7 @@ namespace gui
 
     protected:
         GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
+            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true);
 
     private:
         void startTextInput(InputState* inputState);
@@ -208,8 +208,8 @@ namespace gui
 
         static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
-        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
 
-        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, bool isMovable = true, bool isVisible = true);
+        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true);
     };
 }

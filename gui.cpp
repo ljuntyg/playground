@@ -462,8 +462,8 @@ namespace gui
     }
 
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible, bool takesInput)
-        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale)
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible, bool takesInput)
+        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale), padding(padding)
     {
         if (font == nullptr)
         {
@@ -529,19 +529,9 @@ namespace gui
         return true;
     }
 
+    // Cursor from x,y = 0, feed cursor for eahc character to calculateVertices
     bool GUIText::initializeBuffers()
     {
-        baseline = 0;
-
-        // Iterate through all characters to find the maximum yOffset
-        for (auto& pair : font->getIdCharacterMap()) 
-        {
-            if (pair.second.yOffset > baseline) 
-            {
-                baseline = (float)pair.second.yOffset;
-            }
-        }
-
         totalWidth = 0, totalHeight = 0;
         lines = text::createLines(characters, &totalWidth, &totalHeight);
 
@@ -585,7 +575,7 @@ namespace gui
                 glBindVertexArray(0);
 
                 // Advance cursor for next glyph
-                xCursor += ch->xAdvance * textScale;
+                xCursor += ch->advance * ch->font->getSize() * textScale;
             }
 
             lines[i]->endX = xCursor;
@@ -619,7 +609,7 @@ namespace gui
         prepareTextRendering();
 
         int charVAOIx = -1;
-        float yLineOffset = height - (lines[0]->height * textScale);
+        float yLineOffset = height - lines[0]->maxAscender * textScale;
         // Bind the VAO and texture for each character and draw it
         for (size_t i = 0; i < lines.size(); ++i)
         {
@@ -630,7 +620,7 @@ namespace gui
 
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(ch->page));
+                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(0));
 
                 // Create the model matrix for this character
                 glm::mat4 model = glm::mat4(1.0f);
@@ -686,16 +676,7 @@ namespace gui
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                if (font->getTextureNbrChannels() == 3)
-                {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
-                }
-                else if (font->getTextureNbrChannels() == 4)
-                {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
-                }
-
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
                 glGenerateMipmap(GL_TEXTURE_2D);
                 
                 textureIDs.push_back(textureID);
@@ -709,26 +690,29 @@ namespace gui
 
     std::vector<float> GUIText::calculateVertices(text::Character* ch, float x, float y)
     {
-        float xpos = x + ch->xOffset * textScale;
-        float ypos = y + (baseline - ch->yOffset - ch->height) * textScale;
-        
-        float w = ch->width * textScale;
-        float h = ch->height * textScale;
+        float fontSize = ch->font->getSize();
 
-        // Calculate the texture coordinates for this character
-        float xTex = ch->x / font->getTextureWidth();
-        float yTex = (ch->y + ch->height) / font->getTextureHeight();
-        float wTex = ch->width / font->getTextureWidth();
-        float hTex = -ch->height / font->getTextureHeight();
+        // Compute the absolute pixel bounds of the glyph.
+        float x1 = x + ch->planeLeft * fontSize * textScale;
+        float y1 = y + ch->planeBottom * fontSize * textScale;
+        float x2 = x + ch->planeRight * fontSize * textScale;
+        float y2 = y + ch->planeTop * fontSize * textScale;
+
+        // Compute the texture coordinates of the glyph.
+        float u1 = ch->atlasLeft / ch->font->getTextureWidth();
+        float v1 = ch->atlasBottom / ch->font->getTextureHeight();
+        float u2 = ch->atlasRight / ch->font->getTextureWidth();
+        float v2 = ch->atlasTop / ch->font->getTextureHeight();
 
         std::vector<float> retVec = {
-            xpos,     (ypos + h), xTex,        yTex + hTex,
-            xpos,     ypos,       xTex,        yTex,
-            xpos + w, ypos,       xTex + wTex, yTex,
-
-            xpos,     (ypos + h), xTex,        yTex + hTex,
-            xpos + w, ypos,       xTex + wTex, yTex,
-            xpos + w, (ypos + h), xTex + wTex, yTex + hTex
+            // Triangle 1
+            x1, y1, u1, v1,
+            x2, y1, u2, v1,
+            x1, y2, u1, v2,
+            // Triangle 2
+            x1, y2, u1, v2,
+            x2, y1, u2, v1,
+            x2, y2, u2, v2
         };
 
         return retVec;
@@ -759,8 +743,8 @@ namespace gui
     }
 
     GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible)
-        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, true)
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible)
+        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible, true)
     {
         beingEdited = false;
         lastCharacterVisible = true;
@@ -786,7 +770,7 @@ namespace gui
         }
 
         int charVAOIx = -1;
-        float yLineOffset = height - (lines[0]->height * textScale);
+        float yLineOffset = height - lines[0]->maxAscender * textScale;
         // Bind the VAO and texture for each character and draw it
         for (size_t i = 0; i < lines.size(); ++i)
         {
@@ -802,7 +786,7 @@ namespace gui
 
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(ch->page));
+                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(0));
 
                 // Create the model matrix for this character
                 glm::mat4 model = glm::mat4(1.0f);
@@ -920,12 +904,12 @@ namespace gui
 
         characters = text::createText(text, font);
 
-        // Regenerate buffers
+        // Regenerate Characters and buffers
         cleanupBuffers();
         return initializeBuffers();
     }
 
-    // Conversion deprecated
+    // TODO: Conversion deprecated
     std::wstring GUIEditText::cStringToWString(const char* inputText)
     {
         std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -974,25 +958,25 @@ namespace gui
         return false;
     }
 
-    // TODO: Not precise for small text, bound stretches above text into text above
+    // TODO: I don't know if this works
     bool GUIEditText::isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y)
     {
-        int xCursor = 0;
+        float xCursor = 0;
         for (const auto& lineCh : line->characters)
         {
             if (lineCh == ch)
             {
-                int startBoundX = xPos + (int)line->startX + xCursor;
-                int endBoundX = startBoundX + (int)(lineCh->width * textScale);
-                int topBoundY = yPos + height + (int)line->yPosition;
-                int lowerBoundY = topBoundY - (int)(line->height * textScale);
+                float startBoundX = line->startX * textScale + xCursor;
+                float endBoundX = startBoundX + lineCh->advance * ch->font->getSize() * textScale;
+                float topBoundY = line->yPosition * textScale;
+                float lowerBoundY = topBoundY - line->height * textScale;
 
-                if (x >= startBoundX && x <= endBoundX && y <= topBoundY && y >= lowerBoundY)
+                if (x >= startBoundX && x <= endBoundX && y >= lowerBoundY && y <= topBoundY)
                 {
                     return true;
                 }
             }
-            xCursor += (int)(lineCh->xAdvance * textScale);
+            xCursor += lineCh->advance * ch->font->getSize() * textScale;
         }
 
         return false;
@@ -1028,9 +1012,9 @@ namespace gui
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible, bool takesInput) 
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible, bool takesInput) 
     {
-        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible, takesInput);
+        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible, takesInput);
         if (textElement->initializeShaders() && textElement->initializeBuffers()) 
         {
             return textElement;
@@ -1043,9 +1027,9 @@ namespace gui
         }
     }
 
-    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, bool isMovable, bool isVisible) 
+    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible) 
     {
-        GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, isMovable, isVisible);
+        GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible);
         if (editTextElement->initializeShaders() && editTextElement->initializeBuffers()) 
         {
             return editTextElement;

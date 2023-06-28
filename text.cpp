@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 
+#include "json.h"
 #include "text.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -31,33 +32,52 @@ namespace text
 
     std::vector<Line*> createLines(std::vector<Character*> characters, float* totalWidth, float* totalHeight)
     {
-        float lineWidth = 0, lineHeight = 0;
         std::vector<text::Line*> lines;
         lines.emplace_back(new text::Line());
+        if (characters.empty()) {
+            return lines;
+        }
 
+        float fontSize = characters[0]->font->getSize();
+        float lineWidth = 0, lineHeight = 0, maxAscender = 0, yPos = 0;
         for (const auto ch : characters)
         {
             if (ch->id == '\n')
             {
                 lines.back()->height = lineHeight;
-                lines.emplace_back(new text::Line());
-
+                lines.back()->maxAscender = maxAscender; // Set maxAscender for the line
+                lines.back()->endX = lineWidth;
                 *totalWidth = std::max(*totalWidth, lineWidth); // Keep the maximum line width
-                *totalHeight += lineHeight; // Accumulate line heights
+                *totalHeight += lineHeight;
+
+                yPos -= lineHeight; // Update the yPosition for the next line
+
+                lines.emplace_back(new text::Line());
+                lines.back()->startX = 0;
+                lines.back()->yPosition = yPos;
 
                 lineWidth = 0;
                 lineHeight = 0;
+                maxAscender = 0; // Reset maxAscender for the next line
                 continue;
             }
 
             lines.back()->characters.emplace_back(ch);
-            lineWidth += ch->xAdvance;
-            float characterHeight = (float)(ch->yOffset + ch->height);
+            lineWidth += ch->advance * fontSize;
+
+            // Different Characters can have different Fonts,
+            // so find the Font with the max lineHeight and maxAscender
+            float characterHeight = ch->font->getLineHeight() * ch->font->getSize(); 
             lineHeight = std::max(lineHeight, characterHeight);
+
+            float characterAscender = ch->font->getAscender() * ch->font->getSize();
+            maxAscender = std::max(maxAscender, characterAscender);
         }
 
-        // Update height totalWidth and totalHeight for last line
+        // Update height, maxAscender, totalWidth, totalHeight, and endX for last line
         lines.back()->height = lineHeight;
+        lines.back()->maxAscender = maxAscender;
+        lines.back()->endX = lineWidth;
         *totalWidth = std::max(*totalWidth, lineWidth);
         *totalHeight += lineHeight;
 
@@ -78,7 +98,7 @@ namespace text
             std::cerr << "Unable to load textures" << std::endl;
         }
 
-        if (!bindCharacterIds())
+        if (!bindCharacterIDs())
         {
             std::cerr << "Failed to bind IDs for characters" << std::endl;
         }
@@ -121,11 +141,11 @@ namespace text
         {
             std::cerr << "Character not found, ID: " << (int)wc << std::endl;
             *result = false;
-            return &idCharacterMap.at(63); // 63 is question mark, hopefully lol
+            return idCharacterMap.at(63); // 63 is question mark, hopefully lol
         }
 
         *result = true;
-        return &idCharacterMap.at(wc);
+        return idCharacterMap.at(wc);
     }
 
     std::filesystem::path text::Font::defaultFontPath;
@@ -136,7 +156,7 @@ namespace text
         return defaultFont;
     }
 
-    std::unordered_map<int, Character> Font::getIdCharacterMap()
+    std::unordered_map<int, Character*> Font::getIdCharacterMap()
     {
         return idCharacterMap;
     }
@@ -151,6 +171,11 @@ namespace text
         return textureNbrChannels;
     }
 
+    float Font::getSize()
+    {
+        return size;
+    }
+
     float Font::getTextureWidth()
     {
         return textureWidth;
@@ -159,6 +184,21 @@ namespace text
     float Font::getTextureHeight()
     {
         return textureHeight;
+    }
+    
+    float Font::getLineHeight()
+    {
+        return lineHeight;
+    }
+
+    float Font::getAscender()
+    {
+        return ascender;
+    }
+
+    float Font::getDescender()
+    {
+        return descender;
     }
 
     bool Font::loadFontPaths(std::filesystem::path fontFolderPath)
@@ -210,9 +250,10 @@ namespace text
         {
             for (const auto& entry : std::filesystem::directory_iterator(searchPath))
             {
-                if (entry.path().extension() == ".fnt")
+                auto extension = entry.path().extension();
+                if (entry.path().extension() == ".json")
                 {
-                    fntPath = entry.path();
+                    jsonPath = entry.path();
                 }
                 else if (entry.path().extension() == ".png")
                 {
@@ -226,7 +267,7 @@ namespace text
             return false;
         }
 
-        if (fntPath.empty() || pngPaths.empty())
+        if (jsonPath.empty() || pngPaths.empty())
         {
             return false;
         }
@@ -236,11 +277,13 @@ namespace text
 
     bool Font::loadTextures()
     {
-        int width, height, channels;
+        stbi_set_flip_vertically_on_load(true); // Or the textures load upside down
+
+        int width, height;
         for (auto& path : pngPaths)
         {
             std::cout << "Loading texture from: " << path.string().c_str() << std::endl;
-            unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+            unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, nullptr, 3);  // Ensure 3 channel
             if (texture == NULL)
             {
                 return false;
@@ -249,52 +292,80 @@ namespace text
             textures.emplace_back(texture);
         }
 
-        textureNbrChannels = channels;
+        textureNbrChannels = 3; // The MSDF bitmaps generated by msdf-atlas-gen will have 3 channels (only 1 channel if SDF)
         textureWidth = (float)width;
         textureHeight = (float)height;
+
+        stbi_set_flip_vertically_on_load(false);
         
         return true;
     }
 
-    bool Font::bindCharacterIds()
+    bool Font::bindCharacterIDs() 
     {
-        std::ifstream fontFile(fntPath);
-        if (!fontFile)
+        // Open the file
+        std::ifstream jsonFile(jsonPath);
+
+        // Parse the file into a JSON object
+        nlohmann::json j;
+        jsonFile >> j;
+
+        // Parse the metrics
+        emSize = j["metrics"]["emSize"];
+        lineHeight = j["metrics"]["lineHeight"];
+        ascender = j["metrics"]["ascender"];
+        descender = j["metrics"]["descender"];
+        underlineY = j["metrics"]["underlineY"];
+        underlineThickness = j["metrics"]["underlineThickness"];
+
+        // Parse the size
+        size = j["atlas"]["size"];
+
+        // Parse the glyphs
+        for (auto& glyph : j["glyphs"])
         {
-            std::cerr << "Failed to open font file: " << fntPath << '\n';
-            return false;
-        }
+            unsigned int id = glyph["unicode"];
+            float advance = glyph["advance"];
 
-        // Create id-Character map
-        std::string line;
-        while (std::getline(fontFile, line))
-        {
-            if (line.substr(0, 8) == "char id=")
-            {
-                std::istringstream iss(line);
-                std::string key;
-                std::map<std::string, int> charMap;
-
-                while (iss >> key)
-                {
-                    size_t pos = key.find('=');
-                    if (pos != std::string::npos)
-                    {
-                        std::string actualKey = key.substr(0, pos);
-                        int value = std::stoi(key.substr(pos+1));
-                        charMap[actualKey] = value;
-                    }
-                }
-
-                idCharacterMap.emplace(charMap["id"], Character(this, charMap["id"], charMap["x"], charMap["y"], charMap["width"], charMap["height"], charMap["xoffset"], charMap["yoffset"], charMap["xadvance"], charMap["page"]));
+            float planeLeft = 0.0f;
+            float planeBottom = 0.0f;
+            float planeRight = 0.0f;
+            float planeTop = 0.0f;
+            if (glyph.contains("planeBounds")) {
+                planeLeft = glyph["planeBounds"]["left"];
+                planeBottom = glyph["planeBounds"]["bottom"];
+                planeRight = glyph["planeBounds"]["right"];
+                planeTop = glyph["planeBounds"]["top"];
             }
+
+            float atlasLeft = 0.0f;
+            float atlasBottom = 0.0f;
+            float atlasRight = 0.0f;
+            float atlasTop = 0.0f;
+            if (glyph.contains("atlasBounds")) {
+                atlasLeft = glyph["atlasBounds"]["left"];
+                atlasBottom = glyph["atlasBounds"]["bottom"];
+                atlasRight = glyph["atlasBounds"]["right"];
+                atlasTop = glyph["atlasBounds"]["top"];
+            }
+
+            idCharacterMap[id] = new Character(this, id, advance, planeLeft, planeBottom, planeRight, planeTop, atlasLeft, atlasBottom, atlasRight, atlasTop);
         }
 
         // Add Character to represent new-line with id of 10
         if (!idCharacterMap.empty())
         {
-            idCharacterMap.emplace(10, Character(this, 10, 0, 0, 0, 0, 0, 0, 0, 0));
+            idCharacterMap[10] = new Character(this, (unsigned int)10, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+
+            // Add a space character if it does not exist in the JSON file
+            if (idCharacterMap.find(32) == idCharacterMap.end()) // Check if space character exists
+            {
+                // Space character does not exist, create one, codepoint 97 for "a"
+                idCharacterMap[32] = new Character(this, (unsigned int)32, idCharacterMap.at(97)->advance, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+            }
         }
+
+        jsonFile.close();
 
         return true;
     }

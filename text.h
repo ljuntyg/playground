@@ -26,48 +26,64 @@ namespace text
         static Font defaultFont;
         static Font& getDefaultFont();
 
-        std::unordered_map<int, Character> getIdCharacterMap();
+        std::unordered_map<int, Character*> getIdCharacterMap();
         std::vector<unsigned char*> getTextures();
 
         int getTextureNbrChannels();
+        float getSize();
         float getTextureWidth();
         float getTextureHeight();
+        float getLineHeight();
+        float getAscender();
+        float getDescender();
 
     private:
-        friend struct Character;
         std::vector<Character*> characters;
 
         std::string fontName;
         std::filesystem::path fontFolderPath;
-        std::filesystem::path fntPath;
+        std::filesystem::path jsonPath;
         std::vector<std::filesystem::path> pngPaths; // E.g. res/fonts/Bungee_Inline
 
-        std::unordered_map<int, Character> idCharacterMap;
+        std::unordered_map<int, Character*> idCharacterMap;
         std::vector<unsigned char*> textures;
+
         int textureNbrChannels;
+        float size;
         float textureWidth;
         float textureHeight;
+        float emSize;
+        float lineHeight;
+        float ascender;
+        float descender;
+        float underlineY;
+        float underlineThickness;
 
         bool loadFontPaths(std::filesystem::path fontFolderPath);
         bool loadTextures();
-        bool bindCharacterIds();
+        bool bindCharacterIDs();
     };
 
     struct Character
     {
         Font* font;
-        int id;
-        int x;
-        int y;
-        int width;
-        int height;
-        int xOffset;
-        int yOffset;
-        int xAdvance;   
-        int page;
+        unsigned int id;
+        float advance;
+        float planeLeft; // Plane variables are in EMs
+        float planeBottom;
+        float planeRight;
+        float planeTop;
+        float atlasLeft; // Atlas variables are in pixels
+        float atlasBottom;
+        float atlasRight;
+        float atlasTop;
 
-        Character(Font* font, int id, int x, int y, int width, int height, int xOffset, int yOffset, int xAdvance, int page) 
-            : font(font), id(id), x(x), y(y), width(width), height(height), xOffset(xOffset), yOffset(yOffset), xAdvance(xAdvance), page(page) 
+        Character(Font* font, unsigned int id, float advance, 
+                float planeLeft, float planeBottom, float planeRight, float planeTop,
+                float atlasLeft, float atlasBottom, float atlasRight, float atlasTop)
+            : font(font), id(id), advance(advance),
+            planeLeft(planeLeft), planeBottom(planeBottom), planeRight(planeRight), planeTop(planeTop),
+            atlasLeft(atlasLeft), atlasBottom(atlasBottom), atlasRight(atlasRight), atlasTop(atlasTop)
         {
             if (font == nullptr) 
             {
@@ -92,6 +108,7 @@ namespace text
         float endX;
         float yPosition; // yPosition reaches to top of Line, not bottom
         float height;
+        float maxAscender;
 
         Line() : startX(0), endX(0), yPosition(0), height(0) {}
     };

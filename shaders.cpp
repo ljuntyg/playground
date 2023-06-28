@@ -140,11 +140,20 @@ namespace shaders
 
         uniform sampler2D text;
         uniform vec4 textColor;
+        
+        const float smoothing = 1.0f;
+
+        float median(float r, float g, float b) 
+        {
+            return max(min(r, g), min(max(r, g), b));
+        }
 
         void main()
         {    
-            vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
-            color = textColor * sampled;
+            vec3 sample = texture(text, TexCoords).rgb;
+            float sigDist = median(sample.r, sample.g, sample.b) - 0.5;
+            float alpha = clamp(sigDist/(fwidth(sigDist) * smoothing) + 0.5, 0.0, 1.0);
+            color = vec4(textColor.rgb, textColor.a * alpha);
         }
     )glsl";
 }

@@ -19,4 +19,3 @@ InputState::MouseState InputState::getMouseState() const {
 InputState::KeyboardState InputState::getKeyboardState() const {
     return keyboardState;
 }
-
