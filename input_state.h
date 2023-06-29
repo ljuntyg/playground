@@ -6,7 +6,8 @@ public:
     enum MouseState
     {
         CameraControl,
-        GUIMouseControl
+        GUIMouseControl,
+        GUIResizeControl
     };
 
     enum KeyboardState

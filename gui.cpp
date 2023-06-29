@@ -152,11 +152,10 @@ namespace gui
         return result;
     }
 
-    GUIElement::GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput)
-        : handler(handler), xPos(xPos), yPos(yPos), width(width), height(height), color(color), isMovable(isMovable), isVisible(isVisible), takesInput(takesInput)
+    GUIElement::GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color)
+        : handler(handler), xPos(xPos), yPos(yPos), width(width), height(height), isMovable(isMovable), isResizable(isResizable), isVisible(isVisible), takesInput(takesInput), borderWidth(borderWidth), color(color)
     {
         // TODO: Ensure xPos, yPos, width and height places element within screen (width and height clip outside screen?), also needs to be checked on handleInput/render
-
         if (isMovable && !takesInput)
         {
             std::cerr << "Attempt to create movable GUIElement that does not take input, element made immovable" << std::endl;
@@ -250,9 +249,9 @@ namespace gui
 
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        // Only GUIElement that isMovable should be movable
-        if (isMovable)
+        if (isMovable) // Only GUIElement that isMovable should be movable
         {
+            resize(event, inputState);
             move(event, inputState);
         }
 
@@ -264,6 +263,59 @@ namespace gui
         if (x >= xPos && x <= (xPos + width) && y >= yPos && y <= (yPos + height))
         {
             return true;
+        }
+
+        return false;
+    }
+
+    // 1 = top left, 2 = top right, 3 = bottom left, 4 = bottom right
+    bool GUIElement::isOnCorner(int cornerNbr, int x, int y)
+    {
+        int centerX = 0, centerY = 0;
+        switch (cornerNbr)
+        {
+        case 1:
+            centerX = xPos;
+            centerY = yPos + height;
+            break;
+        case 2:
+            centerX = xPos + width;
+            centerY = yPos + height;
+            break;
+        case 3:
+            centerX = xPos;
+            centerY = yPos;
+            break;
+        case 4:
+            centerX = xPos + width;
+            centerY = yPos;
+            break;
+        default:
+            std::cerr << "Passed integer not in range 1-4 to isOnCorner, returning false" << std::endl;
+            return false;
+        }
+
+        int startBoundX = centerX - borderWidth;
+        int endBoundX = centerX + borderWidth;
+        int startBoundY = centerY - borderWidth;
+        int endBoundY = centerY + borderWidth;
+
+        if (x >= startBoundX && x <= endBoundX && y >= startBoundY && y <= endBoundY)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool GUIElement::isOnAnyCorner(int x, int y)
+    {
+        for (int i = 1; i <= 4; ++i)
+        {
+            if (isOnCorner(i, x, y))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -357,8 +409,60 @@ namespace gui
         return true;
     }
 
+    // TODO: Better align behavior with expected behavior,
+    // e.g. dragging the top right corner should resize with
+    // bottom left corner (its opposite corner) as an anchor
+    // Also, resizing of text needs to be considered for elements
+    // that have text elements as children
+    void GUIElement::resize(const SDL_Event* event, InputState* inputState)
+    {
+        // Either resize or move, not at the same time
+        if (isBeingDragged)
+        {
+            return;
+        }
+
+        switch (event->type)
+        {
+        case SDL_MOUSEBUTTONDOWN:
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                int mouseX = event->button.x;
+                int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
+                if (isOnAnyCorner(mouseX, mouseY))
+                {
+                    isBeingResized = true;
+                    inputState->setMouseState(InputState::GUIResizeControl);
+                }
+            }
+            break;
+
+        case SDL_MOUSEBUTTONUP:
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                isBeingResized = false;
+                inputState->setMouseState(InputState::CameraControl);
+            }
+            break;
+
+        case SDL_MOUSEMOTION:
+            if (isBeingResized)
+            {
+                width += event->motion.xrel;
+                height -= event->motion.yrel;
+            }
+            break;
+        }
+    }
+
     void GUIElement::move(const SDL_Event* event, InputState* inputState)
     {
+        // Either resize or move, not at the same time
+        if (isBeingResized)
+        {
+            return;
+        }
+
         switch (event->type)
         {
         case SDL_MOUSEBUTTONDOWN:
@@ -408,9 +512,9 @@ namespace gui
         }
     }
 
-    GUIButton::GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput)
-        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), onClick(onClick) {}
+    GUIButton::GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color, 
+        std::function<void(GUIButton*)> onClick)
+        : GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color), onClick(onClick) {}
 
     GUIButton::~GUIButton() {}
 
@@ -418,6 +522,7 @@ namespace gui
     {
         if (isMovable)
         {
+            // TODO: Add resize when method finished
             move(event, inputState);
         }
 
@@ -461,9 +566,9 @@ namespace gui
         std::cerr << "Quit application button method not implemented" << std::endl;
     }
 
-    GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible, bool takesInput)
-        : GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale), padding(padding)
+    GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding)
+        : GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale), padding(padding)
     {
         if (font == nullptr)
         {
@@ -475,6 +580,15 @@ namespace gui
         {
             std::cerr << "autoScaleText set to true but textScale != 1.0f, textScale reverted to 1.0f" << std::endl;
             textScale = 1.0f;
+        }
+
+        if (padding > std::min(width, height) / 2)
+        {
+            std::cout << "Warning: GUIText created with padding larger than half of minimum span of GUIElement, meaning text will not be visible" << std::endl;
+        }
+        else if (padding < 0.0f)
+        {
+            std::cout << "Warning: GUIText created with negative padding, possibility of text ending up outside of GUIElement, thus not being rendered" << std::endl;
         }
 
         characters = text::createText(text, font);
@@ -529,25 +643,25 @@ namespace gui
         return true;
     }
 
-    // Cursor from x,y = 0, feed cursor for eahc character to calculateVertices
+    // Cursor from x,y = 0 (or padding), pass cursors for each character to calculateVertices
     bool GUIText::initializeBuffers()
     {
         totalWidth = 0, totalHeight = 0;
         lines = text::createLines(characters, &totalWidth, &totalHeight);
 
-        float scaleX = width / totalWidth;
-        float scaleY = height / totalHeight;
+        float scaleX = (width - padding * 2) / totalWidth;
+        float scaleY = (height - padding * 2) / totalHeight;
 
         if (autoScaleText)
         {
             textScale = std::min(scaleX, scaleY);
         }
 
-        float xCursor = 0, yCursor = 0; // Initialize x and y to the starting position of the text
+        float xCursor = (float)padding, yCursor = -(float)padding; // Initialize x and y to the starting position of the text
         // For each line, traverse characters and calculate vertices
         for (size_t i = 0; i < lines.size(); ++i)
         {
-            xCursor = 0;
+            xCursor = (float)padding;
             lines[i]->startX = xCursor;
             for (const auto& ch : lines[i]->characters)
             {
@@ -618,6 +732,11 @@ namespace gui
                 ++charVAOIx;
                 text::Character* ch = lines[i]->characters[j];
 
+                if (!shouldRenderCharacter(charVAOIx))
+                {
+                    continue;
+                }
+
                 // Bind the texture for this character
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(0));
@@ -649,7 +768,11 @@ namespace gui
     bool GUIText::loadFontTextures()
     {
         std::vector<text::Font*> fonts;
-        for (text::Character* ch : characters)
+        if (characters.empty())
+        {
+            fonts.emplace_back(font);
+        }
+        else for (text::Character* ch : characters)
         {
             if (std::find(fonts.begin(), fonts.end(), ch->font) == fonts.end())
             {
@@ -742,9 +865,14 @@ namespace gui
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible)
-        : GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible, true)
+    bool GUIText::shouldRenderCharacter(int charVAOIx) const
+    {
+        return true;
+    }
+
+    GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, glm::vec4 color,
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding)
+        : GUIText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, true, borderWidth, color, text, font, autoScaleText, textScale, padding)
     {
         beingEdited = false;
         lastCharacterVisible = true;
@@ -752,65 +880,6 @@ namespace gui
     }
 
     GUIEditText::~GUIEditText() {}
-
-    bool GUIEditText::render() const
-    {
-        prepareTextRendering();
-
-        auto now = std::chrono::steady_clock::now();
-        // Ensure that if not beingEdited then lastCharacterVisible is true
-        if (!beingEdited)
-        {
-            lastCharacterVisible = true;
-        }
-        else if (beingEdited && (now - lastBlinkTime > blinkDuration))
-        {
-            lastCharacterVisible = !lastCharacterVisible;
-            lastBlinkTime = now;
-        }
-
-        int charVAOIx = -1;
-        float yLineOffset = height - lines[0]->maxAscender * textScale;
-        // Bind the VAO and texture for each character and draw it
-        for (size_t i = 0; i < lines.size(); ++i)
-        {
-            for (size_t j = 0; j < lines[i]->characters.size(); j++)
-            {
-                ++charVAOIx;
-                text::Character* ch = lines[i]->characters[j];
-
-                if (charVAOIx == characterVAOs.size() - 1 && !lastCharacterVisible) 
-                {
-                    continue;
-                }
-
-                // Bind the texture for this character
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, fontTextures.at(ch->font).at(0));
-
-                // Create the model matrix for this character
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(xPos, yPos + yLineOffset, 0.0f));
-                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-                // Bind the VAO for this character and draw it
-                glBindVertexArray(characterVAOs[charVAOIx]);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
-        }
-
-        finishTextRendering();
-
-        // Check for OpenGL errors
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "Error when rendering GUIText, OpenGL error: " << error << std::endl;
-            return false;
-        }
-
-        return true;
-    }
 
     // TODO: Maybe change text editing to start from specific char clicked?
     // add ctrl+c, ctrl+v, ctrl+z, ctrl+y, add cursor after current character
@@ -863,6 +932,16 @@ namespace gui
         {
             if (event->button.button == SDL_BUTTON_LEFT)
             {
+                if (text.empty())
+                {
+                    // Seems to work correctly without else statement
+                    if (isOnElement(event->button.x, (int)handler->getWindowHeight() - event->button.y))
+                    {
+                        startTextInput(inputState);
+                        return true;
+                    }
+                }
+
                 if (isOnText(event->button.x, (int)handler->getWindowHeight() - event->button.y))
                 {
                     startTextInput(inputState);
@@ -874,6 +953,28 @@ namespace gui
                     return true;
                 }
             }
+        }
+
+        return true;
+    }
+
+    bool GUIEditText::shouldRenderCharacter(int charVAOIx) const
+    {
+        auto now = std::chrono::steady_clock::now();
+        // Ensure that if not beingEdited then lastCharacterVisible is true
+        if (!beingEdited)
+        {
+            lastCharacterVisible = true;
+        }
+        else if (beingEdited && (now - lastBlinkTime > blinkDuration))
+        {
+            lastCharacterVisible = !lastCharacterVisible;
+            lastBlinkTime = now;
+        }
+
+        if (charVAOIx == characterVAOs.size() - 1 && !lastCharacterVisible) 
+        {
+            return false;
         }
 
         return true;
@@ -982,9 +1083,9 @@ namespace gui
         return false;
     }
 
-    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable, bool isVisible, bool takesInput) 
+    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color) 
     {
-        GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, color, isMovable, isVisible, takesInput);
+        GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color);
         if (element->initializeShaders() && element->initializeBuffers()) 
         {
             return element;
@@ -997,9 +1098,10 @@ namespace gui
         }
     }
 
-    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick, bool isMovable, bool isVisible, bool takesInput) 
+    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,
+        std::function<void(GUIButton*)> onClick) 
     {
-        GUIButton* buttonElement = new GUIButton(handler, xPos, yPos, width, height, color, onClick, isMovable, isVisible, takesInput);
+        GUIButton* buttonElement = new GUIButton(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color, onClick);
         if (buttonElement->initializeShaders() && buttonElement->initializeBuffers()) 
         {
             return buttonElement;
@@ -1012,9 +1114,10 @@ namespace gui
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible, bool takesInput) 
+    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding) 
     {
-        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible, takesInput);
+        GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color, text, font, autoScaleText, textScale, padding);
         if (textElement->initializeShaders() && textElement->initializeBuffers()) 
         {
             return textElement;
@@ -1027,9 +1130,10 @@ namespace gui
         }
     }
 
-    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText, float textScale, float padding, bool isMovable, bool isVisible) 
+    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, glm::vec4 color,
+        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding) 
     {
-        GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, color, text, font, autoScaleText, textScale, padding, isMovable, isVisible);
+        GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, borderWidth, color, text, font, autoScaleText, textScale, padding);
         if (editTextElement->initializeShaders() && editTextElement->initializeBuffers()) 
         {
             return editTextElement;

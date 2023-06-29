@@ -11,7 +11,6 @@
 namespace text
 {
     // TODO: Texts created with this (actually, everywhere) aren't being registered to Font's characters
-    // TODO: Replace non-found characters with question marks
     std::vector<Character*> createText(std::wstring text, Font* font)
     {
         std::vector<Character*> characters;
@@ -115,11 +114,9 @@ namespace text
             }
         }
 
-        for (auto* character : characters)
-        {
-            if (character)
-            {
-                character->font = &getDefaultFont(); // Replace destroyed Font with defaultFont
+        for (auto* character : characters) {
+            if (character && this != getDefaultFont()) {
+                character->font = getDefaultFont(); // Replace destroyed Font with defaultFont
                 character->font->registerCharacter(character);
             }
         }
@@ -141,7 +138,7 @@ namespace text
         {
             std::cerr << "Character not found, ID: " << (int)wc << std::endl;
             *result = false;
-            return idCharacterMap.at(63); // 63 is question mark, hopefully lol
+            return idCharacterMap.at(63); // Codepoint decimal 63 is question mark
         }
 
         *result = true;
@@ -149,11 +146,21 @@ namespace text
     }
 
     std::filesystem::path text::Font::defaultFontPath;
+    Font* Font::defaultFont = nullptr;
 
-    Font& Font::getDefaultFont() 
+    Font* Font::getDefaultFont() 
     {
-        static Font defaultFont(defaultFontPath.string(), defaultFontPath);
+        if (defaultFont == nullptr) // Only initialize if it hasn't been initialized already
+        {
+            defaultFont = new Font(defaultFontPath.filename().string(), defaultFontPath);
+        }
+
         return defaultFont;
+    }
+
+    std::string Font::getFontName()
+    {
+        return fontName;
     }
 
     std::unordered_map<int, Character*> Font::getIdCharacterMap()

@@ -79,6 +79,8 @@ namespace gui
         virtual bool handleInput(const SDL_Event* event, InputState* inputState);
 
         bool isOnElement(int x, int y);
+        bool isOnCorner(int cornerNbr, int x, int y);
+        bool isOnAnyCorner(int x, int y);
 
         bool getIsMovable();
         bool getIsVisible();
@@ -93,8 +95,9 @@ namespace gui
         virtual bool initializeBuffers();
     
     protected:
-        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"));
 
+        void resize(const SDL_Event* event, InputState* inputState);
         void move(const SDL_Event* event, InputState* inputState);
         void offsetChildren(int xOffset, int yOffset);
 
@@ -103,9 +106,11 @@ namespace gui
 
         int xPos, yPos;
         int width, height;
+        int borderWidth;
         glm::vec4 color;
-        bool isMovable, isVisible, takesInput;
-        bool isBeingDragged = false;
+        bool isMovable, isResizable, isVisible, takesInput;
+        bool isBeingDragged = false, isBeingResized = false;
+        int cornerNbrBeingResized = 0;
 
         GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc, textColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
@@ -124,8 +129,8 @@ namespace gui
         static void quitApplication(GUIButton* button);
 
     protected:
-        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"),
+            std::function<void(GUIButton*)> onClick = [](GUIButton*){});
 
         std::function<void(GUIButton*)> onClick;
     };
@@ -139,8 +144,8 @@ namespace gui
         bool render() const override;
 
     protected:
-        GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
+            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
 
         const char* getVertexShader() override; 
         const char* getFragmentShader() override;
@@ -152,15 +157,17 @@ namespace gui
 
         virtual void prepareTextRendering() const;
         virtual void finishTextRendering() const;
+
+        virtual bool shouldRenderCharacter(int charVAOIx) const;
         
         std::wstring text;
-        text::Font* font;
+        text::Font* font; // I forgot why this is here if each Character has its own Font
         std::vector<text::Character*> characters;
         std::unordered_map<text::Font*, std::vector<GLuint>> fontTextures;
         std::vector<text::Line*> lines;
 
+        int padding;
         float textScale;
-        float padding;
         float totalHeight, totalWidth;
 
         bool autoScaleText;
@@ -178,12 +185,13 @@ namespace gui
     public:
         ~GUIEditText() override;
 
-        bool render() const override;
         bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
     protected:
-        GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color,
-            std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true);
+        GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
+            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
+
+        bool shouldRenderCharacter(int charVAOIx) const override;
 
     private:
         void startTextInput(InputState* inputState);
@@ -204,12 +212,15 @@ namespace gui
 
     class GUIElementFactory {
     public:
-        static GUIElement* createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIElement* createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"));
 
-        static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::function<void(GUIButton*)> onClick = [](GUIButton*){}, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"),
+            std::function<void(GUIButton*)> onClick = [](GUIButton*){});
 
-        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true, bool takesInput = true);
+        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
+            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
 
-        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, glm::vec4 color, std::wstring text, text::Font* font, bool autoScaleText = true, float textScale = 1.0f, float padding = 0.0f, bool isMovable = true, bool isVisible = true);
+        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
+            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
     };
 }

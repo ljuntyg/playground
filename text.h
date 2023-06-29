@@ -22,10 +22,8 @@ namespace text
         void removeCharacter(Character* character);
         Character* getCharacter(const wchar_t &wc, bool* result);
 
-        static std::filesystem::path defaultFontPath;
-        static Font defaultFont;
-        static Font& getDefaultFont();
-
+        static Font* getDefaultFont();
+        std::string getFontName();
         std::unordered_map<int, Character*> getIdCharacterMap();
         std::vector<unsigned char*> getTextures();
 
@@ -38,13 +36,15 @@ namespace text
         float getDescender();
 
     private:
-        std::vector<Character*> characters;
+        static std::filesystem::path defaultFontPath;
+        static Font* defaultFont;
 
         std::string fontName;
         std::filesystem::path fontFolderPath;
         std::filesystem::path jsonPath;
         std::vector<std::filesystem::path> pngPaths; // E.g. res/fonts/Bungee_Inline
 
+        std::vector<Character*> characters;
         std::unordered_map<int, Character*> idCharacterMap;
         std::vector<unsigned char*> textures;
 
