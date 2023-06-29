@@ -81,7 +81,6 @@ namespace renderer
     Renderer::~Renderer() 
     {   
         // Delete defaultFont created using new in text namespace
-        // TODO: This specifically causes a delay when the SDL window is closed, not sure if correct
         delete text::Font::getDefaultFont();
 
         // Clean up shaderProgram, VAO, VBO, EBO
@@ -176,24 +175,24 @@ namespace renderer
     void Renderer::run()
     {
         auto testFont = new text::Font("Annie", "res/fonts/AnnieUseYourTelescope");
-        auto testFont2 = new text::Font("Cormorant", "res/fonts/CormorantSC");
+        auto testFont2 = new text::Font("Coiny", "res/fonts/Coiny");
         auto testFont3 = new text::Font("KuaiLe", "res/fonts/ZCOOLKuaiLe");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 40, 40, 100, 100, true, true, true, true, 10, gui::colorMap.at("BLUE"));
-        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, false, true, true, false, 10, gui::colorMap.at("RED"));
-        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, false, true, true, false, 10, gui::colorMap.at("YELLOW"));
-        auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 150, 150, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
-        auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 300, 300, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
+        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 30, 30, 75, 75, true, true, true, true, 10, gui::colorMap.at("BLUE"));
+        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, false, false, true, false, 10, gui::colorMap.at("RED"));
+        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, false, false, true, false, 10, gui::colorMap.at("YELLOW"));
+        auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 30, 120, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
+        auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 30, 160, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
 
-        auto testGUIEditTextBase = gui::GUIElementFactory::createGUIElement(testHandler, 30, 40, 200, 400);
-        auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 200, 400, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont);
+        auto testGUIEditTextBase = gui::GUIElementFactory::createGUIElement(testHandler, 130, 30, 75, 75);
+        auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont, true, 1.0f, 10);
 
-        auto testGUIEditTextBase2 = gui::GUIElementFactory::createGUIElement(testHandler, 100, 400, 400, 200);
-        auto testGUIEditText2 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 400, 200, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont2);
+        auto testGUIEditTextBase2 = gui::GUIElementFactory::createGUIElement(testHandler, 230, 30, 75, 75);
+        auto testGUIEditText2 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont2, true, 1.0f, 10);
 
-        auto testGUIEditTextBase3 = gui::GUIElementFactory::createGUIElement(testHandler, 400, 200, 400, 200);
-        auto testGUIEditText3 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 400, 200, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont3);
+        auto testGUIEditTextBase3 = gui::GUIElementFactory::createGUIElement(testHandler, 330, 30, 75, 75);
+        auto testGUIEditText3 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont3, true, 1.0f, 10);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);

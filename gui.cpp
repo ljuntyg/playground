@@ -162,6 +162,12 @@ namespace gui
             isMovable = false;
         }
 
+        if (isResizable && !takesInput)
+        {
+            std::cerr << "Attempt to create resizable GUIElement that does not take input, element made non-resizable" << std::endl;
+            isResizable = false;
+        }
+
         if (isMovable || takesInput)
         {
             handler->addToHandleInputVector(this);
@@ -249,9 +255,12 @@ namespace gui
 
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        if (isMovable) // Only GUIElement that isMovable should be movable
+        if (isResizable)
         {
             resize(event, inputState);
+        }
+        if (isMovable)
+        {
             move(event, inputState);
         }
 
@@ -308,16 +317,19 @@ namespace gui
         return false;
     }
 
-    bool GUIElement::isOnAnyCorner(int x, int y)
+    // Sets cornerNbrBeingResized to the corner being resized, or 0 if none being resized
+    bool GUIElement::isOnAnyCorner(int x, int y, int* cornerNbrBeingResized)
     {
         for (int i = 1; i <= 4; ++i)
         {
+            *cornerNbrBeingResized = i;
             if (isOnCorner(i, x, y))
             {
                 return true;
             }
         }
 
+        *cornerNbrBeingResized = 0;
         return false;
     }
 
@@ -409,11 +421,8 @@ namespace gui
         return true;
     }
 
-    // TODO: Better align behavior with expected behavior,
-    // e.g. dragging the top right corner should resize with
-    // bottom left corner (its opposite corner) as an anchor
-    // Also, resizing of text needs to be considered for elements
-    // that have text elements as children
+    void GUIElement::onResize() {}
+
     void GUIElement::resize(const SDL_Event* event, InputState* inputState)
     {
         // Either resize or move, not at the same time
@@ -429,7 +438,7 @@ namespace gui
             {
                 int mouseX = event->button.x;
                 int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
-                if (isOnAnyCorner(mouseX, mouseY))
+                if (isOnAnyCorner(mouseX, mouseY, &cornerNbrBeingResized))
                 {
                     isBeingResized = true;
                     inputState->setMouseState(InputState::GUIResizeControl);
@@ -448,8 +457,58 @@ namespace gui
         case SDL_MOUSEMOTION:
             if (isBeingResized)
             {
-                width += event->motion.xrel;
-                height -= event->motion.yrel;
+                int xOffset = event->motion.xrel;
+                int yOffset = -event->motion.yrel;
+
+                switch (cornerNbrBeingResized)
+                {
+                case 1: // Top Left
+                    if(width - xOffset >= 2 * borderWidth && height + yOffset >= 2 * borderWidth)
+                    {
+                        xPos += xOffset;
+                        width -= xOffset;
+                        height += yOffset;
+                        offsetChildren(xOffset, 0); // xPos/yPos
+                        resizeChildren(-xOffset, yOffset); // Width/height
+                    }
+                    break;
+
+                case 2: // Top Right
+                    if(width + xOffset >= 2 * borderWidth && height + yOffset >= 2 * borderWidth)
+                    {
+                        width += xOffset;
+                        height += yOffset;
+                        // offsetChildren(0, 0);
+                        resizeChildren(xOffset, yOffset);
+                    }
+                    break;
+
+                case 3: // Bottom Left
+                    if(width - xOffset >= 2 * borderWidth && height - yOffset >= 2 * borderWidth)
+                    {
+                        xPos += xOffset;
+                        yPos += yOffset;
+                        width -= xOffset;
+                        height -= yOffset;
+                        offsetChildren(xOffset, -yOffset);
+                        resizeChildren(-xOffset, -yOffset);
+                    }
+                    break;
+
+                case 4: // Bottom Right
+                    if(width + xOffset >= 2 * borderWidth && height - yOffset >= 2 * borderWidth)
+                    {
+                        yPos += yOffset;
+                        width += xOffset;
+                        height -= yOffset;
+                        offsetChildren(0, -yOffset);
+                        resizeChildren(xOffset, -yOffset);
+                    }
+                    break;
+                    
+                default:
+                    break;
+                }
             }
             break;
         }
@@ -469,7 +528,7 @@ namespace gui
             if (event->button.button == SDL_BUTTON_LEFT)
             {
                 int mouseX = event->button.x;
-                int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
+                int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
                 if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
                 {
                     isBeingDragged = true;
@@ -493,11 +552,25 @@ namespace gui
                 int yOffset = event->motion.yrel;
 
                 xPos += xOffset;
-                yPos -= yOffset; // Conversion from top-left to bottom-left system
+                yPos -= yOffset;
 
                 offsetChildren(xOffset, yOffset);
             }
             break;
+        }
+    }
+
+    void GUIElement::resizeChildren(int xOffset, int yOffset)
+    {
+        for (auto& child : children)
+        {
+            child->width += xOffset;
+            child->height += yOffset;
+
+            child->resizeChildren(xOffset, yOffset);
+
+            // Override to handle resize changes (e.g. for GUIText text resizing)
+            child->onResize();
         }
     }
 
@@ -506,7 +579,7 @@ namespace gui
         for (auto& child : children)
         {
             child->xPos += xOffset;
-            child->yPos -= yOffset; // Conversion from top-left to bottom-left system
+            child->yPos -= yOffset;
 
             child->offsetChildren(xOffset, yOffset);
         }
@@ -616,6 +689,12 @@ namespace gui
         glDeleteProgram(shaderProgram);
     }
 
+    void GUIText::onResize()
+    {
+        cleanupBuffers();
+        initializeBuffers();
+    }
+
     const char* GUIText::getVertexShader()
     {
         return shaders::textVertexShaderSource;
@@ -709,13 +788,28 @@ namespace gui
         return true;
     }
 
-    void GUIText::cleanupBuffers()
+    void GUIText::prepareTextRendering() const
     {
-        for (GLuint VAO : characterVAOs)
-        {
-            glDeleteVertexArrays(1, &VAO);
-        }
-        characterVAOs.clear();
+        glUseProgram(shaderProgram);
+
+        // Set the scissor rectangle to the bounding box of the GUIElement
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(xPos, yPos, width, height);
+
+        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glUniform1i(textLoc, 0);
+        glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
+    }
+
+    void GUIText::finishTextRendering() const
+    {
+        glDisable(GL_SCISSOR_TEST);
+
+        // Clean up
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     bool GUIText::render() const
@@ -762,6 +856,20 @@ namespace gui
             return false;
         }
 
+        return true;
+    }
+
+    void GUIText::cleanupBuffers()
+    {
+        for (GLuint VAO : characterVAOs)
+        {
+            glDeleteVertexArrays(1, &VAO);
+        }
+        characterVAOs.clear();
+    }
+
+    bool GUIText::shouldRenderCharacter(int charVAOIx) const
+    {
         return true;
     }
 
@@ -839,35 +947,6 @@ namespace gui
         };
 
         return retVec;
-    }
-
-    void GUIText::prepareTextRendering() const
-    {
-        glUseProgram(shaderProgram);
-
-        // Set the scissor rectangle to the bounding box of the GUIElement
-        glEnable(GL_SCISSOR_TEST);
-        glScissor(xPos, yPos, width, height);
-
-        glm::mat4 projection = glm::ortho(0.0f, handler->getWindowWidth(), 0.0f, handler->getWindowHeight());
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-        glUniform1i(textLoc, 0);
-        glUniform4fv(textColorLoc, 1, glm::value_ptr(color));
-    }
-
-    void GUIText::finishTextRendering() const
-    {
-        glDisable(GL_SCISSOR_TEST);
-
-        // Clean up
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    bool GUIText::shouldRenderCharacter(int charVAOIx) const
-    {
-        return true;
     }
 
     GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, glm::vec4 color,

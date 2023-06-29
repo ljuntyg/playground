@@ -80,7 +80,7 @@ namespace gui
 
         bool isOnElement(int x, int y);
         bool isOnCorner(int cornerNbr, int x, int y);
-        bool isOnAnyCorner(int x, int y);
+        bool isOnAnyCorner(int x, int y, int* cornerNbrBeingResized);
 
         bool getIsMovable();
         bool getIsVisible();
@@ -97,8 +97,12 @@ namespace gui
     protected:
         GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"));
 
+        // Override for GUIText text regeneration after resize
+        virtual void onResize();
+
         void resize(const SDL_Event* event, InputState* inputState);
         void move(const SDL_Event* event, InputState* inputState);
+        void resizeChildren(int xOffset, int yOffset);
         void offsetChildren(int xOffset, int yOffset);
 
         GUIHandler* handler;
@@ -147,17 +151,18 @@ namespace gui
         GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
             std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
 
+        void onResize() override;
+
         const char* getVertexShader() override; 
         const char* getFragmentShader() override;
 
         bool initializeShaders() override;
         bool initializeBuffers() override;
 
+        void prepareTextRendering() const;
+        void finishTextRendering() const;
+
         void cleanupBuffers();
-
-        virtual void prepareTextRendering() const;
-        virtual void finishTextRendering() const;
-
         virtual bool shouldRenderCharacter(int charVAOIx) const;
         
         std::wstring text;

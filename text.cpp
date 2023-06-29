@@ -114,8 +114,10 @@ namespace text
             }
         }
 
-        for (auto* character : characters) {
-            if (character && this != getDefaultFont()) {
+        for (auto* character : characters) 
+        {
+            if (character && this != getDefaultFont())
+            {
                 character->font = getDefaultFont(); // Replace destroyed Font with defaultFont
                 character->font->registerCharacter(character);
             }
