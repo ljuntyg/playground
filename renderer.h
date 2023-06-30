@@ -12,6 +12,7 @@
 
 #include "obj_loader.h"
 #include "input_state.h"
+#include "pub_sub.h"
 
 namespace renderer 
 {
@@ -39,13 +40,16 @@ namespace renderer
         const float mouseSensitivity = 0.05f;
     };
 
-    class Renderer 
+    class Renderer : public Subscriber, public Publisher
     {
     public:
         RendererState RENDERER_STATE;
 
         Renderer();
         ~Renderer();
+
+        void notify(const event::Event* event) override;
+        void quit();
 
     private:
         bool initializeObject();
@@ -68,6 +72,7 @@ namespace renderer
         SDL_Window* window;
         SDL_GLContext context;
 
+        bool running = true;
         float WINDOW_WIDTH;
         float WINDOW_HEIGHT;
         const float NEAR_DIST = 0.1f;

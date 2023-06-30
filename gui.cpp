@@ -11,8 +11,6 @@
 
 namespace gui
 {
-    // TODO: Use pub-sub to communicate changes in
-    // windowWidth and windoHeight in renderer
     GUIHandler::GUIHandler(float windowWidth, float windowHeight)
         : windowWidth(windowWidth), windowHeight(windowHeight) {}
 
@@ -31,6 +29,15 @@ namespace gui
                     delete e;
                 }
             }
+        }
+    }
+
+    void GUIHandler::notify(const event::Event* event) 
+    {
+        if (const event::WindowResizeEvent* resizeEvent = dynamic_cast<const event::WindowResizeEvent*>(event)) 
+        {
+            windowWidth = (float)resizeEvent->newWidth;
+            windowHeight = (float)resizeEvent->newHeight;
         }
     }
 
@@ -253,6 +260,7 @@ namespace gui
         return true;
     }
 
+    // TODO: Handle corners for children offset outside parent
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
         if (isResizable)
@@ -280,6 +288,8 @@ namespace gui
     // 1 = top left, 2 = top right, 3 = bottom left, 4 = bottom right
     bool GUIElement::isOnCorner(int cornerNbr, int x, int y)
     {
+        int newX = x, newY = y;
+        findPossibleNewCorner(cornerNbr, &newX, &newY);
         int centerX = 0, centerY = 0;
         switch (cornerNbr)
         {
@@ -316,6 +326,8 @@ namespace gui
 
         return false;
     }
+
+    void GUIElement::findPossibleNewCorner(int cornerNbr, int* newX, int* newY) {}
 
     // Sets cornerNbrBeingResized to the corner being resized, or 0 if none being resized
     bool GUIElement::isOnAnyCorner(int x, int y, int* cornerNbrBeingResized)
@@ -426,7 +438,7 @@ namespace gui
     void GUIElement::resize(const SDL_Event* event, InputState* inputState)
     {
         // Either resize or move, not at the same time
-        if (isBeingDragged)
+        if (manipulationState == ElementManipulationState::BeingDragged)
         {
             return;
         }
@@ -440,7 +452,8 @@ namespace gui
                 int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
                 if (isOnAnyCorner(mouseX, mouseY, &cornerNbrBeingResized))
                 {
-                    isBeingResized = true;
+                    manipulationState = ElementManipulationState::BeingResized;
+                    setManipulationStateForChildren(manipulationState);
                     inputState->setMouseState(InputState::GUIResizeControl);
                 }
             }
@@ -449,13 +462,14 @@ namespace gui
         case SDL_MOUSEBUTTONUP:
             if (event->button.button == SDL_BUTTON_LEFT)
             {
-                isBeingResized = false;
+                manipulationState = ElementManipulationState::None;
+                setManipulationStateForChildren(manipulationState);
                 inputState->setMouseState(InputState::CameraControl);
             }
             break;
 
         case SDL_MOUSEMOTION:
-            if (isBeingResized)
+            if (manipulationState == ElementManipulationState::BeingResized)
             {
                 int xOffset = event->motion.xrel;
                 int yOffset = -event->motion.yrel;
@@ -517,7 +531,7 @@ namespace gui
     void GUIElement::move(const SDL_Event* event, InputState* inputState)
     {
         // Either resize or move, not at the same time
-        if (isBeingResized)
+        if (manipulationState == ElementManipulationState::BeingResized)
         {
             return;
         }
@@ -531,7 +545,8 @@ namespace gui
                 int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
                 if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
                 {
-                    isBeingDragged = true;
+                    manipulationState = ElementManipulationState::BeingDragged;
+                    setManipulationStateForChildren(manipulationState);
                     inputState->setMouseState(InputState::GUIMouseControl);
                 }
             }
@@ -540,13 +555,14 @@ namespace gui
         case SDL_MOUSEBUTTONUP:
             if (event->button.button == SDL_BUTTON_LEFT)
             {
-                isBeingDragged = false;
+                manipulationState = ElementManipulationState::None;
+                setManipulationStateForChildren(manipulationState);
                 inputState->setMouseState(InputState::CameraControl);
             }
             break;
 
         case SDL_MOUSEMOTION:
-            if (isBeingDragged)
+            if (manipulationState == ElementManipulationState::BeingDragged)
             {
                 int xOffset = event->motion.xrel;
                 int yOffset = event->motion.yrel;
@@ -635,6 +651,16 @@ namespace gui
         }
     }
 
+    void GUIElement::setManipulationStateForChildren(ElementManipulationState whichState)
+    {
+        for (auto& child : children)
+        {
+            child->manipulationState = whichState;
+
+            child->setManipulationStateForChildren(whichState);
+        }
+    }
+
     GUIButton::GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color, 
         std::function<void(GUIButton*)> onClick)
         : GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color), onClick(onClick) {}
@@ -682,12 +708,9 @@ namespace gui
         button->color = glm::vec4(r, g, b, 1.0f);
     }
 
-    // TODO: Implement publish-subscribe system to communicate between
-    // renderer and gui, can here allow to publish "quit" notification
-    // to be passed to renderer which can then quit renderer
     void GUIButton::quitApplication(GUIButton* button)
     {
-        std::cerr << "Quit application button method not implemented" << std::endl;
+        button->handler->publish(new event::QuitEvent());
     }
 
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,

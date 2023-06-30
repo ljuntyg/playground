@@ -31,7 +31,7 @@ namespace renderer
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
         *window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            (int)*WINDOW_WIDTH, (int)*WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            (int)*WINDOW_WIDTH, (int)*WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
         if (*window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -80,8 +80,8 @@ namespace renderer
 
     Renderer::~Renderer() 
     {   
-        // Delete defaultFont created using new in text namespace
-        delete text::Font::getDefaultFont();
+        // Delete defaultFont created using new in getDefaultFont (or delete nullptr if it wasn't created)
+        delete text::Font::defaultFont;
 
         // Clean up shaderProgram, VAO, VBO, EBO
         glDeleteProgram(shaderProgram);
@@ -93,6 +93,19 @@ namespace renderer
         SDL_GL_DeleteContext(context);
         SDL_DestroyWindow(window);
         SDL_Quit();
+    }
+
+    void Renderer::notify(const event::Event* event) 
+    {
+        if (const event::QuitEvent* quitEvent = dynamic_cast<const event::QuitEvent*>(event)) 
+        {
+            quit();
+        }
+    }
+
+    void Renderer::quit()
+    {
+        running = false;
     }
 
     bool Renderer::initializeObject()
@@ -174,15 +187,19 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = new text::Font("Coiny", "res/fonts/Coiny");
+        auto testFont = new text::Font("FasterOne", "res/fonts/FasterOne");
         auto testFont2 = new text::Font("DukePlus", "res/fonts/DukePlus");
         auto testFont3 = new text::Font("KuaiLe", "res/fonts/ZCOOLKuaiLe");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 30, 30, 75, 75, true, true, true, true, 10, gui::colorMap.at("BLUE"));
-        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, false, false, true, false, 10, gui::colorMap.at("RED"));
-        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, false, false, true, false, 10, gui::colorMap.at("YELLOW"));
-        auto testChild2GUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 15, 15, false, false, true, false, 10, gui::colorMap.at("BLACK"), L"PLAYGROUND!", testFont, true, 1.0f, 5);
+        // Pub-sub
+        testHandler->subscribe(this);
+        this->subscribe(testHandler);
+
+        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 30, 30, 55, 55, true, true, true, true, 10, gui::colorMap.at("BLUE"));
+        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 55, 55, false, false, true, false, 10, gui::colorMap.at("RED"));
+        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 55, 55, false, false, true, false, 10, gui::colorMap.at("YELLOW"));
+        auto testChild2GUIText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 55, 55, false, false, true, 10, gui::colorMap.at("BLACK"), L"PLAYGROUND!", testFont, true, 1.0f, 5);
 
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 30, 120, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 30, 160, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
@@ -213,7 +230,6 @@ namespace renderer
         float lag = 0.0;
 
         float dxMouse = 0, dyMouse = 0;
-        bool running = true;
         while (running) 
         {
             Uint32 current = SDL_GetTicks();
@@ -235,6 +251,17 @@ namespace renderer
                     {
                         dxMouse += event.motion.xrel;
                         dyMouse -= event.motion.yrel;
+                    }
+                }
+
+                if (event.type == SDL_WINDOWEVENT) 
+                {
+                    if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) 
+                    {
+                        int newWidth = event.window.data1;
+                        int newHeight = event.window.data2;
+                        glViewport(0, 0, newWidth, newHeight);
+                        this->publish(new event::WindowResizeEvent(newWidth, newHeight));
                     }
                 }
 

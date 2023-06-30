@@ -23,6 +23,9 @@ namespace text
         Character* getCharacter(const wchar_t &wc, bool* result);
 
         static Font* getDefaultFont();
+        static std::filesystem::path defaultFontPath;
+        static Font* defaultFont;
+        
         std::string getFontName();
         std::unordered_map<int, Character*> getIdCharacterMap();
         std::vector<unsigned char*> getTextures();
@@ -36,9 +39,6 @@ namespace text
         float getDescender();
 
     private:
-        static std::filesystem::path defaultFontPath;
-        static Font* defaultFont;
-
         std::string fontName;
         std::filesystem::path fontFolderPath;
         std::filesystem::path jsonPath;

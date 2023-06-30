@@ -11,6 +11,7 @@
 
 #include "input_state.h"
 #include "text.h"
+#include "pub_sub.h"
 
 namespace gui
 {
@@ -31,11 +32,20 @@ namespace gui
         {"DARK GRAY",  glm::vec4(0.25f, 0.25f, 0.25f, 1.0f)}
     };
 
-    class GUIHandler 
+    enum class ElementManipulationState
+    {
+        BeingDragged,
+        BeingResized,
+        None
+    };
+
+    class GUIHandler : public Subscriber, public Publisher
     {
     public:
         GUIHandler(float windowWidth, float windowHeight);
         ~GUIHandler();
+
+        void notify(const event::Event* event) override;
 
         float getWindowHeight() const;
         float getWindowWidth() const;
@@ -80,6 +90,7 @@ namespace gui
 
         bool isOnElement(int x, int y);
         bool isOnCorner(int cornerNbr, int x, int y);
+        void findPossibleNewCorner(int cornerNbr, int* newX, int* newY);
         bool isOnAnyCorner(int x, int y, int* cornerNbrBeingResized);
 
         bool getIsMovable();
@@ -105,6 +116,8 @@ namespace gui
         void resizeChildren(int xOffset, int yOffset);
         void offsetChildren(int xOffset, int yOffset);
 
+        void setManipulationStateForChildren(ElementManipulationState whichState);
+
         GUIHandler* handler;
         std::vector<GUIElement*> children;
 
@@ -113,8 +126,8 @@ namespace gui
         int borderWidth;
         glm::vec4 color;
         bool isMovable, isResizable, isVisible, takesInput;
+        ElementManipulationState manipulationState = ElementManipulationState::None;
 
-        bool isBeingDragged = false, isBeingResized = false;
         int cornerNbrBeingResized = 0;
         int accumUnderMinSizeX = 0, accumUnderMinSizeY = 0;
 
@@ -130,7 +143,7 @@ namespace gui
 
         bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
-        // These are functions that can be passed to the constructor
+        // These are functions that can be passed to the constructor (onClick)
         static void randomColor(GUIButton* button);
         static void quitApplication(GUIButton* button);
 
