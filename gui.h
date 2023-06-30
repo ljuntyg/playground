@@ -113,8 +113,10 @@ namespace gui
         int borderWidth;
         glm::vec4 color;
         bool isMovable, isResizable, isVisible, takesInput;
+
         bool isBeingDragged = false, isBeingResized = false;
         int cornerNbrBeingResized = 0;
+        int accumUnderMinSizeX = 0, accumUnderMinSizeY = 0;
 
         GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc, textColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;

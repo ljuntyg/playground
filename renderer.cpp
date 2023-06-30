@@ -174,14 +174,16 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = new text::Font("Annie", "res/fonts/AnnieUseYourTelescope");
-        auto testFont2 = new text::Font("Coiny", "res/fonts/Coiny");
+        auto testFont = new text::Font("Coiny", "res/fonts/Coiny");
+        auto testFont2 = new text::Font("DukePlus", "res/fonts/DukePlus");
         auto testFont3 = new text::Font("KuaiLe", "res/fonts/ZCOOLKuaiLe");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 30, 30, 75, 75, true, true, true, true, 10, gui::colorMap.at("BLUE"));
         auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 30, 30, false, false, true, false, 10, gui::colorMap.at("RED"));
         auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 5, 5, 15, 15, false, false, true, false, 10, gui::colorMap.at("YELLOW"));
+        auto testChild2GUIText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 15, 15, false, false, true, false, 10, gui::colorMap.at("BLACK"), L"PLAYGROUND!", testFont, true, 1.0f, 5);
+
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 30, 120, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 30, 160, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
 
@@ -196,6 +198,7 @@ namespace renderer
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
+        testChild2->addChild(testChild2GUIText);
 
         testGUIEditTextBase->addChild(testGUIEditText);
         testGUIEditTextBase2->addChild(testGUIEditText2);

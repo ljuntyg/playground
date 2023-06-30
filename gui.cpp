@@ -560,12 +560,62 @@ namespace gui
         }
     }
 
+    // Resizes children down to a minSize, any offset past minSize is stored in element accumUnderMinSizeX and accumUnderMinSizeY,
+    // when element is upsized again, it checks against accumulations to ensure children are only upsized if they have "made up" for their
+    // size underflow, this ensures they are only upsized again when their parent is the same size it was at the point when the minSize was reached
     void GUIElement::resizeChildren(int xOffset, int yOffset)
     {
+        int minSize = 0;
+
         for (auto& child : children)
         {
-            child->width += xOffset;
-            child->height += yOffset;
+            int newWidth = child->width + xOffset;
+            int newHeight = child->height + yOffset;
+
+            // Handle newWidth
+            if (newWidth < minSize)
+            {
+                accumUnderMinSizeX += newWidth - minSize;
+                newWidth = minSize;
+            }
+            else if (accumUnderMinSizeX < 0) // If there is accumulated size from previous underflow
+            {
+                int potentialWidth = newWidth + accumUnderMinSizeX;
+                if (potentialWidth >= minSize) // New size is valid
+                {
+                    newWidth = potentialWidth;
+                    accumUnderMinSizeX = 0; // Reset accumulation
+                }
+                else // Update accumulation
+                {
+                    accumUnderMinSizeX = potentialWidth - minSize;
+                    newWidth = minSize;
+                }
+            }
+
+            // Handle newHeight
+            if (newHeight < minSize)
+            {
+                accumUnderMinSizeY += newHeight - minSize;
+                newHeight = minSize;
+            }
+            else if (accumUnderMinSizeY < 0) // If there is accumulated size from previous underflow
+            {
+                int potentialHeight = newHeight + accumUnderMinSizeY;
+                if (potentialHeight >= minSize) // New size is valid
+                {
+                    newHeight = potentialHeight;
+                    accumUnderMinSizeY = 0; // Reset accumulation
+                }
+                else // Update accumulation
+                {
+                    accumUnderMinSizeY = potentialHeight - minSize;
+                    newHeight = minSize;
+                }
+            }
+
+            child->width = newWidth;
+            child->height = newHeight;
 
             child->resizeChildren(xOffset, yOffset);
 
@@ -595,7 +645,8 @@ namespace gui
     {
         if (isMovable)
         {
-            // TODO: Add resize when method finished
+            // TODO: Add resize when method finished,
+            // make sure resizing doesn't trigger button click
             move(event, inputState);
         }
 
@@ -604,7 +655,7 @@ namespace gui
             if (event->button.button == SDL_BUTTON_LEFT) 
             {
                 int mouseX = event->button.x;
-                int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
+                int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
                 if (mouseX >= xPos && mouseX < xPos + width && mouseY >= yPos && mouseY < yPos + height) 
                 {
                     onClick(this);
@@ -923,13 +974,13 @@ namespace gui
     {
         float fontSize = ch->font->getSize();
 
-        // Compute the absolute pixel bounds of the glyph.
+        // Compute the absolute pixel bounds of the glyph
         float x1 = x + ch->planeLeft * fontSize * textScale;
         float y1 = y + ch->planeBottom * fontSize * textScale;
         float x2 = x + ch->planeRight * fontSize * textScale;
         float y2 = y + ch->planeTop * fontSize * textScale;
 
-        // Compute the texture coordinates of the glyph.
+        // Compute the texture coordinates of the glyph
         float u1 = ch->atlasLeft / ch->font->getTextureWidth();
         float v1 = ch->atlasBottom / ch->font->getTextureHeight();
         float u2 = ch->atlasRight / ch->font->getTextureWidth();
