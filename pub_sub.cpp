@@ -1,7 +1,5 @@
 #include "pub_sub.h"
 
-Subscriber::~Subscriber() {}
-
 Publisher::~Publisher() {}
 
 void Publisher::subscribe(Subscriber* subscriber)
@@ -21,3 +19,5 @@ void Publisher::publish(const event::Event* event)
         subscriber->notify(event);
     }
 }
+
+Subscriber::~Subscriber() {}

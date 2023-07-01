@@ -265,7 +265,7 @@ namespace renderer
                     }
                 }
 
-                testHandler->handleInputWholeVector(&event, &inputState);
+                testHandler->handleInputAllElements(&event, &inputState);
             }
 
             while (lag >= MS_PER_UPDATE)
@@ -281,7 +281,7 @@ namespace renderer
 
             drawObject();
 
-            testHandler->renderWholeVector();
+            testHandler->renderAllElements();
 
             SDL_GL_SwapWindow(window);
         }

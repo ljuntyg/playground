@@ -20,9 +20,9 @@ namespace gui
     // "delete element" can be called to remove delete element and remove it from elements externally
     GUIHandler::~GUIHandler()
     {
-        if (!elements.empty())
+        if (!rootElements.empty())
         {
-            for (auto& e : elements)
+            for (auto& e : rootElements)
             {
                 if (e != nullptr)
                 {
@@ -53,63 +53,19 @@ namespace gui
 
     void GUIHandler::addElement(GUIElement* element)
     {
-        elements.emplace(element);
+        rootElements.emplace(element);
     }
 
     void GUIHandler::removeElement(GUIElement* element)
     {
-        auto it = std::find(elements.begin(), elements.end(), element);
-        if(it == elements.end())
+        auto it = std::find(rootElements.begin(), rootElements.end(), element);
+        if(it == rootElements.end())
         {
             std::cerr << "Element not a member of elements, unable to remove from elements" << std::endl;
             return;
         }
 
-        elements.erase(it);
-    }
-
-    bool GUIHandler::renderGUIElement(GUIElement* element) const 
-    {
-        if (elements.find(element) == elements.end())
-        {
-            std::cerr << "Element to render not present in GUIHandler, unable to render element" << std::endl;
-            return false;
-        }
-
-        return element->render();
-    }
-
-    bool GUIHandler::handleGUIElementInput(GUIElement* element, const SDL_Event* event, InputState* inputState)
-    {
-        if (elements.find(element) == elements.end())
-        {
-            std::cerr << "Element to handle input for not present in GUIHandler, unable to handle input for element" << std::endl;
-            return false;
-        }
-
-        return element->handleInput(event, inputState);
-    }
-
-    void GUIHandler::addToRenderVector(GUIElement* element)
-    {
-        if (!element->getIsVisible())
-        {
-            std::cerr << "Attempt to add non-visible GUIElement to GUIHandler render vector, element not added to vector" << std::endl;
-            return;
-        }
-
-        renderVector.emplace_back(element);
-    }
-
-    void GUIHandler::addToHandleInputVector(GUIElement* element)
-    {
-        if (!element->getTakesInput())
-        {
-            std::cerr << "Attempt to add GUIElement not accepting input to GUIHandler handle input vector, element not added to vector" << std::endl;
-            return;
-        }
-        
-        handleInputVector.emplace_back(element);
+        rootElements.erase(it);
     }
 
     void GUIHandler::prepareGUIRendering() const
@@ -125,17 +81,20 @@ namespace gui
         glDisable(GL_BLEND);
     }
 
-    bool GUIHandler::renderWholeVector() const
+    bool GUIHandler::renderAllElements() const
     {
         prepareGUIRendering();
 
         bool result = true;
-        for (auto& e : renderVector)
+        for (auto& e : rootElements)
         {
-            if (!renderGUIElement(e))
+            if (e->getIsVisible())
             {
-                std::cerr << "Issue rendering individual GUIElement when rendering all elements in renderVector" << std::endl;
-                result = false;
+                if (!e->render())
+                {
+                    std::cerr << "Issue rendering individual GUIElement when rendering all elements in renderVector" << std::endl;
+                    result = false;
+                }
             }
         }
 
@@ -144,15 +103,18 @@ namespace gui
         return result;
     }
 
-    bool GUIHandler::handleInputWholeVector(const SDL_Event* event, InputState* inputState)
+    bool GUIHandler::handleInputAllElements(const SDL_Event* event, InputState* inputState)
     {
         bool result = true;
-        for (auto& e : handleInputVector)
+        for (auto& e : rootElements)
         {
-            if(!handleGUIElementInput(e, event, inputState))
+            if (e->getTakesInput())
             {
-                std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in handleInputVector" << std::endl;
-                result = false;
+                if (!e->handleInput(event, inputState))
+                {
+                    std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in handleInputVector" << std::endl;
+                    result = false;
+                }
             }
         }
 
@@ -173,16 +135,6 @@ namespace gui
         {
             std::cerr << "Attempt to create resizable GUIElement that does not take input, element made non-resizable" << std::endl;
             isResizable = false;
-        }
-
-        if (isMovable || takesInput)
-        {
-            handler->addToHandleInputVector(this);
-        }
-
-        if (isVisible)
-        {
-            handler->addToRenderVector(this);
         }
 
         handler->addElement(this);
@@ -207,7 +159,10 @@ namespace gui
             return;
         }
 
-        children.emplace_back(child);
+        // Remove child from parent handler rootElements since it is no longer a root
+        handler->removeElement(child);
+
+        children.emplace(child);
         child->xPos += xPos; // Offset child x in relation to parent (this)
         child->yPos += yPos; // Offset child y in relation to parent (this)
     }
@@ -257,12 +212,35 @@ namespace gui
             return false;
         }
 
+        // Render children
+        renderChildren();
+
+        return true;
+    }
+
+    bool GUIElement::renderChildren() const
+    {
+        for (auto& child : children)
+        {
+            if (isVisible)
+            {
+                if (!child->render())
+                {
+                    std::cerr << "Issue rendering individual GUIElement when rendering children" << std::endl;
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
     // TODO: Handle corners for children offset outside parent
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
+        auto preManipulationState = manipulationState;
+        auto preXPos = xPos, preYPos = yPos, preWidth = width, preHeight = height;
+
         if (isResizable)
         {
             resize(event, inputState);
@@ -270,6 +248,27 @@ namespace gui
         if (isMovable)
         {
             move(event, inputState);
+        }
+
+        // Handle input for this children if this element is not being manipulated
+        // and if it has either changed state or has changed size???
+        if (manipulationState == ElementManipulationState::None)
+        {
+            handleInputChildren(event, inputState);
+        }
+
+        return true;
+    }
+
+    bool GUIElement::handleInputChildren(const SDL_Event* event, InputState* inputState)
+    {
+        for (auto& child : children)
+        {
+            if (!child->handleInput(event, inputState))
+            {
+                std::cerr << "Issue handling input for individual GUIElement when handling input for children" << std::endl;
+                return false;
+            }
         }
 
         return true;
@@ -358,6 +357,11 @@ namespace gui
     bool GUIElement::getTakesInput()
     {
         return takesInput;
+    }
+
+    ElementManipulationState GUIElement::getManipulationState()
+    {
+        return manipulationState;
     }
 
     const char* GUIElement::getVertexShader()
@@ -453,7 +457,6 @@ namespace gui
                 if (isOnAnyCorner(mouseX, mouseY, &cornerNbrBeingResized))
                 {
                     manipulationState = ElementManipulationState::BeingResized;
-                    setManipulationStateForChildren(manipulationState);
                     inputState->setMouseState(InputState::GUIResizeControl);
                 }
             }
@@ -463,7 +466,6 @@ namespace gui
             if (event->button.button == SDL_BUTTON_LEFT)
             {
                 manipulationState = ElementManipulationState::None;
-                setManipulationStateForChildren(manipulationState);
                 inputState->setMouseState(InputState::CameraControl);
             }
             break;
@@ -528,54 +530,6 @@ namespace gui
         }
     }
 
-    void GUIElement::move(const SDL_Event* event, InputState* inputState)
-    {
-        // Either resize or move, not at the same time
-        if (manipulationState == ElementManipulationState::BeingResized)
-        {
-            return;
-        }
-
-        switch (event->type)
-        {
-        case SDL_MOUSEBUTTONDOWN:
-            if (event->button.button == SDL_BUTTON_LEFT)
-            {
-                int mouseX = event->button.x;
-                int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
-                if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
-                {
-                    manipulationState = ElementManipulationState::BeingDragged;
-                    setManipulationStateForChildren(manipulationState);
-                    inputState->setMouseState(InputState::GUIMouseControl);
-                }
-            }
-            break;
-
-        case SDL_MOUSEBUTTONUP:
-            if (event->button.button == SDL_BUTTON_LEFT)
-            {
-                manipulationState = ElementManipulationState::None;
-                setManipulationStateForChildren(manipulationState);
-                inputState->setMouseState(InputState::CameraControl);
-            }
-            break;
-
-        case SDL_MOUSEMOTION:
-            if (manipulationState == ElementManipulationState::BeingDragged)
-            {
-                int xOffset = event->motion.xrel;
-                int yOffset = event->motion.yrel;
-
-                xPos += xOffset;
-                yPos -= yOffset;
-
-                offsetChildren(xOffset, yOffset);
-            }
-            break;
-        }
-    }
-
     // Resizes children down to a minSize, any offset past minSize is stored in element accumUnderMinSizeX and accumUnderMinSizeY,
     // when element is upsized again, it checks against accumulations to ensure children are only upsized if they have "made up" for their
     // size underflow, this ensures they are only upsized again when their parent is the same size it was at the point when the minSize was reached
@@ -635,8 +589,54 @@ namespace gui
 
             child->resizeChildren(xOffset, yOffset);
 
-            // Override to handle resize changes (e.g. for GUIText text resizing)
+            // Override to handle resize changes (e.g. for GUIText text updating on resize)
             child->onResize();
+        }
+    }
+
+    void GUIElement::move(const SDL_Event* event, InputState* inputState)
+    {
+        // Either resize or move, not at the same time
+        if (manipulationState == ElementManipulationState::BeingResized)
+        {
+            return;
+        }
+
+        switch (event->type)
+        {
+        case SDL_MOUSEBUTTONDOWN:
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                int mouseX = event->button.x;
+                int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
+                if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
+                {
+                    manipulationState = ElementManipulationState::BeingDragged;
+                    inputState->setMouseState(InputState::GUIMouseControl);
+                }
+            }
+            break;
+
+        case SDL_MOUSEBUTTONUP:
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                manipulationState = ElementManipulationState::None;
+                inputState->setMouseState(InputState::CameraControl);
+            }
+            break;
+
+        case SDL_MOUSEMOTION:
+            if (manipulationState == ElementManipulationState::BeingDragged)
+            {
+                int xOffset = event->motion.xrel;
+                int yOffset = event->motion.yrel;
+
+                xPos += xOffset;
+                yPos -= yOffset;
+
+                offsetChildren(xOffset, yOffset);
+            }
+            break;
         }
     }
 
@@ -648,16 +648,6 @@ namespace gui
             child->yPos -= yOffset;
 
             child->offsetChildren(xOffset, yOffset);
-        }
-    }
-
-    void GUIElement::setManipulationStateForChildren(ElementManipulationState whichState)
-    {
-        for (auto& child : children)
-        {
-            child->manipulationState = whichState;
-
-            child->setManipulationStateForChildren(whichState);
         }
     }
 
@@ -688,6 +678,12 @@ namespace gui
                     return true;
                 }
             }
+        }
+
+        // Handle input for this children if this element is not being manipulated
+        if (manipulationState == ElementManipulationState::None)
+        {
+            handleInputChildren(event, inputState);
         }
 
         return true;
@@ -930,6 +926,9 @@ namespace gui
             return false;
         }
 
+        // Render children
+        renderChildren();
+
         return true;
     }
 
@@ -1106,6 +1105,12 @@ namespace gui
                     return true;
                 }
             }
+        }
+
+        // Handle input for this children if this element is not being manipulated
+        if (manipulationState == ElementManipulationState::None)
+        {
+            handleInputChildren(event, inputState);
         }
 
         return true;

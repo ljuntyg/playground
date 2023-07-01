@@ -3,13 +3,8 @@
 #include <list>
 #include "event.h"
 
-class Subscriber
-{
-public:
-    virtual ~Subscriber();
-
-    virtual void notify(const event::Event* event) = 0;
-};
+// Forward declaration
+class Subscriber;
 
 // TODO: Lifetime of subscribers?
 class Publisher
@@ -23,4 +18,12 @@ public:
 
 private:
     std::list<Subscriber*> subscribers;
+};
+
+class Subscriber
+{
+public:
+    virtual ~Subscriber();
+
+    virtual void notify(const event::Event* event) = 0;
 };

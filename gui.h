@@ -34,9 +34,10 @@ namespace gui
 
     enum class ElementManipulationState
     {
+        None,
+        JustManipulated,
         BeingDragged,
-        BeingResized,
-        None
+        BeingResized
     };
 
     class GUIHandler : public Subscriber, public Publisher
@@ -54,28 +55,21 @@ namespace gui
         void addElement(GUIElement* element);
         void removeElement(GUIElement* element);
 
-        bool renderGUIElement(GUIElement* element) const;
-        bool handleGUIElementInput(GUIElement* element, const SDL_Event* event, InputState* inputState);
-
-        void addToRenderVector(GUIElement* element);
-        void addToHandleInputVector(GUIElement* element);
-
         void prepareGUIRendering() const;
         void finishGUIRendering() const;
 
-        bool renderWholeVector() const;
-        bool handleInputWholeVector(const SDL_Event* event, InputState* inputState);
+        bool renderAllElements() const;
+        bool handleInputAllElements(const SDL_Event* event, InputState* inputState);
 
     private:
         float windowWidth;
         float windowHeight;
 
-        std::unordered_set<GUIElement*> elements;
-
-        std::vector<GUIElement*> renderVector;
-        std::vector<GUIElement*> handleInputVector;
+        std::unordered_set<GUIElement*> rootElements;
     };
 
+    // TODO: Switch to hierarchical input handling system instead 
+    // of flat vector of all GUIElements to handle input for
     class GUIElement 
     {
         friend class GUIElementFactory;
@@ -85,8 +79,12 @@ namespace gui
         void addChild(GUIElement* child);
         void removeChild(GUIElement* child);
 
+        // TODO: Render and handleInput should be recursive on children
+        // with regard for bool flags, e.g. isVisible, takesInput...
         virtual bool render() const;
+        virtual bool renderChildren() const;
         virtual bool handleInput(const SDL_Event* event, InputState* inputState);
+        virtual bool handleInputChildren(const SDL_Event* event, InputState* inputState);
 
         bool isOnElement(int x, int y);
         bool isOnCorner(int cornerNbr, int x, int y);
@@ -96,6 +94,7 @@ namespace gui
         bool getIsMovable();
         bool getIsVisible();
         bool getTakesInput();
+        ElementManipulationState getManipulationState();
 
     private:
         // Override to return respective shader for each GUIElement subtype
@@ -112,14 +111,12 @@ namespace gui
         virtual void onResize();
 
         void resize(const SDL_Event* event, InputState* inputState);
-        void move(const SDL_Event* event, InputState* inputState);
         void resizeChildren(int xOffset, int yOffset);
+        void move(const SDL_Event* event, InputState* inputState);
         void offsetChildren(int xOffset, int yOffset);
 
-        void setManipulationStateForChildren(ElementManipulationState whichState);
-
         GUIHandler* handler;
-        std::vector<GUIElement*> children;
+        std::unordered_set<GUIElement*> children;
 
         int xPos, yPos;
         int width, height;
