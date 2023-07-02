@@ -103,22 +103,33 @@ namespace gui
         return result;
     }
 
+    // A true return value from receiveInput means the element consumed the event
     bool GUIHandler::receiveInputAllElements(const SDL_Event* event, InputState* inputState)
     {
-        bool result = true;
+        int i = 1;
         for (auto& e : rootElements)
-        {
-            if (e->getTakesInput())
+        {   
+            std::cout << "ELEMENT " << i << " position, x: " << e->getXPos() << ", y: " << e->getYPos() << std::endl;
+            if (e->receiveInput(event, inputState))
             {
-                if (!e->receiveInput(event, inputState))
-                {
-                    std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in GUIHandler" << std::endl;
-                    result = false;
-                }
+                std::cout << "ELEMENT " << i << " consumed event, event: " << event->type << std::endl; 
+                return true; // Stop propagation on event consumed
             }
+            ++i;
+            std::cout << std::endl;
         }
 
-        return result;
+        return false; // No element consumed the event
+    }
+
+    GUIElement* GUIHandler::getActiveElement()
+    {
+        return activeElement;
+    }
+
+    void GUIHandler::setActiveElement(GUIElement* element)
+    {
+        activeElement = element;
     }
 
     GUIElement::GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color)
@@ -238,51 +249,59 @@ namespace gui
 
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        return true;
+        return false; // Default implementation does not consume event
     }
 
     // TODO: Handle corners for children offset outside parent
+    // True return value means the element consumed the event
     bool GUIElement::receiveInput(const SDL_Event* event, InputState* inputState)
     {
+        if (handler->getActiveElement() && handler->getActiveElement() != this)
+        {
+            return false;
+        }
+
         if (isResizable)
         {
-            resize(event, inputState);
-            onResize();
+            if (resize(event, inputState))
+            {
+                onResize();
+                return true;
+            }
         }
+
         if (isMovable)
-        {
-            move(event, inputState);
+        {   
+            if (move(event, inputState))
+            {
+                return true;
+            }
         }
 
-        // Define an early return condition, where return if a manipulation has happened,
-        // i.e. if manipulationState was non-None before AND is None after
-        // AND a manipulation-relevant event has occurred (moved OR size changed)
-        if ((lastManipulationState != ElementManipulationState::None)
-            && (manipulationState == ElementManipulationState::None)
-            && (lastManipulationState == ElementManipulationState::WasDragged 
-                || lastManipulationState == ElementManipulationState::WasResized))
+        if (takesInput)
         {
-            return true;
+            if (handleInput(event, inputState))  // If event was consumed by handleInput
+            {
+                std::cout << "handleInput consumed event, event: " << event->type << std::endl;
+                std::cout << "consumer of event position, x: " << xPos << ", y: " << yPos << std::endl;
+                return true; // Event consumed, stop propagation
+            }
         }
 
-        handleInput(event, inputState);
-
-        lastManipulationState = manipulationState;
-        return receiveInputChildren(event, inputState);
+        return receiveInputChildren(event, inputState); // Propagate to children
     }
 
     bool GUIElement::receiveInputChildren(const SDL_Event* event, InputState* inputState)
     {
         for (auto& child : children)
         {
-            if (!child->receiveInput(event, inputState))
+            if (child->receiveInput(event, inputState)) // If child consumed event
             {
-                std::cerr << "Issue handling input for individual GUIElement when handling input for children" << std::endl;
-                return false;
+                return true; // Event consumed, stop propagation
             }
         }
 
-        return true;
+        return false;
     }
 
     bool GUIElement::isOnElement(int x, int y)
@@ -355,6 +374,16 @@ namespace gui
         return false;
     }
 
+    int GUIElement::getXPos()
+    {
+        return xPos;
+    }
+
+    int GUIElement::getYPos()
+    {
+        return yPos;
+    }
+
     bool GUIElement::getIsMovable()
     {
         return isMovable;
@@ -370,9 +399,14 @@ namespace gui
         return takesInput;
     }
 
-    ElementManipulationState GUIElement::getManipulationState()
+    ElementManipulationState GUIElement::getManipulationStateResize()
     {
-        return manipulationState;
+        return manipulationStateResize;
+    }
+
+    ElementManipulationState GUIElement::getManipulationStateMove()
+    {
+        return manipulationStateMove;
     }
 
     const char* GUIElement::getVertexShader()
@@ -450,14 +484,8 @@ namespace gui
 
     void GUIElement::onResize() {}
 
-    void GUIElement::resize(const SDL_Event* event, InputState* inputState)
+    bool GUIElement::resize(const SDL_Event* event, InputState* inputState)
     {
-        // Either resize or move, not at the same time
-        if (manipulationState == ElementManipulationState::BeingDragged)
-        {
-            return;
-        }
-
         switch (event->type)
         {
         case SDL_MOUSEBUTTONDOWN:
@@ -467,8 +495,10 @@ namespace gui
                 int mouseY = (int)(handler->getWindowHeight() - event->button.y); // Conversion from top-left to bottom-left system
                 if (isOnAnyCorner(mouseX, mouseY, &cornerNbrBeingResized))
                 {
-                    manipulationState = ElementManipulationState::BeingResized;
+                    handler->setActiveElement(this);
+                    manipulationStateResize = ElementManipulationState::PressOnCorner;
                     inputState->setMouseState(InputState::GUIResizeControl);
+                    return true;
                 }
             }
             break;
@@ -476,16 +506,30 @@ namespace gui
         case SDL_MOUSEBUTTONUP:
             if (event->button.button == SDL_BUTTON_LEFT)
             {
-                manipulationState = ElementManipulationState::None;
+                handler->setActiveElement(nullptr);
                 inputState->setMouseState(InputState::CameraControl);
+                cornerNbrBeingResized = 0;
+
+                // Two possibilites on MOUSEBUTTONUP, either resizing or not, if resizing
+                // then return true to consume event, else allow other elements to handle event
+                if (manipulationStateResize == ElementManipulationState::Resizing)
+                {
+                    manipulationStateResize = ElementManipulationState::None;
+                    return true;
+                }
+                else
+                {
+                    manipulationStateResize = ElementManipulationState::None;
+                    return false;
+                }
             }
             break;
 
         case SDL_MOUSEMOTION:
-            if (manipulationState == ElementManipulationState::BeingResized
-                || manipulationState == ElementManipulationState::WasResized)
+            if (manipulationStateResize == ElementManipulationState::PressOnCorner
+                || manipulationStateResize == ElementManipulationState::Resizing)
             {
-                manipulationState = ElementManipulationState::WasResized;
+                manipulationStateResize = ElementManipulationState::Resizing;
 
                 int xOffset = event->motion.xrel;
                 int yOffset = -event->motion.yrel;
@@ -500,6 +544,7 @@ namespace gui
                         height += yOffset;
                         offsetChildren(xOffset, 0); // xPos/yPos
                         resizeChildren(-xOffset, yOffset); // Width/height
+                        return true;
                     }
                     break;
 
@@ -510,6 +555,7 @@ namespace gui
                         height += yOffset;
                         // offsetChildren(0, 0);
                         resizeChildren(xOffset, yOffset);
+                        return true;
                     }
                     break;
 
@@ -522,6 +568,7 @@ namespace gui
                         height -= yOffset;
                         offsetChildren(xOffset, -yOffset);
                         resizeChildren(-xOffset, -yOffset);
+                        return true;
                     }
                     break;
 
@@ -533,15 +580,22 @@ namespace gui
                         height -= yOffset;
                         offsetChildren(0, -yOffset);
                         resizeChildren(xOffset, -yOffset);
+                        return true;
                     }
                     break;
-                    
+                
+                // Default case (cornerNbrBeingResized not in range 1-4) means no corner is being resized
                 default:
-                    break;
+                    return false;
                 }
             }
             break;
+
+        default:
+            break;
         }
+
+        return false;
     }
 
     // Resizes children down to a minSize, any offset past minSize is stored in element accumUnderMinSizeX and accumUnderMinSizeY,
@@ -608,14 +662,8 @@ namespace gui
         }
     }
 
-    void GUIElement::move(const SDL_Event* event, InputState* inputState)
+    bool GUIElement::move(const SDL_Event* event, InputState* inputState)
     {
-        // Either resize or move, not at the same time
-        if (manipulationState == ElementManipulationState::BeingResized)
-        {
-            return;
-        }
-
         switch (event->type)
         {
         case SDL_MOUSEBUTTONDOWN:
@@ -623,10 +671,12 @@ namespace gui
             {
                 int mouseX = event->button.x;
                 int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
-                if (mouseX >= xPos && mouseX <= xPos + width && mouseY >= yPos && mouseY <= yPos + height)
+                if (isOnElement(mouseX, mouseY))
                 {
-                    manipulationState = ElementManipulationState::BeingDragged;
+                    handler->setActiveElement(this);
+                    manipulationStateMove = ElementManipulationState::PressOnElement;
                     inputState->setMouseState(InputState::GUIMouseControl);
+                    return true;
                 }
             }
             break;
@@ -634,16 +684,29 @@ namespace gui
         case SDL_MOUSEBUTTONUP:
             if (event->button.button == SDL_BUTTON_LEFT)
             {
-                manipulationState = ElementManipulationState::None;
+                handler->setActiveElement(nullptr);
                 inputState->setMouseState(InputState::CameraControl);
+
+                // Two possibilites on MOUSEBUTTONUP, either resizing or not, if resizing
+                // then return true to consume event, else allow other elements to handle event
+                if (manipulationStateMove == ElementManipulationState::Dragging)
+                {
+                    manipulationStateMove = ElementManipulationState::None;
+                    return true;
+                }
+                else
+                {
+                    manipulationStateMove = ElementManipulationState::None;
+                    return false;
+                }
             }
             break;
 
         case SDL_MOUSEMOTION:
-            if (manipulationState == ElementManipulationState::BeingDragged
-                || manipulationState == ElementManipulationState::WasDragged)
+            if (manipulationStateMove == ElementManipulationState::PressOnElement
+                || manipulationStateMove == ElementManipulationState::Dragging)
             {
-                manipulationState = ElementManipulationState::WasDragged;
+                manipulationStateMove = ElementManipulationState::Dragging;
 
                 int xOffset = event->motion.xrel;
                 int yOffset = event->motion.yrel;
@@ -652,9 +715,15 @@ namespace gui
                 yPos -= yOffset;
 
                 offsetChildren(xOffset, yOffset);
+                return true;
             }
             break;
+
+        default:
+            break;
         }
+
+        return false;
     }
 
     void GUIElement::offsetChildren(int xOffset, int yOffset)
@@ -690,7 +759,7 @@ namespace gui
             }
         }
 
-        return true;
+        return false;
     }
 
     void GUIButton::randomColor(GUIButton* button)
@@ -1028,91 +1097,112 @@ namespace gui
 
     GUIEditText::GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, glm::vec4 color,
         std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding)
-        : GUIText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, true, borderWidth, color, text, font, autoScaleText, textScale, padding)
-    {
-        beingEdited = false;
-        lastCharacterVisible = true;
-        lastBlinkTime = std::chrono::steady_clock::now();
-    }
+        : GUIText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, true, borderWidth, color, text, font, autoScaleText, textScale, padding) {}
 
     GUIEditText::~GUIEditText() {}
 
     // TODO: Maybe change text editing to start from specific char clicked?
     // add ctrl+c, ctrl+v, ctrl+z, ctrl+y, add cursor after current character
-    // Also better handle the cursor blink state, it's a bit buggy
+
+    // TODO: Refactor method with event consumer pattern in mind,
+    // ensure it works if other texts are clicked and clicked back etc.
     bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        // If GUIKeyboardControl but this element not being edited, it means another GUIEditText is being edited
-        if (inputState->getKeyboardState() == InputState::KeyboardState::GUIKeyboardControl && !beingEdited)
+        switch (event->type)
         {
-            return true;
-        }
-
-        if (beingEdited)
-        {
-            if (event->type == SDL_TEXTINPUT)
-            {
-                text += cStringToWString(event->text.text);
-                return regenCharactersAndBuffers();
-            }
-            else if (event->type == SDL_KEYDOWN)
-            {
-                // Handle special keys like backspace or enter
-                if (event->key.keysym.sym == SDLK_BACKSPACE && !text.empty())
+            case SDL_TEXTINPUT:
+                if (beingEdited)
                 {
-                    if (text.back() == '\n')
+                    text += cStringToWString(event->text.text);
+                    if (!regenCharactersAndBuffers())
                     {
-                        text.pop_back();
-                        text.pop_back();
+                        std::cerr << "Failed to regenerate characters and buffers for GUIEditText in handleInput" << std::endl;
+                    }
+                    return true;  // Event consumed
+                }
+                break;
+
+            case SDL_KEYDOWN:
+                if (beingEdited)
+                {
+                    // Handle special keys like backspace or enter
+                    switch (event->key.keysym.sym)
+                    {
+                        case SDLK_BACKSPACE:
+                            if (!text.empty())
+                            {
+                                if (text.back() == '\n')
+                                {
+                                    text.pop_back();
+                                    text.pop_back();
+                                }
+                                else
+                                {
+                                    text.pop_back();
+                                }
+
+                                if (!regenCharactersAndBuffers())
+                                {
+                                    std::cerr << "Failed to regenerate characters and buffers for GUIEditText in handleInput" << std::endl;
+                                }
+                            }
+                            return true;  // Event consumed
+                            break;
+
+                        case SDLK_RETURN:
+                            text += '\n';
+                            if (!regenCharactersAndBuffers())
+                            {
+                                std::cerr << "Failed to regenerate characters and buffers for GUIEditText in handleInput" << std::endl;
+                            }
+                            return true;  // Event consumed
+                            break;
+
+                        case SDLK_ESCAPE:
+                            stopTextInput(inputState);
+                            return true;  // Event consumed
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+                break;
+
+            case SDL_MOUSEBUTTONUP:
+                if (event->button.button == SDL_BUTTON_LEFT)
+                {
+                    int mouseX = event->button.x;
+                    int mouseY = (int)handler->getWindowHeight() - event->button.y;
+                    if (isOnElement(mouseX, mouseY))
+                    {
+                        if (text.empty())
+                        {
+                            startTextInput(inputState);
+                        }
+                        else if (isOnText(mouseX, mouseY))
+                        {
+                            startTextInput(inputState);
+                        }
+                        else
+                        {
+                            stopTextInput(inputState);
+                        }
+                        return true;  // Event consumed
                     }
                     else
                     {
-                        text.pop_back();
-                    }
-
-                    return regenCharactersAndBuffers();
-                }
-                else if (event->key.keysym.sym == SDLK_RETURN)
-                {
-                    text += '\n';
-                    return regenCharactersAndBuffers();
-                }
-                else if (event->key.keysym.sym == SDLK_ESCAPE)
-                {
-                    stopTextInput(inputState);
-                    return true;
-                }
-            }
-        }
-
-        if (event->type == SDL_MOUSEBUTTONUP)
-        {
-            if (event->button.button == SDL_BUTTON_LEFT)
-            {
-                if (text.empty())
-                {
-                    // Seems to work correctly without else statement
-                    if (isOnElement(event->button.x, (int)handler->getWindowHeight() - event->button.y))
-                    {
-                        startTextInput(inputState);
-                        return true;
+                        stopTextInput(inputState);
+                        return true;  // Event consumed
                     }
                 }
-
-                if (isOnText(event->button.x, (int)handler->getWindowHeight() - event->button.y))
-                {
-                    startTextInput(inputState);
-                    return true;
-                }
-                else
-                {
-                    stopTextInput(inputState);
-                    return true;
-                }
-            }
+                break;
+            
+            default:
+                break;
         }
 
-        return true;
+        return false;  // If this point reached, the event has not been consumed
     }
 
     bool GUIEditText::shouldRenderCharacter(int charVAOIx) const
@@ -1137,16 +1227,20 @@ namespace gui
         return true;
     }
 
+    // TODO: Take control of activeElement and the keyboard
     void GUIEditText::startTextInput(InputState* inputState)
     {
+        /* handler->setActiveElement(this); */
         beingEdited = true;
 
         inputState->setKeyboardState(InputState::KeyboardState::GUIKeyboardControl);
         SDL_StartTextInput();
     }
 
+    // TODO: Resign control of activeElement and the keyboard
     void GUIEditText::stopTextInput(InputState* inputState)
     {
+        /* handler->setActiveElement(nullptr); */
         beingEdited = false;
 
         inputState->setKeyboardState(InputState::KeyboardState::MovementControl);

@@ -15,7 +15,9 @@
 
 namespace gui
 {
+    // Forward declarations
     class GUIElement;
+    class GUIEditText;
     class GUIElementFactory;
 
     const std::unordered_map<std::string, glm::vec4> colorMap = {
@@ -35,10 +37,10 @@ namespace gui
     enum class ElementManipulationState
     {
         None,
-        BeingDragged,
-        BeingResized,
-        WasDragged,
-        WasResized
+        PressOnElement,
+        PressOnCorner,
+        Dragging,
+        Resizing
     };
 
     // TODO: Since GUIElement lifetime is bound to GUIHandler,
@@ -65,11 +67,15 @@ namespace gui
         bool renderAllElements() const;
         bool receiveInputAllElements(const SDL_Event* event, InputState* inputState);
 
+        GUIElement* getActiveElement();
+        void setActiveElement(GUIElement* element);
+
     private:
         float windowWidth;
         float windowHeight;
 
         std::unordered_set<GUIElement*> rootElements;
+        GUIElement* activeElement = nullptr;
     };
 
     class GUIElement 
@@ -85,7 +91,8 @@ namespace gui
         virtual bool renderChildren() const;
 
         // Override handleInput for the specific handling of input for each GUIElement subtype,
-        // receiveInput is a common wrapper for each subtype's handleInput
+        // receiveInput is a common wrapper for each subtype's handleInput, handleInput returns
+        // a bool indicating whether the event was consumed or not, true for consumed, false for not
         virtual bool handleInput(const SDL_Event* event, InputState* inputState);
         bool receiveInput(const SDL_Event* event, InputState* inputState);
         bool receiveInputChildren(const SDL_Event* event, InputState* inputState);
@@ -95,10 +102,13 @@ namespace gui
         void findPossibleNewCorner(int cornerNbr, int* newX, int* newY);
         bool isOnAnyCorner(int x, int y, int* cornerNbrBeingResized);
 
+        int getXPos();
+        int getYPos();
         bool getIsMovable();
         bool getIsVisible();
         bool getTakesInput();
-        ElementManipulationState getManipulationState();
+        ElementManipulationState getManipulationStateResize();
+        ElementManipulationState getManipulationStateMove();
 
     private:
         // Override to return respective shader for each GUIElement subtype
@@ -114,9 +124,10 @@ namespace gui
         // Override for GUIText text regeneration after resize
         virtual void onResize();
 
-        void resize(const SDL_Event* event, InputState* inputState);
+        // Resize and move return true if the event was consumed, false otherwise
+        bool resize(const SDL_Event* event, InputState* inputState);
         void resizeChildren(int xOffset, int yOffset);
-        void move(const SDL_Event* event, InputState* inputState);
+        bool move(const SDL_Event* event, InputState* inputState);
         void offsetChildren(int xOffset, int yOffset);
 
         GUIHandler* handler;
@@ -127,8 +138,8 @@ namespace gui
         int borderWidth;
         glm::vec4 color;
         bool isMovable, isResizable, isVisible, takesInput;
-        ElementManipulationState manipulationState = ElementManipulationState::None;
-        ElementManipulationState lastManipulationState = ElementManipulationState::None;
+        ElementManipulationState manipulationStateResize = ElementManipulationState::None;
+        ElementManipulationState manipulationStateMove = ElementManipulationState::None;
 
         int cornerNbrBeingResized = 0;
         int accumUnderMinSizeX = 0, accumUnderMinSizeY = 0;
@@ -226,9 +237,9 @@ namespace gui
         bool isOnLine(text::Line* line, int x, int y);
         bool isOnCharacterInLine(text::Character* ch, text::Line* line, int x, int y);
 
-        bool beingEdited;
-        mutable bool lastCharacterVisible;
-        mutable std::chrono::steady_clock::time_point lastBlinkTime;
+        bool beingEdited = false;
+        mutable bool lastCharacterVisible = true;
+        mutable std::chrono::steady_clock::time_point lastBlinkTime = std::chrono::steady_clock::now();
         std::chrono::milliseconds blinkDuration = std::chrono::milliseconds(500);
     };
 

@@ -217,6 +217,9 @@ namespace renderer
         auto testGUIEditTextBase3 = gui::GUIElementFactory::createGUIElement(testHandler, 330, 30, 75, 75);
         auto testGUIEditText3 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont3, true, 1.0f, 10);
 
+        auto testGUIEditText4 = gui::GUIElementFactory::createGUIEditText(testHandler, 430, 30, 75, 75, true, true, true, 10, gui::colorMap.at("RED"), L"Text!", testFont3, true, 1.0f, 10);
+        auto testGUIEditText5 = gui::GUIElementFactory::createGUIEditText(testHandler, 530, 30, 75, 75, true, true, true, 10, gui::colorMap.at("RED"), L"Text!", testFont4, true, 1.0f, 10);
+
         testButtonQuit->addChild(testButtonQuitText);
         testButton2Base->addChild(testButton2);
 
