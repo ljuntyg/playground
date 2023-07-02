@@ -103,16 +103,16 @@ namespace gui
         return result;
     }
 
-    bool GUIHandler::handleInputAllElements(const SDL_Event* event, InputState* inputState)
+    bool GUIHandler::receiveInputAllElements(const SDL_Event* event, InputState* inputState)
     {
         bool result = true;
         for (auto& e : rootElements)
         {
             if (e->getTakesInput())
             {
-                if (!e->handleInput(event, inputState))
+                if (!e->receiveInput(event, inputState))
                 {
-                    std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in handleInputVector" << std::endl;
+                    std::cerr << "Issue handling input for individual GUIElement when handling input for all elements in GUIHandler" << std::endl;
                     result = false;
                 }
             }
@@ -222,6 +222,7 @@ namespace gui
     {
         for (auto& child : children)
         {
+            // TODO: This will effectively make any children of this element invisible too if this element is invisible, is this desired?
             if (isVisible)
             {
                 if (!child->render())
@@ -235,36 +236,46 @@ namespace gui
         return true;
     }
 
-    // TODO: Handle corners for children offset outside parent
     bool GUIElement::handleInput(const SDL_Event* event, InputState* inputState)
     {
-        auto preManipulationState = manipulationState;
-        auto preXPos = xPos, preYPos = yPos, preWidth = width, preHeight = height;
+        return true;
+    }
 
+    // TODO: Handle corners for children offset outside parent
+    bool GUIElement::receiveInput(const SDL_Event* event, InputState* inputState)
+    {
         if (isResizable)
         {
             resize(event, inputState);
+            onResize();
         }
         if (isMovable)
         {
             move(event, inputState);
         }
 
-        // Handle input for this children if this element is not being manipulated
-        // and if it has either changed state or has changed size???
-        if (manipulationState == ElementManipulationState::None)
+        // Define an early return condition, where return if a manipulation has happened,
+        // i.e. if manipulationState was non-None before AND is None after
+        // AND a manipulation-relevant event has occurred (moved OR size changed)
+        if ((lastManipulationState != ElementManipulationState::None)
+            && (manipulationState == ElementManipulationState::None)
+            && (lastManipulationState == ElementManipulationState::WasDragged 
+                || lastManipulationState == ElementManipulationState::WasResized))
         {
-            handleInputChildren(event, inputState);
+            return true;
         }
 
-        return true;
+        handleInput(event, inputState);
+
+        lastManipulationState = manipulationState;
+        return receiveInputChildren(event, inputState);
     }
 
-    bool GUIElement::handleInputChildren(const SDL_Event* event, InputState* inputState)
+    bool GUIElement::receiveInputChildren(const SDL_Event* event, InputState* inputState)
     {
         for (auto& child : children)
         {
-            if (!child->handleInput(event, inputState))
+            if (!child->receiveInput(event, inputState))
             {
                 std::cerr << "Issue handling input for individual GUIElement when handling input for children" << std::endl;
                 return false;
@@ -471,8 +482,11 @@ namespace gui
             break;
 
         case SDL_MOUSEMOTION:
-            if (manipulationState == ElementManipulationState::BeingResized)
+            if (manipulationState == ElementManipulationState::BeingResized
+                || manipulationState == ElementManipulationState::WasResized)
             {
+                manipulationState = ElementManipulationState::WasResized;
+
                 int xOffset = event->motion.xrel;
                 int yOffset = -event->motion.yrel;
 
@@ -626,8 +640,11 @@ namespace gui
             break;
 
         case SDL_MOUSEMOTION:
-            if (manipulationState == ElementManipulationState::BeingDragged)
+            if (manipulationState == ElementManipulationState::BeingDragged
+                || manipulationState == ElementManipulationState::WasDragged)
             {
+                manipulationState = ElementManipulationState::WasDragged;
+
                 int xOffset = event->motion.xrel;
                 int yOffset = event->motion.yrel;
 
@@ -659,13 +676,6 @@ namespace gui
 
     bool GUIButton::handleInput(const SDL_Event* event, InputState* inputState) 
     {
-        if (isMovable)
-        {
-            // TODO: Add resize when method finished,
-            // make sure resizing doesn't trigger button click
-            move(event, inputState);
-        }
-
         if (event->type == SDL_MOUSEBUTTONUP) 
         {
             if (event->button.button == SDL_BUTTON_LEFT) 
@@ -678,12 +688,6 @@ namespace gui
                     return true;
                 }
             }
-        }
-
-        // Handle input for this children if this element is not being manipulated
-        if (manipulationState == ElementManipulationState::None)
-        {
-            handleInputChildren(event, inputState);
         }
 
         return true;
@@ -1035,6 +1039,7 @@ namespace gui
 
     // TODO: Maybe change text editing to start from specific char clicked?
     // add ctrl+c, ctrl+v, ctrl+z, ctrl+y, add cursor after current character
+    // Also better handle the cursor blink state, it's a bit buggy
     bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
         // If GUIKeyboardControl but this element not being edited, it means another GUIEditText is being edited
@@ -1105,12 +1110,6 @@ namespace gui
                     return true;
                 }
             }
-        }
-
-        // Handle input for this children if this element is not being manipulated
-        if (manipulationState == ElementManipulationState::None)
-        {
-            handleInputChildren(event, inputState);
         }
 
         return true;

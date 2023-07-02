@@ -187,9 +187,10 @@ namespace renderer
 
     void Renderer::run()
     {
-        auto testFont = new text::Font("FasterOne", "res/fonts/FasterOne");
+        auto testFont = new text::Font("Coiny", "res/fonts/Coiny");
         auto testFont2 = new text::Font("DukePlus", "res/fonts/DukePlus");
         auto testFont3 = new text::Font("KuaiLe", "res/fonts/ZCOOLKuaiLe");
+        auto testFont4 = new text::Font("VT323", "res/fonts/VT323");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // Pub-sub
@@ -203,6 +204,9 @@ namespace renderer
 
         auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 30, 120, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
         auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 30, 160, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
+        auto testButtonQuitText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 30, 30, false, false, true, false, 10, gui::colorMap.at("WHITE"), L"Quit", testFont, true, 1.0f, 5);
+        auto testButton2Base = gui::GUIElementFactory::createGUIElement(testHandler, 30, 200, 40, 40);
+        auto testButton2 = gui::GUIElementFactory::createGUIButton(testHandler, 5, 5, 30, 30, false, false, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
 
         auto testGUIEditTextBase = gui::GUIElementFactory::createGUIElement(testHandler, 130, 30, 75, 75);
         auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont, true, 1.0f, 10);
@@ -212,6 +216,9 @@ namespace renderer
 
         auto testGUIEditTextBase3 = gui::GUIElementFactory::createGUIElement(testHandler, 330, 30, 75, 75);
         auto testGUIEditText3 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont3, true, 1.0f, 10);
+
+        testButtonQuit->addChild(testButtonQuitText);
+        testButton2Base->addChild(testButton2);
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
@@ -265,7 +272,7 @@ namespace renderer
                     }
                 }
 
-                testHandler->handleInputAllElements(&event, &inputState);
+                testHandler->receiveInputAllElements(&event, &inputState);
             }
 
             while (lag >= MS_PER_UPDATE)

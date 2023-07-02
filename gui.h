@@ -35,11 +35,15 @@ namespace gui
     enum class ElementManipulationState
     {
         None,
-        JustManipulated,
         BeingDragged,
-        BeingResized
+        BeingResized,
+        WasDragged,
+        WasResized
     };
 
+    // TODO: Since GUIElement lifetime is bound to GUIHandler,
+    // ensure that with the new hierarchical structure, root GUIElement's 
+    // children are recursively deleted when a GUIHandler is deleted
     class GUIHandler : public Subscriber, public Publisher
     {
     public:
@@ -59,7 +63,7 @@ namespace gui
         void finishGUIRendering() const;
 
         bool renderAllElements() const;
-        bool handleInputAllElements(const SDL_Event* event, InputState* inputState);
+        bool receiveInputAllElements(const SDL_Event* event, InputState* inputState);
 
     private:
         float windowWidth;
@@ -68,8 +72,6 @@ namespace gui
         std::unordered_set<GUIElement*> rootElements;
     };
 
-    // TODO: Switch to hierarchical input handling system instead 
-    // of flat vector of all GUIElements to handle input for
     class GUIElement 
     {
         friend class GUIElementFactory;
@@ -79,12 +81,14 @@ namespace gui
         void addChild(GUIElement* child);
         void removeChild(GUIElement* child);
 
-        // TODO: Render and handleInput should be recursive on children
-        // with regard for bool flags, e.g. isVisible, takesInput...
         virtual bool render() const;
         virtual bool renderChildren() const;
+
+        // Override handleInput for the specific handling of input for each GUIElement subtype,
+        // receiveInput is a common wrapper for each subtype's handleInput
         virtual bool handleInput(const SDL_Event* event, InputState* inputState);
-        virtual bool handleInputChildren(const SDL_Event* event, InputState* inputState);
+        bool receiveInput(const SDL_Event* event, InputState* inputState);
+        bool receiveInputChildren(const SDL_Event* event, InputState* inputState);
 
         bool isOnElement(int x, int y);
         bool isOnCorner(int cornerNbr, int x, int y);
@@ -124,6 +128,7 @@ namespace gui
         glm::vec4 color;
         bool isMovable, isResizable, isVisible, takesInput;
         ElementManipulationState manipulationState = ElementManipulationState::None;
+        ElementManipulationState lastManipulationState = ElementManipulationState::None;
 
         int cornerNbrBeingResized = 0;
         int accumUnderMinSizeX = 0, accumUnderMinSizeY = 0;
