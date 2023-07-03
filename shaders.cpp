@@ -102,24 +102,55 @@ namespace shaders
         uniform mat4 model;
         uniform mat4 projection;
 
+        out vec2 vPos;
+
         void main()
         {
             gl_Position = projection * model * vec4(aPos, 1.0);
+            vPos = aPos.xy;
         }
     )glsl";
     const GLchar *guiFragmentShaderSource = R"glsl(
         #version 330 core
+        in vec2 vPos;
+
         out vec4 FragColor;
 
         uniform vec4 color;
+        uniform vec2 resolution;  // Width and height of the UI element
+        uniform float cornerRadius;  // Radius of the corners in pixels
 
         void main()
         {
-            FragColor = color;
+            // Compute the position in the UI element in pixels
+            vec2 pos = vPos * resolution;
+
+            // Define the light source position at the top right corner
+            vec2 lightSource = vec2(1.0, 1.0) * resolution;
+
+            // Compute the distance from the light source to the current pixel
+            float dist = distance(lightSource, pos);
+
+            // Normalize the distance based on the size of the UI element,
+            // so that it ranges from 0.0 at the light source to 1.0 at the corner
+            float normDist = dist / (sqrt(2.0) * length(lightSource));
+
+            vec4 startColor = vec4(color.rgb * 1.3, 1.0);
+            vec4 endColor = vec4(color.rgb * 0.9, 1.0);
+
+            // Create a smoother gradient by using smoothstep
+            vec4 gradientColor = mix(startColor, endColor, smoothstep(0.0, 1.0, normDist));
+
+            // Calculate distance to each corner and keep the minimum distance
+            vec2 d = abs(pos - resolution*0.5) - (resolution*0.5 - vec2(cornerRadius));
+            float distToCorner = length(max(d, 0.0));
+
+            // Blend the color based on the distance to the corner
+            FragColor = mix(gradientColor, vec4(0.0), smoothstep(0.0, 1.0, max(0.0, distToCorner) / cornerRadius));
         }
     )glsl";
-    
-    const char* textVertexShaderSource = R"glsl(
+
+    const GLchar* textVertexShaderSource = R"glsl(
         #version 330 core
         layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
         out vec2 TexCoords;
@@ -133,7 +164,7 @@ namespace shaders
             TexCoords = vertex.zw;
         }
     )glsl";
-    const char* textFragmentShaderSource = R"glsl(
+    const GLchar* textFragmentShaderSource = R"glsl(
         #version 330 core
         in vec2 TexCoords;
         out vec4 color;

@@ -4,10 +4,10 @@
 #include <glad/glad.h>
 #include <queue>
 #include <unordered_set>
-#include <unordered_map>
 #include <functional>   
 #include <string>
 #include <chrono>
+#include <map>
 
 #include "input_state.h"
 #include "text.h"
@@ -42,10 +42,7 @@ namespace gui
         Dragging,
         Resizing
     };
-
-    // TODO: Since GUIElement lifetime is bound to GUIHandler,
-    // ensure that with the new hierarchical structure, root GUIElement's 
-    // children are recursively deleted when a GUIHandler is deleted
+    
     class GUIHandler : public Subscriber, public Publisher
     {
     public:
@@ -58,26 +55,28 @@ namespace gui
         float getWindowWidth() const;
 
         // Do not access removeElement externally, only indirectly through "delete element"
-        void addElement(GUIElement* element);
+        void addElement(GUIElement* element, int zIndex = 0);
         void removeElement(GUIElement* element);
 
         void prepareGUIRendering() const;
         void finishGUIRendering() const;
 
         bool renderAllElements() const;
+        // receiveInputAllElements has as a side effect that it updates the zIndexRootElementMap
         bool receiveInputAllElements(const SDL_Event* event, InputState* inputState);
 
-        std::unordered_set<GUIElement*> getRootElements();
+        std::multimap<int, GUIElement*> getZIndexRootElementMap();
+        void GUIHandler::normalizeZIndices();
 
-        bool isOrContainsActiveElement(GUIElement* element);
         GUIElement* getActiveElement();
         void setActiveElement(GUIElement* element);
+        bool isOrContainsActiveElement(GUIElement* element);
 
     private:
         float windowWidth;
         float windowHeight;
 
-        std::unordered_set<GUIElement*> rootElements;
+        std::multimap<int, GUIElement*> zIndexRootElementMap;
         GUIElement* activeElement = nullptr;
     };
 
@@ -96,7 +95,10 @@ namespace gui
         // Override handleInput for the specific handling of input for each GUIElement subtype,
         // receiveInput is a common wrapper for each subtype's handleInput, handleInput returns
         // a bool indicating whether the event was consumed or not, true for consumed, false for not
+        // TODO: Handle corners for children offset outside parent
         virtual bool handleInput(const SDL_Event* event, InputState* inputState);
+
+        // A true return value from receiveInput means the element consumed the event
         bool receiveInput(const SDL_Event* event, InputState* inputState);
         bool receiveInputChildren(const SDL_Event* event, InputState* inputState);
 
@@ -123,7 +125,8 @@ namespace gui
         virtual bool initializeBuffers();
     
     protected:
-        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"));
+        // Only constructed through GUIElementBuilder, which defines default values for all parameters
+        GUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, int cornerRadius, glm::vec4 color);
 
         // Override for GUIText text regeneration after resize
         virtual void onResize();
@@ -139,16 +142,19 @@ namespace gui
 
         int xPos, yPos;
         int width, height;
-        int borderWidth;
-        glm::vec4 color;
         bool isMovable, isResizable, isVisible, takesInput;
+        int borderWidth;
+        int cornerRadius; // In pixels, TODO: Add as parameter to constructor
+        glm::vec4 color;
+
+        // Manipulation management members
         ElementManipulationState manipulationStateResize = ElementManipulationState::None;
         ElementManipulationState manipulationStateMove = ElementManipulationState::None;
-
         int cornerNbrBeingResized = 0;
         int accumUnderMinSizeX = 0, accumUnderMinSizeY = 0;
 
-        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, textLoc, textColorLoc;
+        // Shader stuff
+        GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, colorLoc, timeLoc, resolutionLoc, cornerRadiusLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
     };
 
@@ -165,8 +171,9 @@ namespace gui
         static void quitApplication(GUIButton* button);
 
     protected:
-        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"),
-            std::function<void(GUIButton*)> onClick = [](GUIButton*){});
+        // Only constructed through GUIElementBuilder, which defines default values for all parameters
+        GUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, int cornerRadius, glm::vec4 color,
+            std::function<void(GUIButton*)> onClick);
 
         std::function<void(GUIButton*)> onClick;
     };
@@ -180,8 +187,9 @@ namespace gui
         bool render() const override;
 
     protected:
-        GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
-            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
+        // Only constructed through GUIElementBuilder, which defines default values for all parameters
+        GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, int cornerRadius, glm::vec4 color,
+            std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding);
 
         void onResize() override;
 
@@ -206,8 +214,9 @@ namespace gui
         int padding;
         float textScale;
         float totalHeight, totalWidth;
-
         bool autoScaleText;
+
+        // Shader stuff
         std::vector<GLuint> characterVAOs;
         GLint projectionLoc, modelLoc, textLoc, textColorLoc;
     
@@ -224,9 +233,12 @@ namespace gui
 
         bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
+        void setBeingEdited(bool beingEdited);
+
     protected:
-        GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
-            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
+        // Only constructed through GUIElementBuilder, which defines default values for all parameters
+        GUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, int cornerRadius, glm::vec4 color,
+            std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding);
 
         bool shouldRenderCharacter(int charVAOIx) const override;
 
@@ -252,8 +264,8 @@ namespace gui
         GUIElementBuilder& setHandler(GUIHandler* handler);
         GUIElementBuilder& setPosition(int xPos, int yPos);
         GUIElementBuilder& setSize(int width, int height);
-        GUIElementBuilder& setFlags(bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true);
-        GUIElementBuilder& setBorderWidth(int borderWidth);
+        GUIElementBuilder& setFlags(bool isMovable, bool isResizable, bool isVisible, bool takesInput);
+        GUIElementBuilder& setEdgeParameters(int borderWidth, int cornerRadius);
         GUIElementBuilder& setColor(glm::vec4 color);
         GUIElement* buildElement();
 
@@ -279,12 +291,13 @@ namespace gui
         int width = 10, height = 10;
         bool isMovable = true, isResizable = true, isVisible = true, takesInput = true;
         int borderWidth = 10;
+        int cornerRadius = 5;
         glm::vec4 color = colorMap.at("DARK GRAY");
         std::function<void(GUIButton*)> onClick = [](GUIButton*){};
         std::wstring text = L"";
         text::Font* font = text::Font::getDefaultFont();
         bool autoScaleText = true;
         float textScale = 1.0f;
-        int padding = 0;
+        int padding = 5;
     };
 }

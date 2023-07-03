@@ -200,11 +200,11 @@ namespace renderer
         auto testElement = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 30).setSize(55, 55).setColor(gui::colorMap.at("BLUE")).buildElement();
         auto testChild = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("RED")).buildElement();
         auto testChild2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("YELLOW")).buildElement();
-        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND!").setPadding(5).setFont(testFont).buildEditText();
+        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND!").setFont(testFont).buildEditText();
 
         auto testButton = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 120).setSize(30, 30).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
         auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("BLUE")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
-        auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setPadding(5).setFont(testFont).buildText();
+        auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setFont(testFont).buildText();
         auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(40, 40).buildElement();
         auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(30, 30).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
 
@@ -247,6 +247,8 @@ namespace renderer
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {   
+                testHandler->receiveInputAllElements(&event, &inputState);
+
                 if (event.type == SDL_QUIT) 
                 {
                     running = false;
@@ -254,7 +256,8 @@ namespace renderer
 
                 if (event.type == SDL_MOUSEMOTION) 
                 {
-                    if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
+                    if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)
+                        && inputState.getMouseState() == InputState::CameraControl)
                     {
                         dxMouse += event.motion.xrel;
                         dyMouse -= event.motion.yrel;
@@ -271,8 +274,6 @@ namespace renderer
                         this->publish(new event::WindowResizeEvent(newWidth, newHeight));
                     }
                 }
-
-                testHandler->receiveInputAllElements(&event, &inputState);
             }
 
             while (lag >= MS_PER_UPDATE)
