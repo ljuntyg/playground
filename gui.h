@@ -18,7 +18,7 @@ namespace gui
     // Forward declarations
     class GUIElement;
     class GUIEditText;
-    class GUIElementFactory;
+    class GUIElementBuilder;
 
     const std::unordered_map<std::string, glm::vec4> colorMap = {
         {"RED",        glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)},
@@ -67,6 +67,9 @@ namespace gui
         bool renderAllElements() const;
         bool receiveInputAllElements(const SDL_Event* event, InputState* inputState);
 
+        std::unordered_set<GUIElement*> getRootElements();
+
+        bool isOrContainsActiveElement(GUIElement* element);
         GUIElement* getActiveElement();
         void setActiveElement(GUIElement* element);
 
@@ -80,7 +83,7 @@ namespace gui
 
     class GUIElement 
     {
-        friend class GUIElementFactory;
+        friend class GUIElementBuilder;
     public:
         virtual ~GUIElement();
 
@@ -102,6 +105,7 @@ namespace gui
         void findPossibleNewCorner(int cornerNbr, int* newX, int* newY);
         bool isOnAnyCorner(int x, int y, int* cornerNbrBeingResized);
 
+        std::unordered_set<GUIElement*> getChildren();
         int getXPos();
         int getYPos();
         bool getIsMovable();
@@ -150,7 +154,7 @@ namespace gui
 
     class GUIButton : public GUIElement 
     {
-        friend class GUIElementFactory;
+        friend class GUIElementBuilder;
     public:
         ~GUIButton() override;
 
@@ -169,7 +173,7 @@ namespace gui
 
     class GUIText : public GUIElement
     {
-        friend class GUIElementFactory;
+        friend class GUIElementBuilder;
     public:
         ~GUIText() override;
 
@@ -214,7 +218,7 @@ namespace gui
 
     class GUIEditText : public GUIText
     {
-        friend class GUIElementFactory;
+        friend class GUIElementBuilder;
     public:
         ~GUIEditText() override;
 
@@ -243,17 +247,44 @@ namespace gui
         std::chrono::milliseconds blinkDuration = std::chrono::milliseconds(500);
     };
 
-    class GUIElementFactory {
+    class GUIElementBuilder {
     public:
-        static GUIElement* createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"));
+        GUIElementBuilder& setHandler(GUIHandler* handler);
+        GUIElementBuilder& setPosition(int xPos, int yPos);
+        GUIElementBuilder& setSize(int width, int height);
+        GUIElementBuilder& setFlags(bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true);
+        GUIElementBuilder& setBorderWidth(int borderWidth);
+        GUIElementBuilder& setColor(glm::vec4 color);
+        GUIElement* buildElement();
 
-        static GUIButton* createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("DARK GRAY"),
-            std::function<void(GUIButton*)> onClick = [](GUIButton*){});
+        // GUIButton specific
+        GUIElementBuilder& setOnClick(std::function<void(GUIButton*)> onClick);
+        GUIButton* buildButton();
 
-        static GUIText* createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, bool takesInput = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
-            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
+        // GUIText specific
+        GUIElementBuilder& setText(std::wstring text);
+        GUIElementBuilder& setFont(text::Font* font);
+        GUIElementBuilder& setAutoScaleText(bool autoScaleText);
+        GUIElementBuilder& setTextScale(float textScale);
+        GUIElementBuilder& setPadding(int padding);
+        GUIText* buildText();
 
-        static GUIEditText* createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable = true, bool isResizable = true, bool isVisible = true, int borderWidth = 10, glm::vec4 color = colorMap.at("WHITE"),
-            std::wstring text = L"", text::Font* font = text::Font::getDefaultFont(), bool autoScaleText = true, float textScale = 1.0f, int padding = 0);
+        // GUIEditText specific
+        GUIEditText* buildEditText();
+    
+    // TODO: Kind of a minefield if handler isn't set
+    private:
+        GUIHandler* handler = nullptr;
+        int xPos = 0, yPos = 0;
+        int width = 10, height = 10;
+        bool isMovable = true, isResizable = true, isVisible = true, takesInput = true;
+        int borderWidth = 10;
+        glm::vec4 color = colorMap.at("DARK GRAY");
+        std::function<void(GUIButton*)> onClick = [](GUIButton*){};
+        std::wstring text = L"";
+        text::Font* font = text::Font::getDefaultFont();
+        bool autoScaleText = true;
+        float textScale = 1.0f;
+        int padding = 0;
     };
 }

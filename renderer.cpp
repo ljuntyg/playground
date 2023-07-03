@@ -197,35 +197,32 @@ namespace renderer
         testHandler->subscribe(this);
         this->subscribe(testHandler);
 
-        auto testElement = gui::GUIElementFactory::createGUIElement(testHandler, 30, 30, 55, 55, true, true, true, true, 10, gui::colorMap.at("BLUE"));
-        auto testChild = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 55, 55, false, false, true, false, 10, gui::colorMap.at("RED"));
-        auto testChild2 = gui::GUIElementFactory::createGUIElement(testHandler, 10, 10, 55, 55, false, false, true, false, 10, gui::colorMap.at("YELLOW"));
-        auto testChild2GUIText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 55, 55, false, false, true, 10, gui::colorMap.at("BLACK"), L"PLAYGROUND!", testFont, true, 1.0f, 5);
+        auto testElement = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 30).setSize(55, 55).setColor(gui::colorMap.at("BLUE")).buildElement();
+        auto testChild = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("RED")).buildElement();
+        auto testChild2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("YELLOW")).buildElement();
+        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND!").setPadding(5).setFont(testFont).buildEditText();
 
-        auto testButton = gui::GUIElementFactory::createGUIButton(testHandler, 30, 120, 30, 30, true, true, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
-        auto testButtonQuit = gui::GUIElementFactory::createGUIButton(testHandler, 30, 160, 30, 30, true, true, true, true, 10, gui::colorMap.at("BLUE"), &gui::GUIButton::quitApplication);
-        auto testButtonQuitText = gui::GUIElementFactory::createGUIText(testHandler, 0, 0, 30, 30, false, false, true, false, 10, gui::colorMap.at("WHITE"), L"Quit", testFont, true, 1.0f, 5);
-        auto testButton2Base = gui::GUIElementFactory::createGUIElement(testHandler, 30, 200, 40, 40);
-        auto testButton2 = gui::GUIElementFactory::createGUIButton(testHandler, 5, 5, 30, 30, false, false, true, true, 10, gui::colorMap.at("GREEN"), &gui::GUIButton::randomColor);
+        auto testButton = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 120).setSize(30, 30).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
+        auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("BLUE")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
+        auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setPadding(5).setFont(testFont).buildText();
+        auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(40, 40).buildElement();
+        auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(30, 30).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
 
-        auto testGUIEditTextBase = gui::GUIElementFactory::createGUIElement(testHandler, 130, 30, 75, 75);
-        auto testGUIEditText = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont, true, 1.0f, 10);
+        auto testGUIEditTextBase = gui::GUIElementBuilder().setHandler(testHandler).setPosition(130, 30).setSize(75, 75).buildElement();
+        auto testGUIEditText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont2).buildEditText();
 
-        auto testGUIEditTextBase2 = gui::GUIElementFactory::createGUIElement(testHandler, 230, 30, 75, 75);
-        auto testGUIEditText2 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont2, true, 1.0f, 10);
+        auto testGUIEditTextBase2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(230, 30).setSize(75, 75).buildElement();
+        auto testGUIEditText2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont3).buildEditText();
 
-        auto testGUIEditTextBase3 = gui::GUIElementFactory::createGUIElement(testHandler, 330, 30, 75, 75);
-        auto testGUIEditText3 = gui::GUIElementFactory::createGUIEditText(testHandler, 0, 0, 75, 75, false, false, true, 10, gui::colorMap.at("WHITE"), L"Text!", testFont3, true, 1.0f, 10);
-
-        auto testGUIEditText4 = gui::GUIElementFactory::createGUIEditText(testHandler, 430, 30, 75, 75, true, true, true, 10, gui::colorMap.at("RED"), L"Text!", testFont3, true, 1.0f, 10);
-        auto testGUIEditText5 = gui::GUIElementFactory::createGUIEditText(testHandler, 530, 30, 75, 75, true, true, true, 10, gui::colorMap.at("RED"), L"Text!", testFont4, true, 1.0f, 10);
-
-        testButtonQuit->addChild(testButtonQuitText);
-        testButton2Base->addChild(testButton2);
+        auto testGUIEditTextBase3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(330, 30).setSize(75, 75).buildElement();
+        auto testGUIEditText3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont4).buildEditText();
 
         testElement->addChild(testChild);
         testChild->addChild(testChild2);
         testChild2->addChild(testChild2GUIText);
+
+        testButtonQuit->addChild(testButtonQuitText);
+        testButton2Base->addChild(testButton2);
 
         testGUIEditTextBase->addChild(testGUIEditText);
         testGUIEditTextBase2->addChild(testGUIEditText2);

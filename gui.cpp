@@ -109,17 +109,40 @@ namespace gui
         int i = 1;
         for (auto& e : rootElements)
         {   
-            std::cout << "ELEMENT " << i << " position, x: " << e->getXPos() << ", y: " << e->getYPos() << std::endl;
+            /* std::cout << "ELEMENT " << i << " position, x: " << e->getXPos() << ", y: " << e->getYPos() << std::endl; */
             if (e->receiveInput(event, inputState))
             {
-                std::cout << "ELEMENT " << i << " consumed event, event: " << event->type << std::endl; 
+                /* std::cout << "ELEMENT " << i << " consumed event, event: " << event->type << std::endl;  */
                 return true; // Stop propagation on event consumed
             }
             ++i;
-            std::cout << std::endl;
+            /* std::cout << std::endl; */
         }
 
         return false; // No element consumed the event
+    }
+
+    bool GUIHandler::isOrContainsActiveElement(GUIElement* element)
+    {   
+        if (activeElement == element)
+        {
+            return true;
+        }
+
+        for (auto& child : element->getChildren())
+        {
+            if (isOrContainsActiveElement(child))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    std::unordered_set<GUIElement*> GUIHandler::getRootElements()
+    {
+        return rootElements;
     }
 
     GUIElement* GUIHandler::getActiveElement()
@@ -159,7 +182,10 @@ namespace gui
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
 
-        handler->removeElement(this);
+        for (auto& child : children) 
+        {
+            delete child;
+        }
     }
 
     void GUIElement::addChild(GUIElement* child)
@@ -256,36 +282,25 @@ namespace gui
     // True return value means the element consumed the event
     bool GUIElement::receiveInput(const SDL_Event* event, InputState* inputState)
     {
-        if (handler->getActiveElement() && handler->getActiveElement() != this)
+        if (handler->getActiveElement() && !handler->isOrContainsActiveElement(this))
         {
             return false;
         }
 
-        if (isResizable)
+        if (isResizable && resize(event, inputState))
         {
-            if (resize(event, inputState))
-            {
-                onResize();
-                return true;
-            }
+            onResize();
+            return true;
         }
 
-        if (isMovable)
-        {   
-            if (move(event, inputState))
-            {
-                return true;
-            }
+        if (isMovable && move(event, inputState))
+        {
+            return true;
         }
 
-        if (takesInput)
+        if (takesInput && handleInput(event, inputState))
         {
-            if (handleInput(event, inputState))  // If event was consumed by handleInput
-            {
-                std::cout << "handleInput consumed event, event: " << event->type << std::endl;
-                std::cout << "consumer of event position, x: " << xPos << ", y: " << yPos << std::endl;
-                return true; // Event consumed, stop propagation
-            }
+            return true;
         }
 
         return receiveInputChildren(event, inputState); // Propagate to children
@@ -295,7 +310,7 @@ namespace gui
     {
         for (auto& child : children)
         {
-            if (child->receiveInput(event, inputState)) // If child consumed event
+            if (child->receiveInput(event, inputState))
             {
                 return true; // Event consumed, stop propagation
             }
@@ -372,6 +387,11 @@ namespace gui
 
         *cornerNbrBeingResized = 0;
         return false;
+    }
+
+    std::unordered_set<GUIElement*> GUIElement::getChildren()
+    {
+        return children;
     }
 
     int GUIElement::getXPos()
@@ -1103,9 +1123,6 @@ namespace gui
 
     // TODO: Maybe change text editing to start from specific char clicked?
     // add ctrl+c, ctrl+v, ctrl+z, ctrl+y, add cursor after current character
-
-    // TODO: Refactor method with event consumer pattern in mind,
-    // ensure it works if other texts are clicked and clicked back etc.
     bool GUIEditText::handleInput(const SDL_Event* event, InputState* inputState)
     {
         switch (event->type)
@@ -1173,7 +1190,7 @@ namespace gui
                 if (event->button.button == SDL_BUTTON_LEFT)
                 {
                     int mouseX = event->button.x;
-                    int mouseY = (int)handler->getWindowHeight() - event->button.y;
+                    int mouseY = (int)handler->getWindowHeight() - event->button.y; // Conversion from top-left to bottom-left system
                     if (isOnElement(mouseX, mouseY))
                     {
                         if (text.empty())
@@ -1197,12 +1214,12 @@ namespace gui
                     }
                 }
                 break;
-            
+
             default:
                 break;
         }
 
-        return false;  // If this point reached, the event has not been consumed
+        return false;
     }
 
     bool GUIEditText::shouldRenderCharacter(int charVAOIx) const
@@ -1230,7 +1247,7 @@ namespace gui
     // TODO: Take control of activeElement and the keyboard
     void GUIEditText::startTextInput(InputState* inputState)
     {
-        /* handler->setActiveElement(this); */
+        handler->setActiveElement(this);
         beingEdited = true;
 
         inputState->setKeyboardState(InputState::KeyboardState::GUIKeyboardControl);
@@ -1240,7 +1257,7 @@ namespace gui
     // TODO: Resign control of activeElement and the keyboard
     void GUIEditText::stopTextInput(InputState* inputState)
     {
-        /* handler->setActiveElement(nullptr); */
+        handler->setActiveElement(nullptr);
         beingEdited = false;
 
         inputState->setKeyboardState(InputState::KeyboardState::MovementControl);
@@ -1334,8 +1351,42 @@ namespace gui
         return false;
     }
 
-    GUIElement* GUIElementFactory::createGUIElement(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color) 
-    {
+    GUIElementBuilder& GUIElementBuilder::setHandler(GUIHandler* handler) {
+        this->handler = handler;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setPosition(int xPos, int yPos) {
+        this->xPos = xPos;
+        this->yPos = yPos;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setSize(int width, int height) {
+        this->width = width;
+        this->height = height;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setFlags(bool isMovable, bool isResizable, bool isVisible, bool takesInput) {
+        this->isMovable = isMovable;
+        this->isResizable = isResizable;
+        this->isVisible = isVisible;
+        this->takesInput = takesInput;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setBorderWidth(int borderWidth) {
+        this->borderWidth = borderWidth;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setColor(glm::vec4 color) {
+        this->color = color;
+        return *this;
+    }
+
+    GUIElement* GUIElementBuilder::buildElement() {
         GUIElement* element = new GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color);
         if (element->initializeShaders() && element->initializeBuffers()) 
         {
@@ -1349,9 +1400,12 @@ namespace gui
         }
     }
 
-    GUIButton* GUIElementFactory::createGUIButton(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,
-        std::function<void(GUIButton*)> onClick) 
-    {
+    GUIElementBuilder& GUIElementBuilder::setOnClick(std::function<void(GUIButton*)> onClick) {
+        this->onClick = onClick;
+        return *this;
+    }
+
+    GUIButton* GUIElementBuilder::buildButton() {
         GUIButton* buttonElement = new GUIButton(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color, onClick);
         if (buttonElement->initializeShaders() && buttonElement->initializeBuffers()) 
         {
@@ -1365,9 +1419,32 @@ namespace gui
         }
     }
 
-    GUIText* GUIElementFactory::createGUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding) 
-    {
+    GUIElementBuilder& GUIElementBuilder::setText(std::wstring text) {
+        this->text = text;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setFont(text::Font* font) {
+        this->font = font;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setAutoScaleText(bool autoScaleText) {
+        this->autoScaleText = autoScaleText;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setTextScale(float textScale) {
+        this->textScale = textScale;
+        return *this;
+    }
+
+    GUIElementBuilder& GUIElementBuilder::setPadding(int padding) {
+        this->padding = padding;
+        return *this;
+    }
+
+    GUIText* GUIElementBuilder::buildText() {
         GUIText* textElement = new GUIText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, color, text, font, autoScaleText, textScale, padding);
         if (textElement->initializeShaders() && textElement->initializeBuffers()) 
         {
@@ -1381,9 +1458,7 @@ namespace gui
         }
     }
 
-    GUIEditText* GUIElementFactory::createGUIEditText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, int borderWidth, glm::vec4 color,
-        std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding) 
-    {
+    GUIEditText* GUIElementBuilder::buildEditText() {
         GUIEditText* editTextElement = new GUIEditText(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, borderWidth, color, text, font, autoScaleText, textScale, padding);
         if (editTextElement->initializeShaders() && editTextElement->initializeBuffers()) 
         {
