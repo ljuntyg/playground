@@ -9,6 +9,7 @@
 #include <sstream>
 #include <filesystem>
 #include <unordered_map>
+#include <array>
 
 #include "obj_loader.h"
 #include "input_state.h"
@@ -40,6 +41,13 @@ namespace renderer
         const float mouseSensitivity = 0.05f;
     };
 
+    // TODO: Not sure if appropriate struct for a cubemap
+    struct CubeMap
+    {
+        GLuint textureID;
+        std::filesystem::path path;
+    };
+
     class Renderer : public Subscriber, public Publisher
     {
     public:
@@ -54,20 +62,28 @@ namespace renderer
     private:
         bool initializeObject();
         bool initializeShaders(); 
+        bool initializeCubemaps();
         void run();
         void drawObject();
+        void drawSkybox();
         void onYawPitch(float dx, float dy, InputState* inputState);
         void onKeys(const Uint8* keyboardState, InputState* inputState);
 
-        std::vector<std::string> getObjFilePaths(const std::string& folderName);
+        std::vector<std::string> getObjFilePaths(std::string folderName);
         std::vector<objl::Mesh> getTargetObjMeshes();
         void nextTargetObj();
 
+        std::vector<std::filesystem::path> getCubemapPaths(std::string folderName);
+
         Camera camera;
+        std::string CUBEMAPS_PATH = "res/cubemaps"; // Must be in working directory
         std::string OBJ_PATH = "res/obj"; // Must be in working directory
-        std::string targetFile = "cessna.obj"; // Must be in OBJ_PATH
+        std::string targetCubemapFile = "Skybox1"; // Must be in CUBEMAPS_PATH, must match exact file name
+        std::string targetObjFile = "cessna.obj"; // Must be in OBJ_PATH, must match exact file name
         std::vector<std::string> allObjPaths;
         std::vector<objl::Mesh> targetObj;
+        std::vector<CubeMap*> cubemaps;
+        CubeMap* targetCubemap = nullptr;
 
         SDL_Window* window;
         SDL_GLContext context;
@@ -75,12 +91,14 @@ namespace renderer
         bool running = true;
         float WINDOW_WIDTH;
         float WINDOW_HEIGHT;
-        const float NEAR_DIST = 0.1f;
+        const float NEAR_DIST = 1.0f;
         const float FAR_DIST = 10000.0f;
         const float FOV = (float)M_PI_2;
         const int LOGIC_FREQ_HZ = 0; // Set to 0 for 60Hz, not for capping FPS
 
+        // TODO: Add separate viewLoc and projectionLoc specific to skybox
         GLint modelLoc, viewLoc, projectionLoc, useTextureLoc, objectColorLoc;
         GLuint shaderProgram, VAO, VBO, EBO;
+        GLuint shaderProgramSkybox, skyboxVAO, skyboxVBO, skyboxEBO;
     };
 };

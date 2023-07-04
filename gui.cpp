@@ -8,6 +8,7 @@
 
 #include "gui.h"
 #include "shaders.h"
+#include "texture_loader.h"
 
 namespace gui
 {
@@ -868,15 +869,15 @@ namespace gui
 
         characters = text::createText(text, font);
 
-        if (!loadFontTextures())
+        if (!initFontTextures())
         {
             std::cerr << "Failed to load textures for a font belonging to text provided to GUIText" << std::endl;
         }
     }
 
+    // TODO: Do something with Font pointer?
     GUIText::~GUIText() 
     {
-        // TODO: Do something with Font pointer?
         for (auto& pair : fontTextures)
         {
             for (GLuint textureID : pair.second)
@@ -1078,43 +1079,37 @@ namespace gui
         return true;
     }
 
-    bool GUIText::loadFontTextures()
+    bool GUIText::initFontTextures()
     {
         std::vector<text::Font*> fonts;
         if (characters.empty())
         {
             fonts.emplace_back(font);
         }
-        else for (text::Character* ch : characters)
+        else 
         {
-            if (std::find(fonts.begin(), fonts.end(), ch->font) == fonts.end())
+            for (text::Character* ch : characters)
             {
-                fonts.emplace_back(ch->font);
+                if (std::find(fonts.begin(), fonts.end(), ch->font) == fonts.end())
+                {
+                    fonts.emplace_back(ch->font);
+                }
             }
         }
 
         for (text::Font* font : fonts) 
         {
             std::vector<GLuint> textureIDs;
-            for (const auto& texture : font->getTextures()) 
+            for (const auto& texturePath : font->getPngPaths()) 
             {
-                if (!texture)
+                // Load the texture from the file and store the texture ID
+                GLuint textureID = texturel::loadFontTexture(texturePath);
+                if (textureID == 0)
                 {
-                    std::cerr << "Invalid texture in loadFontTexture" << std::endl;
+                    std::cerr << "Failed to load texture from: " << texturePath << std::endl;
                     return false;
                 }
 
-                // Load the texture into OpenGL and store the texture ID
-                GLuint textureID;
-                glGenTextures(1, &textureID);
-                glBindTexture(GL_TEXTURE_2D, textureID);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)font->getTextureWidth(), (GLsizei)font->getTextureHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
-                glGenerateMipmap(GL_TEXTURE_2D);
-                
                 textureIDs.push_back(textureID);
             }
 

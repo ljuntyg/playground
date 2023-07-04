@@ -27,10 +27,9 @@ namespace text
         static Font* defaultFont;
         
         std::string getFontName();
+        std::vector<std::filesystem::path> getPngPaths();
         std::unordered_map<int, Character*> getIdCharacterMap();
-        std::vector<unsigned char*> getTextures();
-
-        int getTextureNbrChannels();
+ 
         float getSize();
         float getTextureWidth();
         float getTextureHeight();
@@ -46,9 +45,7 @@ namespace text
 
         std::vector<Character*> characters;
         std::unordered_map<int, Character*> idCharacterMap;
-        std::vector<unsigned char*> textures;
 
-        int textureNbrChannels;
         float size;
         float textureWidth;
         float textureHeight;
@@ -60,7 +57,6 @@ namespace text
         float underlineThickness;
 
         bool loadFontPaths(std::filesystem::path fontFolderPath);
-        bool loadTextures();
         bool bindCharacterIDs();
     };
 

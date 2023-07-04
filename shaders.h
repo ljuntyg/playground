@@ -9,6 +9,8 @@ namespace shaders
 
     extern const GLchar* rendererVertexShaderSource;
     extern const GLchar* rendererFragmentShaderSource;
+    extern const GLchar* skyboxVertexShaderSource;
+    extern const GLchar* skyboxFragmentShaderSource;
     extern const GLchar* guiVertexShaderSource;
     extern const GLchar* guiFragmentShaderSource;
     extern const GLchar* textVertexShaderSource;

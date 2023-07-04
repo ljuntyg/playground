@@ -54,8 +54,9 @@ namespace gui
         float getWindowHeight() const;
         float getWindowWidth() const;
 
-        // Do not access removeElement externally, only indirectly through "delete element"
         void addElement(GUIElement* element, int zIndex = 0);
+        // Be careful about using removeElement externally, better 
+        // to access indirectly through "delete element"
         void removeElement(GUIElement* element);
 
         void prepareGUIRendering() const;
@@ -221,7 +222,7 @@ namespace gui
         GLint projectionLoc, modelLoc, textLoc, textColorLoc;
     
     private:
-        bool loadFontTextures();
+        bool initFontTextures();
         std::vector<float> calculateVertices(text::Character* ch, float x, float y);
     };
 

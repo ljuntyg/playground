@@ -6,6 +6,7 @@
 #include "text.h"
 #include "shaders.h"
 #include "gui.h"
+#include "texture_loader.h"
 
 namespace renderer
 {
@@ -63,9 +64,10 @@ namespace renderer
     {
         window = nullptr;
         context = nullptr;
-        if (SDL_GLAD_init(&window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT) &&
-            initializeObject() &&
-            initializeShaders())
+        if (SDL_GLAD_init(&window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT)
+            && initializeObject()
+            && initializeShaders()
+            && initializeCubemaps())
         {
             RENDERER_STATE = RENDERER_CREATED;
         } 
@@ -88,6 +90,18 @@ namespace renderer
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
+
+        // Clean up shaderProgramSkybox, skyboxVAO, skyboxVBO
+        glDeleteProgram(shaderProgramSkybox);
+        glDeleteVertexArrays(1, &skyboxVAO);
+        glDeleteBuffers(1, &skyboxVBO);
+
+        // Clean up cubemaps
+        for (auto& cubemap : cubemaps)
+        {
+            glDeleteTextures(1, &(cubemap->textureID));
+            delete cubemap;
+        }
 
         // SDL clean up
         SDL_GL_DeleteContext(context);
@@ -162,6 +176,7 @@ namespace renderer
         return true;
     }
 
+    // Skybox buffers are initialized in initializeCubemaps
     bool Renderer::initializeShaders()
     {
         shaderProgram = shaders::createShaderProgram(shaders::rendererVertexShaderSource, shaders::rendererFragmentShaderSource);
@@ -182,6 +197,131 @@ namespace renderer
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
 
+        std::cout << "Successfully initialized shaders" << std::endl;
+        return true;
+    }
+
+    // TODO: Rethink/fix
+    bool Renderer::initializeCubemaps()
+    {
+        // Create shader program for skybox
+        shaderProgramSkybox = shaders::createShaderProgram(shaders::skyboxVertexShaderSource, shaders::skyboxFragmentShaderSource);
+        if (shaderProgramSkybox == 0)
+        {
+            std::cerr << "Failed to create skybox shader program, returning false" << std::endl;
+            return false;
+        }
+
+        // Load paths to cubemaps
+        std::vector<std::filesystem::path> cubemapPaths = getCubemapPaths(CUBEMAPS_PATH);
+        if (cubemapPaths.size() == 0)
+        {
+            std::cerr << "No cubemap files found, no further initialization, but returning true" << std::endl;
+            return true;
+        }
+        else for (const auto& path : cubemapPaths)
+        {
+            CubeMap* cubemap = new CubeMap();
+            cubemap->path = path;
+            cubemap->textureID = 0;
+            cubemaps.push_back(cubemap);
+        }
+
+        float skyboxVertices[] =
+        {
+            //   Coordinates
+            -1.0f, -1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,
+             1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f
+        };
+
+        unsigned int skyboxIndices[] =
+        {
+            // Right
+            1, 2, 6,
+            6, 5, 1,
+            // Left
+            0, 4, 7,
+            7, 3, 0,
+            // Top
+            4, 5, 6,
+            6, 7, 4,
+            // Bottom
+            0, 3, 2,
+            2, 1, 0,
+            // Back
+            0, 1, 5,
+            5, 4, 0,
+            // Front
+            3, 7, 6,
+            6, 2, 3
+        };
+
+        // Create VAO, VBO, EBO for skybox
+        glGenVertexArrays(1, &skyboxVAO);
+        glGenBuffers(1, &skyboxVBO);
+        glGenBuffers(1, &skyboxEBO);
+        glBindVertexArray(skyboxVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        // Find target cubemap in cubemapPaths
+        for (const auto& cm : cubemaps)
+        {
+            if (cm->path.filename().string() == targetCubemapFile)
+            {
+                targetCubemap = cm;
+                break;
+            }            
+        }
+        if (targetCubemap == nullptr)
+        {
+            std::cerr << "Target cubemap file not found, initialization failed" << std::endl;
+            return false;
+        }
+
+        // Load cubemap textures
+        std::filesystem::path facesCubemap[6] =
+        {
+            targetCubemap->path / "right.png",
+            targetCubemap->path / "left.png",
+            targetCubemap->path / "top.png",
+            targetCubemap->path / "bottom.png",
+            targetCubemap->path / "front.png",
+            targetCubemap->path / "back.png"
+        };
+
+        glGenTextures(1, &targetCubemap->textureID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // These are very important to prevent seams
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        // This might help with seams on some systems
+        //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        if (!texturel::loadCubemapTextures(targetCubemap->textureID, facesCubemap))
+        {
+            std::cerr << "Failed to load cubemap textures, initialization failed" << std::endl;
+            return false;
+        }
+
+        std::cout << "Successfully initialized cubemaps" << std::endl;
         return true;
     }
 
@@ -203,7 +343,7 @@ namespace renderer
         auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND!").setFont(testFont).buildEditText();
 
         auto testButton = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 120).setSize(30, 30).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
-        auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("BLUE")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
+        auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("RED")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
         auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setFont(testFont).buildText();
         auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(40, 40).buildElement();
         auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(30, 30).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
@@ -287,6 +427,8 @@ namespace renderer
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            drawSkybox();
+
             drawObject();
 
             testHandler->renderAllElements();
@@ -330,6 +472,46 @@ namespace renderer
 
         // Unbind the Vertex Array Object
         glBindVertexArray(0);
+    }
+
+    // TODO: Rethink/fix
+    void Renderer::drawSkybox() 
+    {
+        if (cubemaps.empty())
+        {
+            std::cerr << "No cubemaps found, not drawing skybox" << std::endl;
+            return;
+        }
+
+        glDisable(GL_CULL_FACE);
+        glDepthFunc(GL_LEQUAL);  // Change depth function so depth test passes when values are equal to depth buffer's content
+
+        glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(camera.cameraPos, camera.targetPos, camera.cameraUp)));
+        glm::mat4 projection = glm::perspective(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR_DIST, FAR_DIST);
+
+        glUseProgram(shaderProgramSkybox);  // Use skybox shader
+
+        auto viewSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "view");
+        auto projectionSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "projection");
+        glUniformMatrix4fv(viewSkyboxLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionSkyboxLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glBindVertexArray(skyboxVAO);  // skybox cube
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when drawing skybox, OpenGL error: " << error << std::endl;
+        }
+
+        glBindVertexArray(0);
+
+        glDepthFunc(GL_LESS);  // Set depth function back to default
+        glEnable(GL_CULL_FACE);
     }
 
     void Renderer::onYawPitch(float dx, float dy, InputState* inputState) 
@@ -417,7 +599,7 @@ namespace renderer
         }
     }
 
-    std::vector<std::string> Renderer::getObjFilePaths(const std::string& folderName) 
+    std::vector<std::string> Renderer::getObjFilePaths(std::string folderName) 
     {
         std::vector<std::string> objFiles;
         std::filesystem::path searchPath(folderName);
@@ -459,7 +641,7 @@ namespace renderer
     std::vector<objl::Mesh> Renderer::getTargetObjMeshes() 
     {
         objl::Loader loader;
-        if (loader.LoadFile(OBJ_PATH + "\\" + targetFile) == 0) 
+        if (loader.LoadFile(OBJ_PATH + "\\" + targetObjFile) == 0) 
         {
             std::cout << "Failed to load object file" << std::endl;
         } 
@@ -486,7 +668,7 @@ namespace renderer
             }
         }
 
-        int64_t objIx = std::find(fileNames.begin(), fileNames.end(), targetFile) - fileNames.begin();
+        int64_t objIx = std::find(fileNames.begin(), fileNames.end(), targetObjFile) - fileNames.begin();
         assert(objIx != fileNames.size()); // Means file name not found
 
         if (objIx == fileNames.size() - 1)
@@ -494,7 +676,46 @@ namespace renderer
             objIx = 0;
         }
 
-        targetFile = fileNames[objIx+1];
+        targetObjFile = fileNames[objIx+1];
         targetObj = getTargetObjMeshes();
+    }
+
+    std::vector<std::filesystem::path> Renderer::getCubemapPaths(std::string folderName) 
+    {
+        std::vector<std::filesystem::path> cubemapDirs;
+        std::filesystem::path searchPath(folderName);
+
+        // Check if the folder exists in the current directory
+        if (!std::filesystem::exists(searchPath)) 
+        {
+            // If not, check the parent directory
+            searchPath = std::filesystem::current_path().parent_path() / folderName;
+
+            if (std::filesystem::exists(searchPath))
+            {
+                // Change the working directory to the parent directory
+                std::filesystem::current_path(std::filesystem::current_path().parent_path());
+
+                std::cout << "Changed working directory to: "
+                        << std::filesystem::current_path() << std::endl;
+            }
+        }
+
+        try 
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(searchPath)) 
+            {
+                if (entry.is_directory()) 
+                {
+                    cubemapDirs.push_back(entry.path());
+                }
+            }
+        } 
+        catch (const std::filesystem::filesystem_error& e) 
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+
+        return cubemapDirs;
     }
 }
