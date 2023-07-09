@@ -11,4 +11,8 @@ namespace event
     QuitEvent::QuitEvent() {}
 
     QuitEvent::~QuitEvent() {}
+
+    NextModelEvent::NextModelEvent() {}
+
+    NextModelEvent::~NextModelEvent() {}
 }

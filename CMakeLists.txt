@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 enable_testing()
 
-add_executable(playground main.cpp obj_loader.cpp renderer.cpp text.cpp gui.cpp shaders.cpp input_state.cpp event.cpp pub_sub.cpp texture_loader.cpp)
+add_executable(playground main.cpp renderer.cpp text.cpp gui.cpp shaders.cpp input_state.cpp event.cpp pub_sub.cpp texture_loader.cpp util_gltf.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

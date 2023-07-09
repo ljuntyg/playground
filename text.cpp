@@ -8,7 +8,7 @@
 
 namespace text
 {
-    // TODO: Texts created with this (actually, everywhere) aren't being registered to Font's characters
+    // TODO: Texts created with this (actually, everywhere) aren't being registered to Font's characters (?)
     std::vector<Character*> createText(std::wstring text, Font* font)
     {
         std::vector<Character*> characters;
@@ -81,12 +81,14 @@ namespace text
         return lines;
     }
 
+    // TODO: If the requested font folder exists but does not contain the files necessary to load the font, then this constructor
+    // will return an incomplete Font which will cause issues elsewhere, in particular when calling createText using the Font
     Font::Font(std::string fontName, std::filesystem::path fontFolderPath)
         : fontName(fontName), fontFolderPath(fontFolderPath)
     {
         if (!loadFontPaths(fontFolderPath))
         {
-            std::cerr << "Unable to load path to fonts, unable to proceed to load textures" << std::endl;
+            std::cerr << "Unable to load path to fonts, unable to proceed to load textures, returning default font" << std::endl;
             return;
         }
 
@@ -202,8 +204,7 @@ namespace text
             {
                 std::filesystem::current_path(std::filesystem::current_path().parent_path());
 
-                std::cout << "Changed working directory to: "
-                        << std::filesystem::current_path() << std::endl;
+                std::cout << "Changed working directory to: " << std::filesystem::current_path() << std::endl;
             }
             else
             {

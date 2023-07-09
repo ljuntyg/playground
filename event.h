@@ -24,4 +24,11 @@ namespace event
         QuitEvent();
         ~QuitEvent();
     };
+
+    class NextModelEvent : public Event
+    {
+    public:
+        NextModelEvent();
+        ~NextModelEvent();
+    };  
 }

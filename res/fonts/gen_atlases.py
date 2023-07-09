@@ -23,7 +23,7 @@ for directory_name in os.listdir(root_directory):
         # Go through each file in the sub-directory
         for file_name in os.listdir(directory_path):
             # Check if it's a .ttf file
-            if file_name.endswith('.ttf'):
+            if file_name.endswith('.ttf') or file_name.endswith('.otf'):
                 # Generate charset.txt for the .ttf file
                 font_path = os.path.join(directory_path, file_name)
                 charset_path = os.path.join(directory_path, 'charset.txt')
@@ -39,4 +39,4 @@ for directory_name in os.listdir(root_directory):
                 try:
                     subprocess.run(command, check=True)
                 except subprocess.CalledProcessError as e:
-                    print(f"msdf-atlas-gen command failed with error: {e}")
+                    print(f"msdf-atlas-gen command failed with error: {e}") 

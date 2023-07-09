@@ -403,7 +403,6 @@ namespace gui
 
     void GUIElement::findPossibleNewCorner(int cornerNbr, int* newX, int* newY) {}
 
-    // Sets cornerNbrBeingResized to the corner being resized, or 0 if none being resized
     bool GUIElement::isOnAnyCorner(int x, int y, int* cornerNbrBeingResized)
     {
         for (int i = 1; i <= 4; ++i)
@@ -651,9 +650,6 @@ namespace gui
         return false;
     }
 
-    // Resizes children down to a minSize, any offset past minSize is stored in element accumUnderMinSizeX and accumUnderMinSizeY,
-    // when element is upsized again, it checks against accumulations to ensure children are only upsized if they have "made up" for their
-    // size underflow, this ensures they are only upsized again when their parent is the same size it was at the point when the minSize was reached
     void GUIElement::resizeChildren(int xOffset, int yOffset)
     {
         int minSize = 0;
@@ -840,6 +836,11 @@ namespace gui
     void GUIButton::quitApplication(GUIButton* button)
     {
         button->handler->publish(new event::QuitEvent());
+    }
+
+    void GUIButton::nextModel(GUIButton* button)
+    {
+        button->handler->publish(new event::NextModelEvent());
     }
 
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, int cornerRadius, glm::vec4 color,
@@ -1286,7 +1287,6 @@ namespace gui
         return true;
     }
 
-    // TODO: Take control of activeElement and the keyboard
     void GUIEditText::startTextInput(InputState* inputState)
     {
         handler->setActiveElement(this);
@@ -1296,7 +1296,6 @@ namespace gui
         SDL_StartTextInput();
     }
 
-    // TODO: Resign control of activeElement and the keyboard
     void GUIEditText::stopTextInput(InputState* inputState)
     {
         handler->setActiveElement(nullptr);

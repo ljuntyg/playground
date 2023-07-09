@@ -1,3 +1,7 @@
+// Credit to Laurent NOËL (celeborn2bealive) for the gltf loader and the rendering 
+// code and his tutorial at https://gltf-viewer-tutorial.gitlab.io/ along with the
+// accompanying source code at https://gitlab.com/gltf-viewer-tutorial/gltf-viewer
+
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <algorithm>
@@ -7,10 +11,91 @@
 #include "shaders.h"
 #include "gui.h"
 #include "texture_loader.h"
+#define TINYGLTF_IMPLEMENTATION
+#include "tiny_gltf.h"
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 namespace renderer
 {
-    bool SDL_GLAD_init(SDL_Window** window, SDL_GLContext* context, float* WINDOW_WIDTH, float* WINDOW_HEIGHT) 
+    Renderer::Renderer()
+    {
+        window = nullptr;
+        context = nullptr;
+        if (SDL_GLAD_init(&window, &context)
+            && initializeModel()
+            && initializeShaders()
+            && initializeCubemaps())
+        {
+            RENDERER_STATE = RENDERER_CREATED;
+        } 
+        else 
+        {
+            RENDERER_STATE = RENDERER_CREATE_ERROR;
+            return;
+        }
+
+        run();
+    }
+
+    Renderer::~Renderer() 
+    {   
+        // Delete defaultFont created using new in getDefaultFont (or delete nullptr if it wasn't created)
+        delete text::Font::defaultFont;
+
+        // Clean up shaderProgram, modelTextureIDs, VAOs, VBOs
+        glDeleteProgram(shaderProgram);
+        for (const auto& texture : modelTextureIDs)
+        {
+            glDeleteTextures(1, &texture);
+        }
+        for (const auto& VAO : VAOs)
+        {
+            glDeleteVertexArrays(1, &VAO);
+        }
+        for (const auto& VBO : VBOs)
+        {
+            glDeleteBuffers(1, &VBO);
+        }
+
+        // Clean up shaderProgramSkybox, skyboxVAO, skyboxVBO
+        glDeleteProgram(shaderProgramSkybox);
+        glDeleteVertexArrays(1, &skyboxVAO);
+        glDeleteBuffers(1, &skyboxVBO);
+
+        // Clean up cubemaps
+        for (auto& cubemap : cubemaps)
+        {
+            glDeleteTextures(1, &(cubemap->textureID));
+            delete cubemap;
+        }
+
+        // SDL clean up
+        SDL_GL_DeleteContext(context);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    }
+
+    void Renderer::notify(const event::Event* event) 
+    {
+        if (const event::QuitEvent* quitEvent = dynamic_cast<const event::QuitEvent*>(event)) 
+        {
+            quit();
+        }
+        else if (const event::NextModelEvent* nextModelEvent = dynamic_cast<const event::NextModelEvent*>(event))
+        {
+            nextTargetGLTFmodel();
+        }
+    }
+
+    void Renderer::quit()
+    {
+        running = false;
+    }
+
+    bool Renderer::SDL_GLAD_init(SDL_Window** window, SDL_GLContext* context) 
     {
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
         {
@@ -25,14 +110,14 @@ namespace renderer
             return false;
         }
 
-        *WINDOW_WIDTH = (float)(DM.w / 1.5f);
-        *WINDOW_HEIGHT = (float)(DM.h / 1.5f);
+        WINDOW_WIDTH = (float)(DM.w / 1.5f);
+        WINDOW_HEIGHT = (float)(DM.h / 1.5f);
 
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 
         *window = SDL_CreateWindow("Playground", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            (int)*WINDOW_WIDTH, (int)*WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+            (int)WINDOW_WIDTH, (int)WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
         if (*window == nullptr)
         {
             std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -60,118 +145,70 @@ namespace renderer
         return true;
     }
 
-    Renderer::Renderer()
+    bool Renderer::initializeModel()
     {
-        window = nullptr;
-        context = nullptr;
-        if (SDL_GLAD_init(&window, &context, &WINDOW_WIDTH, &WINDOW_HEIGHT)
-            && initializeObject()
-            && initializeShaders()
-            && initializeCubemaps())
+        allGLTFpaths = getGLTFfilePaths(MODELS_PATH);
+        if (allGLTFpaths.size() == 0)
         {
-            RENDERER_STATE = RENDERER_CREATED;
-        } 
-        else 
-        {
-            RENDERER_STATE = RENDERER_CREATE_ERROR;
-            return;
-        }
-
-        run();
-    }
-
-    Renderer::~Renderer() 
-    {   
-        // Delete defaultFont created using new in getDefaultFont (or delete nullptr if it wasn't created)
-        delete text::Font::defaultFont;
-
-        // Clean up shaderProgram, VAO, VBO, EBO
-        glDeleteProgram(shaderProgram);
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
-
-        // Clean up shaderProgramSkybox, skyboxVAO, skyboxVBO
-        glDeleteProgram(shaderProgramSkybox);
-        glDeleteVertexArrays(1, &skyboxVAO);
-        glDeleteBuffers(1, &skyboxVBO);
-
-        // Clean up cubemaps
-        for (auto& cubemap : cubemaps)
-        {
-            glDeleteTextures(1, &(cubemap->textureID));
-            delete cubemap;
-        }
-
-        // SDL clean up
-        SDL_GL_DeleteContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-    }
-
-    void Renderer::notify(const event::Event* event) 
-    {
-        if (const event::QuitEvent* quitEvent = dynamic_cast<const event::QuitEvent*>(event)) 
-        {
-            quit();
-        }
-    }
-
-    void Renderer::quit()
-    {
-        running = false;
-    }
-
-    bool Renderer::initializeObject()
-    {
-        allObjPaths = getObjFilePaths(OBJ_PATH);
-        if (allObjPaths.size() == 0)
-        {
-            std::cerr << "No obj files found" << std::endl;
+            std::cerr << "No gltf files found, object initialization failed" << std::endl;
             return false;
         }
 
-        targetObj = getTargetObjMeshes();
-        if (targetObj.size() == 0)
+        // If targetGLTFfile has not been initialized, find targetGLTFfile in allGLTFpaths
+        if (targetGLTFpath.empty())
         {
-            std::cerr << "Object meshes failed to load" << std::endl;
+            // Create white texture for object with no base color texture on first initialization
+            glGenTextures(1, &whiteTextureID);
+            glBindTexture(GL_TEXTURE_2D, whiteTextureID);
+            float white[] = {1, 1, 1, 1};
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, white);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            for (const auto& path : allGLTFpaths)
+            {
+                if (path.filename().string() == targetGLTFfile)
+                {
+                    targetGLTFpath = path;
+                    break;
+                }
+            }
+
+            if (targetGLTFpath.empty())
+            {
+                std::cerr << "Target gltf file not found, object initialization failed" << std::endl;
+                return false;
+            }
+        }
+
+        if (!utilgltf::loadGLTFfile(targetGLTFpath, targetGLTFmodel))
+        {
+            std::cerr << "Failed to load gltf file, object initialization failed" << std::endl;
             return false;
         }
+    
+        modelTextureIDs = utilgltf::createTextureObjects(targetGLTFmodel);
+        VBOs = utilgltf::createVBOs(targetGLTFmodel);
+        VAOs = utilgltf::createVAOs(targetGLTFmodel, VBOs, meshToVertexArrays);
 
-        for (auto& mesh : targetObj) 
-        {
-            // Generate and bind a VAO for the mesh
-            GLuint VAO;
-            glGenVertexArrays(1, &VAO);
-            glBindVertexArray(VAO);
+        // TODO: Add error checks
 
-            // Upload vertex data
-            GLuint VBO;
-            glGenBuffers(1, &VBO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, mesh.Vertices.size() * sizeof(objl::Vertex), &mesh.Vertices[0], GL_STATIC_DRAW);
+        // Compute scene bounds and get diagonal distance
+        glm::vec3 bboxMin, bboxMax;
+        utilgltf::computeSceneBounds(targetGLTFmodel, bboxMin, bboxMax);
+        glm::vec3 diag = bboxMax - bboxMin;
+        sceneDiagonalDistance = glm::length(diag);
 
-            // Upload index data
-            GLuint EBO;
-            glGenBuffers(1, &EBO);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.Indices.size() * sizeof(unsigned int), &mesh.Indices[0], GL_STATIC_DRAW);
+        // Ensures the scene is within the view frustum (assuming scene is centered at origin)
+        NEAR_DIST = (float)0.001 * sceneDiagonalDistance;
+        FAR_DIST = (float)100.0 * sceneDiagonalDistance;
 
-            // Position attribute
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)0);
-            glEnableVertexAttribArray(0);
-
-            // Normal attribute
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)offsetof(objl::Vertex, Normal));
-            glEnableVertexAttribArray(1);
-
-            // Texture Coordinate attribute
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(objl::Vertex), (void*)offsetof(objl::Vertex, TextureCoordinate));
-            glEnableVertexAttribArray(2);
-
-            // Store the VAO in the mesh
-            mesh.VAO = VAO;
-        }
+        // TODO: Add more error checks after loading the model
+        std::cout << "Successfully initialized object" << std::endl;
 
         return true;
     }
@@ -186,22 +223,33 @@ namespace renderer
             return false;
         }
 
-        modelLoc = glGetUniformLocation(shaderProgram, "model");
-        viewLoc = glGetUniformLocation(shaderProgram, "view");
-        projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-        useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
-        objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
-
         glUseProgram(shaderProgram);
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
+
+        modelViewProjMatrixLoc = glGetUniformLocation(shaderProgram, "uModelViewProjMatrix");
+        modelViewMatrixLoc = glGetUniformLocation(shaderProgram, "uModelViewMatrix");
+        normalMatrixLoc = glGetUniformLocation(shaderProgram, "uNormalMatrix");
+
+        lightDirectionLoc = glGetUniformLocation(shaderProgram, "uLightDirection");
+        lightIntensityLoc = glGetUniformLocation(shaderProgram, "uLightIntensity");
+
+        baseColorTextureLoc = glGetUniformLocation(shaderProgram, "uBaseColorTexture");
+        baseColorFactorLoc = glGetUniformLocation(shaderProgram, "uBaseColorFactor");
+
+        metallicRoughnessTextureLoc = glGetUniformLocation(shaderProgram, "uMetallicRoughnessTexture");
+        metallicFactorLoc = glGetUniformLocation(shaderProgram, "uMetallicFactor");
+        roughnessFactorLoc = glGetUniformLocation(shaderProgram, "uRoughnessFactor");
+
+        emissiveTextureLoc = glGetUniformLocation(shaderProgram, "uEmissiveTexture");
+        emissiveFactorLoc = glGetUniformLocation(shaderProgram, "uEmissiveFactor");
+
+        occlusionTextureLoc = glGetUniformLocation(shaderProgram, "uOcclusionTexture");
+        occlusionStrengthLoc = glGetUniformLocation(shaderProgram, "uOcclusionStrength");
+        applyOcclusionLoc = glGetUniformLocation(shaderProgram, "uApplyOcclusion");
 
         std::cout << "Successfully initialized shaders" << std::endl;
         return true;
     }
 
-    // TODO: Rethink/fix
     bool Renderer::initializeCubemaps()
     {
         // Create shader program for skybox
@@ -211,6 +259,9 @@ namespace renderer
             std::cerr << "Failed to create skybox shader program, returning false" << std::endl;
             return false;
         }
+
+        viewSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "view");
+        projectionSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "projection");
 
         // Load paths to cubemaps
         std::vector<std::filesystem::path> cubemapPaths = getCubemapPaths(CUBEMAPS_PATH);
@@ -229,7 +280,6 @@ namespace renderer
 
         float skyboxVertices[] =
         {
-            //   Coordinates
             -1.0f, -1.0f,  1.0f,
              1.0f, -1.0f,  1.0f,
              1.0f, -1.0f, -1.0f,
@@ -328,9 +378,9 @@ namespace renderer
     void Renderer::run()
     {
         auto testFont = new text::Font("Coiny", "res/fonts/Coiny");
-        auto testFont2 = new text::Font("DukePlus", "res/fonts/DukePlus");
-        auto testFont3 = new text::Font("KuaiLe", "res/fonts/ZCOOLKuaiLe");
-        auto testFont4 = new text::Font("VT323", "res/fonts/VT323");
+        auto testFont2 = new text::Font("Diplomata", "res/fonts/Diplomata");
+        auto testFont3 = new text::Font("Geo", "res/fonts/Geo");
+        auto testFont4 = new text::Font("Nabla", "res/fonts/Nabla");
         auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // Pub-sub
@@ -340,13 +390,15 @@ namespace renderer
         auto testElement = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 30).setSize(55, 55).setColor(gui::colorMap.at("BLUE")).buildElement();
         auto testChild = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("RED")).buildElement();
         auto testChild2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("YELLOW")).buildElement();
-        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND!").setFont(testFont).buildEditText();
+        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND").setFont(testFont).buildEditText();
 
         auto testButton = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 120).setSize(30, 30).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
         auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("RED")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
         auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setFont(testFont).buildText();
-        auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(40, 40).buildElement();
-        auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(30, 30).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
+        auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(30, 30).buildElement();
+        auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(20, 20).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
+        auto testButton3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 240).setSize(30, 30).setColor(gui::colorMap.at("BLUE")).setOnClick(&gui::GUIButton::nextModel).buildButton();
+        auto testButton3Text = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Next\nModel").setFont(testFont).buildText();
 
         auto testGUIEditTextBase = gui::GUIElementBuilder().setHandler(testHandler).setPosition(130, 30).setSize(75, 75).buildElement();
         auto testGUIEditText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont2).buildEditText();
@@ -363,6 +415,7 @@ namespace renderer
 
         testButtonQuit->addChild(testButtonQuitText);
         testButton2Base->addChild(testButton2);
+        testButton3->addChild(testButton3Text);
 
         testGUIEditTextBase->addChild(testGUIEditText);
         testGUIEditTextBase2->addChild(testGUIEditText2);
@@ -376,7 +429,7 @@ namespace renderer
         Uint32 previous = SDL_GetTicks();
         float lag = 0.0;
 
-        float dxMouse = 0, dyMouse = 0;
+        float targetYaw = 0, targetPitch = 0;
         while (running) 
         {
             Uint32 current = SDL_GetTicks();
@@ -399,8 +452,8 @@ namespace renderer
                     if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)
                         && inputState.getMouseState() == InputState::CameraControl)
                     {
-                        dxMouse += event.motion.xrel;
-                        dyMouse -= event.motion.yrel;
+                        targetYaw += event.motion.xrel * camera.horizontalMouseSensitivity;
+                        targetPitch -= event.motion.yrel * camera.verticalMouseSensitivity;
                     }
                 }
 
@@ -418,18 +471,20 @@ namespace renderer
 
             while (lag >= MS_PER_UPDATE)
             {
-                onYawPitch(dxMouse, dyMouse, &inputState);
+                onYawPitch(targetYaw, targetPitch, &inputState);
                 onKeys(SDL_GetKeyboardState(NULL), &inputState);
-                dxMouse = 0, dyMouse = 0;
                 lag -= MS_PER_UPDATE;
             }
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            viewMatrix = glm::lookAt(camera.cameraPos, camera.targetPos, camera.cameraUp);
+            projMatrix = glm::perspective(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR_DIST, FAR_DIST); // Just in case of window resize
+
             drawSkybox();
 
-            drawObject();
+            drawModel();
 
             testHandler->renderAllElements();
 
@@ -437,96 +492,15 @@ namespace renderer
         }
     }
 
-    void Renderer::drawObject() 
-    {
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = glm::lookAt(camera.cameraPos, camera.targetPos, camera.cameraUp);
-        glm::mat4 projection = glm::perspective(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR_DIST, FAR_DIST);
-
-        // Use the shader program
-        glUseProgram(shaderProgram);
-
-        // Set uniforms
-        glUniform1i(useTextureLoc, GL_FALSE);
-        glUniform3f(objectColorLoc, 1.0f, 1.0f, 1.0f); // White color
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-        // Loop over each mesh in the target object
-        for (const auto& mesh : targetObj) 
-        {
-            // Bind the mesh's VAO
-            glBindVertexArray(mesh.VAO);
-
-            // Draw the object
-            glDrawElements(GL_TRIANGLES, (GLsizei)mesh.Indices.size(), GL_UNSIGNED_INT, 0);
-
-            // Check for OpenGL errors
-            GLenum error = glGetError();
-            if (error != GL_NO_ERROR)
-            {
-                std::cerr << "Error when drawing object, OpenGL error: " << error << std::endl;
-            }
-        }
-
-        // Unbind the Vertex Array Object
-        glBindVertexArray(0);
-    }
-
-    // TODO: Rethink/fix
-    void Renderer::drawSkybox() 
-    {
-        if (cubemaps.empty())
-        {
-            std::cerr << "No cubemaps found, not drawing skybox" << std::endl;
-            return;
-        }
-
-        glDisable(GL_CULL_FACE);
-        glDepthFunc(GL_LEQUAL);  // Change depth function so depth test passes when values are equal to depth buffer's content
-
-        glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(camera.cameraPos, camera.targetPos, camera.cameraUp)));
-        glm::mat4 projection = glm::perspective(FOV, WINDOW_WIDTH / WINDOW_HEIGHT, NEAR_DIST, FAR_DIST);
-
-        glUseProgram(shaderProgramSkybox);  // Use skybox shader
-
-        auto viewSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "view");
-        auto projectionSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "projection");
-        glUniformMatrix4fv(viewSkyboxLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projectionSkyboxLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-        glBindVertexArray(skyboxVAO);  // skybox cube
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-        // Check for OpenGL errors
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "Error when drawing skybox, OpenGL error: " << error << std::endl;
-        }
-
-        glBindVertexArray(0);
-
-        glDepthFunc(GL_LESS);  // Set depth function back to default
-        glEnable(GL_CULL_FACE);
-    }
-
-    void Renderer::onYawPitch(float dx, float dy, InputState* inputState) 
+    void Renderer::onYawPitch(float targetYaw, float targetPitch, InputState* inputState) 
     {
         if (inputState->getMouseState() != InputState::CameraControl)
         {
             return;
         }
 
-        float dxAccum = dx * camera.mouseSensitivity;
-        float dyAccum = dy * camera.mouseSensitivity;
-
-        // Update camera yaw and pitch
-        camera.cameraYaw += dxAccum;
-        camera.cameraPitch += dyAccum;
+        camera.cameraYaw += (targetYaw - camera.cameraYaw) * camera.smoothingFactor;
+        camera.cameraPitch += (targetPitch - camera.cameraPitch) * camera.smoothingFactor;
 
         // Clamp pitch between -89 and 89 degrees
         if (camera.cameraPitch > glm::radians(89.0f)) 
@@ -599,85 +573,286 @@ namespace renderer
         }
     }
 
-    std::vector<std::string> Renderer::getObjFilePaths(std::string folderName) 
+    void Renderer::drawModel()
     {
-        std::vector<std::string> objFiles;
-        std::filesystem::path searchPath(folderName);
+        // Use the shader program
+        glUseProgram(shaderProgram);
 
-        // Check if the folder exists in the current directory
-        if (!std::filesystem::exists(searchPath)) 
+        // Init light parameters
+        glm::vec3 lightDirection = glm::vec3(std::sin(lightIncline) * std::cos(lightAziumth), std::sin(lightIncline) * std::sin(lightAziumth), std::cos(lightIncline));
+        glm::vec3 lightIntensity = glm::vec3(1, 1, 1) * luminanceFactor;
+        bool lightFromCamera = true;
+        bool applyOcclusion = true;
+
+        if (lightDirectionLoc >= 0) 
         {
-            // If not, check the parent directory
-            searchPath = std::filesystem::current_path().parent_path() / folderName;
-            
-            if (std::filesystem::exists(searchPath))
+            if (lightFromCamera) 
             {
-                // Change the working directory to the parent directory
-                std::filesystem::current_path(std::filesystem::current_path().parent_path());
-
-                std::cout << "Changed working directory to: "
-                        << std::filesystem::current_path() << std::endl;
+                glUniform3f(lightDirectionLoc, 0, 0, 1);
+            } 
+            else 
+            {
+                const auto lightDirectionInViewSpace = glm::normalize(glm::vec3(viewMatrix * glm::vec4(lightDirection, 0.)));
+                glUniform3f(lightDirectionLoc, lightDirectionInViewSpace[0], lightDirectionInViewSpace[1], lightDirectionInViewSpace[2]);
             }
         }
 
-        try 
+        if (lightIntensityLoc >= 0) 
         {
-            for (const auto& entry : std::filesystem::directory_iterator(searchPath)) 
-            {
-                if (entry.is_regular_file() && entry.path().extension() == ".obj") 
-                {
-                    objFiles.push_back(entry.path().string());
-                }
-            }
-        } 
-        catch (const std::filesystem::filesystem_error& e) 
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
+            glUniform3f(lightIntensityLoc, lightIntensity[0], lightIntensity[1], lightIntensity[2]);
         }
 
-        return objFiles;
+        if (applyOcclusionLoc >= 0) 
+        {
+            glUniform1i(applyOcclusionLoc, applyOcclusion);
+        }
+
+        // Draw model by initiating recursive drawNode calls
+        if (targetGLTFmodel.defaultScene >= 0) 
+        {
+            for (const auto nodeIdx : targetGLTFmodel.scenes[targetGLTFmodel.defaultScene].nodes) 
+            {
+                drawNode(nodeIdx, glm::mat4(1));
+            }
+        }
     }
 
-    std::vector<objl::Mesh> Renderer::getTargetObjMeshes() 
+    void Renderer::drawNode(int nodeIdx, const glm::mat4 parentMatrix)
     {
-        objl::Loader loader;
-        if (loader.LoadFile(OBJ_PATH + "\\" + targetObjFile) == 0) 
+        const auto& node = targetGLTFmodel.nodes[nodeIdx];
+        glm::mat4 modelMatrix = utilgltf::getLocalToWorldMatrix(node, parentMatrix);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(scaleFactor)); // Apply scale factor to the model
+
+        // If the node references a mesh (a node can also reference a
+        // camera, or a light)
+        if (node.mesh >= 0) 
         {
-            std::cout << "Failed to load object file" << std::endl;
+            const auto mvMatrix = viewMatrix * modelMatrix; // Also called localToCamera matrix
+            const auto mvpMatrix = projMatrix * mvMatrix; // Also called localToScreen matrix
+            // Normal matrix is necessary to maintain normal vectors
+            // orthogonal to tangent vectors
+            // https://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
+            const auto normalMatrix = glm::transpose(glm::inverse(mvMatrix));
+
+            glUniformMatrix4fv(modelViewProjMatrixLoc, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
+            glUniformMatrix4fv(modelViewMatrixLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
+            glUniformMatrix4fv(normalMatrixLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+
+            const auto& mesh = targetGLTFmodel.meshes[node.mesh];
+            const auto& vaoRange = meshToVertexArrays[node.mesh];
+            for (size_t pIdx = 0; pIdx < mesh.primitives.size(); ++pIdx) 
+            {
+                const auto vao = VAOs[vaoRange.begin + pIdx];
+                const auto &primitive = mesh.primitives[pIdx];
+
+                bindMaterial(primitive.material);
+
+                glBindVertexArray(vao);
+                if (primitive.indices >= 0) 
+                {
+                    const auto& accessor = targetGLTFmodel.accessors[primitive.indices];
+                    const auto& bufferView = targetGLTFmodel.bufferViews[accessor.bufferView];
+                    const auto byteOffset = accessor.byteOffset + bufferView.byteOffset;
+                    glDrawElements(primitive.mode, GLsizei(accessor.count), accessor.componentType, (const GLvoid *)byteOffset);
+                } 
+                else 
+                {
+                    // Take first accessor to get the count
+                    const auto accessorIdx = (*begin(primitive.attributes)).second;
+                    const auto& accessor = targetGLTFmodel.accessors[accessorIdx];
+                    glDrawArrays(primitive.mode, 0, GLsizei(accessor.count));
+                }
+            }
+        }
+
+        // Draw children
+        for (const auto childNodeIdx : node.children) 
+        {
+            drawNode(childNodeIdx, modelMatrix);
+        }
+    }
+
+    void Renderer::bindMaterial(const int materialIndex)
+    {
+        if (materialIndex >= 0) 
+        {
+            const auto& material = targetGLTFmodel.materials[materialIndex];
+            const auto& pbrMetallicRoughness = material.pbrMetallicRoughness;
+            if (baseColorFactorLoc >= 0) 
+            {
+                glUniform4f(baseColorFactorLoc,
+                    (float)pbrMetallicRoughness.baseColorFactor[0],
+                    (float)pbrMetallicRoughness.baseColorFactor[1],
+                    (float)pbrMetallicRoughness.baseColorFactor[2],
+                    (float)pbrMetallicRoughness.baseColorFactor[3]);
+            }
+            if (baseColorTextureLoc >= 0) 
+            {
+                auto textureObject = whiteTextureID;
+                if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
+                    const auto &texture = targetGLTFmodel.textures[pbrMetallicRoughness.baseColorTexture.index];
+                    if (texture.source >= 0) 
+                    {
+                        textureObject = modelTextureIDs[texture.source];
+                    }
+                }
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textureObject);
+                glUniform1i(baseColorTextureLoc, 0);
+            }
+            if (metallicFactorLoc >= 0) 
+            {
+                glUniform1f(metallicFactorLoc, (float)pbrMetallicRoughness.metallicFactor);
+            }
+            if (roughnessFactorLoc >= 0)
+            {
+                glUniform1f(roughnessFactorLoc, (float)pbrMetallicRoughness.roughnessFactor);
+            }
+            if (metallicRoughnessTextureLoc >= 0) 
+            {
+                auto textureObject = 0u;
+                if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) 
+                {
+                    const auto &texture = targetGLTFmodel.textures[pbrMetallicRoughness.metallicRoughnessTexture.index];
+                    if (texture.source >= 0) 
+                    {
+                        textureObject = modelTextureIDs[texture.source];
+                    }
+                }
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, textureObject);
+                glUniform1i(metallicRoughnessTextureLoc, 1);
+            }
+            if (emissiveFactorLoc >= 0)
+            {
+                glUniform3f(emissiveFactorLoc, (float)material.emissiveFactor[0],
+                    (float)material.emissiveFactor[1],
+                    (float)material.emissiveFactor[2]);
+            }
+            if (emissiveTextureLoc >= 0) 
+            {
+                auto textureObject = 0u;
+                if (material.emissiveTexture.index >= 0) 
+                {
+                    const auto &texture = targetGLTFmodel.textures[material.emissiveTexture.index];
+                    if (texture.source >= 0) 
+                    {
+                        textureObject = modelTextureIDs[texture.source];
+                    }
+                }
+
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, textureObject);
+                glUniform1i(emissiveTextureLoc, 2);
+            }
+            if (occlusionStrengthLoc >= 0) 
+            {
+                glUniform1f(occlusionStrengthLoc, (float)material.occlusionTexture.strength);
+            }
+            if (occlusionTextureLoc >= 0) 
+            {
+                auto textureObject = whiteTextureID;
+                if (material.occlusionTexture.index >= 0) 
+                {
+                    const auto &texture = targetGLTFmodel.textures[material.occlusionTexture.index];
+                    if (texture.source >= 0) 
+                    {
+                        textureObject = modelTextureIDs[texture.source];
+                    }
+                }
+
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, textureObject);
+                glUniform1i(occlusionTextureLoc, 3);
+            }
         } 
         else 
         {
-            std::cout << "Successfully loaded object file" << std::endl;
-        }
-        return loader.LoadedMeshes;
-    }
-
-    void Renderer::nextTargetObj()
-    {
-        std::vector<std::string> fileNames = allObjPaths;
-
-        // Remove file directory prefix from file names
-        for (auto& file : fileNames) 
-        {
-            std::string prefix = OBJ_PATH + "\\";
-            std::size_t found = file.find(prefix);
-            
-            if (found != std::string::npos) 
+            // Apply default material
+            // Defined here:
+            // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-material
+            // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-pbrmetallicroughness3
+            if (baseColorFactorLoc >= 0)
             {
-                file = file.substr(found + prefix.length());
+                glUniform4f(baseColorFactorLoc, 1, 1, 1, 1);
+            }
+            if (baseColorTextureLoc >= 0)
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, whiteTextureID);
+                glUniform1i(baseColorTextureLoc, 0);
+            }
+            if (metallicFactorLoc >= 0) 
+            {
+                glUniform1f(metallicFactorLoc, 1.f);
+            }
+            if (roughnessFactorLoc >= 0)
+            {
+                glUniform1f(roughnessFactorLoc, 1.f);
+            }
+            if (metallicRoughnessTextureLoc >= 0)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glUniform1i(metallicRoughnessTextureLoc, 1);
+            }
+            if (emissiveFactorLoc >= 0)
+            {
+                glUniform3f(emissiveFactorLoc, 0.f, 0.f, 0.f);
+            }
+            if (emissiveTextureLoc >= 0)
+            {
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glUniform1i(emissiveTextureLoc, 2);
+            }
+            if (occlusionStrengthLoc >= 0)
+            {
+                glUniform1f(occlusionStrengthLoc, 0.f);
+            }
+            if (occlusionTextureLoc >= 0)
+            {
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glUniform1i(occlusionTextureLoc, 3);
             }
         }
+    }
 
-        int64_t objIx = std::find(fileNames.begin(), fileNames.end(), targetObjFile) - fileNames.begin();
-        assert(objIx != fileNames.size()); // Means file name not found
-
-        if (objIx == fileNames.size() - 1)
+    void Renderer::drawSkybox() 
+    {
+        if (cubemaps.empty())
         {
-            objIx = 0;
+            std::cerr << "No cubemaps found, not drawing skybox" << std::endl;
+            return;
         }
 
-        targetObjFile = fileNames[objIx+1];
-        targetObj = getTargetObjMeshes();
+        glDisable(GL_CULL_FACE);
+        glDepthFunc(GL_LEQUAL); // Change depth function so depth test passes when values are equal to depth buffer's content
+
+        glUseProgram(shaderProgramSkybox);  // Use skybox shader
+
+        glUniformMatrix4fv(viewSkyboxLoc, 1, GL_FALSE, glm::value_ptr(glm::mat4(glm::mat3(viewMatrix))));
+        glUniformMatrix4fv(projectionSkyboxLoc, 1, GL_FALSE, glm::value_ptr(projMatrix));
+
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "Error when drawing skybox, OpenGL error: " << error << std::endl;
+        }
+
+        glBindVertexArray(0);
+
+        glDepthFunc(GL_LESS); // Set depth function back to default
+        glEnable(GL_CULL_FACE);
     }
 
     std::vector<std::filesystem::path> Renderer::getCubemapPaths(std::string folderName) 
@@ -717,5 +892,83 @@ namespace renderer
         }
 
         return cubemapDirs;
+    }
+
+    void Renderer::nextTargetCubemap() {}
+
+    std::vector<std::filesystem::path> Renderer::getGLTFfilePaths(std::string folderName) 
+    {
+        std::vector<std::filesystem::path> gltfFiles;
+        std::filesystem::path searchPath(folderName);
+
+        // Check if the folder exists in the current directory
+        if (!std::filesystem::exists(searchPath)) 
+        {
+            // If not, check the parent directory
+            searchPath = std::filesystem::current_path().parent_path() / folderName;
+            
+            if (std::filesystem::exists(searchPath))
+            {
+                // Change the working directory to the parent directory
+                std::filesystem::current_path(std::filesystem::current_path().parent_path());
+
+                std::cout << "Changed working directory to: "
+                        << std::filesystem::current_path() << std::endl;
+            }
+        }
+
+        try 
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(searchPath)) 
+            {
+                if (entry.is_regular_file()
+                    && (entry.path().extension() == ".glb" || entry.path().extension() == ".gltf")) 
+                {
+                    gltfFiles.push_back(entry.path());
+                }
+            }
+        } 
+        catch (const std::filesystem::filesystem_error& e) 
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+
+        return gltfFiles;
+    }
+
+    // TODO: Fix
+    void Renderer::nextTargetGLTFmodel()
+    {
+        auto it = std::find(allGLTFpaths.begin(), allGLTFpaths.end(), targetGLTFpath);
+        if(it != allGLTFpaths.end())
+        {
+            ++it;
+            if(it == allGLTFpaths.end())
+            {
+                it = allGLTFpaths.begin();
+            }
+        }
+        else
+        {
+            std::cout << "Warning: targetGLTFpath not found in allGLTFpaths, setting it to the first element in allGLTFpaths" << std::endl;
+            it = allGLTFpaths.begin();
+        }
+
+        targetGLTFpath = *it;
+
+        for (const auto& texture : modelTextureIDs)
+        {
+            glDeleteTextures(1, &texture);
+        }
+        for (const auto& VAO : VAOs)
+        {
+            glDeleteVertexArrays(1, &VAO);
+        }
+        for (const auto& VBO : VBOs)
+        {
+            glDeleteBuffers(1, &VBO);
+        }
+
+        initializeModel();
     }
 }

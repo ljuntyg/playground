@@ -106,6 +106,7 @@ namespace gui
         bool isOnElement(int x, int y);
         bool isOnCorner(int cornerNbr, int x, int y);
         void findPossibleNewCorner(int cornerNbr, int* newX, int* newY);
+        // Sets cornerNbrBeingResized to the corner being resized, or 0 if none being resized
         bool isOnAnyCorner(int x, int y, int* cornerNbrBeingResized);
 
         std::unordered_set<GUIElement*> getChildren();
@@ -134,6 +135,9 @@ namespace gui
 
         // Resize and move return true if the event was consumed, false otherwise
         bool resize(const SDL_Event* event, InputState* inputState);
+        // Resizes children down to a minSize, any offset past minSize is stored in element accumUnderMinSizeX and accumUnderMinSizeY,
+        // when element is upsized again, it checks against accumulations to ensure children are only upsized if they have "made up" for their
+        // size underflow, this ensures they are only upsized again when their parent is the same size it was at the point when the minSize was reached
         void resizeChildren(int xOffset, int yOffset);
         bool move(const SDL_Event* event, InputState* inputState);
         void offsetChildren(int xOffset, int yOffset);
@@ -170,6 +174,8 @@ namespace gui
         // These are functions that can be passed to the constructor (onClick)
         static void randomColor(GUIButton* button);
         static void quitApplication(GUIButton* button);
+        // Publishes a NextModelEvent which can be handled by the renderer
+        static void nextModel(GUIButton* button);
 
     protected:
         // Only constructed through GUIElementBuilder, which defines default values for all parameters
