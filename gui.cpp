@@ -843,6 +843,66 @@ namespace gui
         button->handler->publish(new event::NextModelEvent());
     }
 
+    void GUIButton::nextCubemap(GUIButton* button)
+    {
+        button->handler->publish(new event::NextCubemapEvent());
+    }
+
+    static float azimuthDelta = 0.1f;
+    void GUIButton::lightAzimuthUp(GUIButton* button)
+    {
+        button->handler->publish(new event::LightAzimuthChangeEvent(azimuthDelta));
+    }
+
+    void GUIButton::lightAzimuthDown(GUIButton* button)
+    {
+        button->handler->publish(new event::LightAzimuthChangeEvent(-azimuthDelta));
+    }
+
+    static float inclineDelta = (float)M_PI_4;
+    void GUIButton::lightInclineUp(GUIButton* button)
+    {
+        button->handler->publish(new event::LightInclineChangeEvent(inclineDelta));
+    }
+
+    void GUIButton::lightInclineDown(GUIButton* button)
+    {
+        button->handler->publish(new event::LightInclineChangeEvent(-inclineDelta));
+    }
+
+    static float luminanceDelta = (float)M_PI_4;
+    void GUIButton::luminanceUp(GUIButton* button)
+    {
+        button->handler->publish(new event::LuminanceChangeEvent(luminanceDelta));
+    }
+
+    void GUIButton::luminanceDown(GUIButton* button)
+    {
+        button->handler->publish(new event::LuminanceChangeEvent(-luminanceDelta));
+    }
+
+    static float scaleDelta = 1.0f;
+    void GUIButton::scaleUp(GUIButton* button)
+    {
+        button->handler->publish(new event::ScaleChangeEvent(scaleDelta));
+    }
+
+    void GUIButton::scaleDown(GUIButton* button)
+    {
+        button->handler->publish(new event::ScaleChangeEvent(-scaleDelta));
+    }
+
+    static float cameraSpeedFactor = 5.0f;
+    void GUIButton::cameraSpeedUp(GUIButton* button)
+    {
+        button->handler->publish(new event::CameraSpeedChangeEvent(cameraSpeedFactor));
+    }
+
+    void GUIButton::cameraSpeedDown(GUIButton* button)
+    {
+        button->handler->publish(new event::CameraSpeedChangeEvent(1/cameraSpeedFactor));
+    } 
+
     GUIText::GUIText(GUIHandler* handler, int xPos, int yPos, int width, int height, bool isMovable, bool isResizable, bool isVisible, bool takesInput, int borderWidth, int cornerRadius, glm::vec4 color,
         std::wstring text, text::Font* font, bool autoScaleText, float textScale, int padding)
         : GUIElement(handler, xPos, yPos, width, height, isMovable, isResizable, isVisible, takesInput, borderWidth, cornerRadius, color), text(text), font(font), autoScaleText(autoScaleText), textScale(textScale), padding(padding)

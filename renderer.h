@@ -20,6 +20,7 @@
 #include "pub_sub.h"
 #include "tiny_gltf.h"
 #include "util_gltf.h"
+#include "gui.h"
 
 namespace renderer 
 {
@@ -32,13 +33,12 @@ namespace renderer
 
         float cameraYaw = 0.0f;
         float cameraPitch = 0.0f;
-        const float cameraSpeed = 0.1f;
+        float cameraSpeed = 1.0f;
         const float horizontalMouseSensitivity = 0.05f;
         const float verticalMouseSensitivity = 0.025f;
         const float smoothingFactor = 0.1f; // Lower value means more smoothing
     };
 
-    // TODO: Make class and move related methods to it as static members?
     struct CubeMap
     {
         GLuint textureID;
@@ -70,32 +70,48 @@ namespace renderer
         bool initializeModel();
         bool initializeShaders(); 
         bool initializeCubemaps();
+        bool initializeGUI();
 
+        // Main event loop
         void run();
         // Update the camera's yaw and pitch to smoothly move towards the target yaw and pitch
-        void onYawPitch(float dx, float dy, InputState* inputState);
+        void onYawPitch(float targetYaw, float targetPitch, InputState* inputState);
+        // Update the camera's position based on keyboard input
         void onKeys(const Uint8* keyboardState, InputState* inputState);
 
+        // Draws each node of the model by calling drawNode
         void drawModel();
-        // Recursively draw nodes
-        void drawNode(int nodeIdx, const glm::mat4 parentMatrix); // Helper method to drawModel
-        void bindMaterial(const int materialIndex); // Helper method to drawNode
+        // Recursively draw node and its children at nodeIdx, binds
+        // materials for each primitive in the mesh of the node
+        void drawNode(int nodeIdx, const glm::mat4 parentMatrix, bool isRoot = false);
+        void bindMaterial(const int materialIndex);
         void drawSkybox();
 
+        // Returns a vector of absolute paths to all folders with 6 .png files in folderName
         std::vector<std::filesystem::path> getCubemapPaths(std::string folderName);
+        // Sets targetCubemapPath to the next one in allCubemapPaths, if the end is reached
+        // it sets the cubemapPath to none and returns in order to render the model without 
+        // a cubemap, the next call to nextTargetCubemap will set the cubemapPath to the first
         void nextTargetCubemap();
 
+        // Returns a vector of absolute paths to all .glb and .gltf files in folderName
         std::vector<std::filesystem::path> getGLTFfilePaths(std::string folderName);
+        // Sets targetGLTFpath to the next element in allGLTFpaths or the first 
+        // element if the end is reached, then reinitializes the targetGLTFmodel
         void nextTargetGLTFmodel();
-
+        
         Camera camera;
+        InputState inputState;
+        gui::GUIHandler* guiHandler;
+
         std::string CUBEMAPS_PATH = "res/cubemaps"; // Must be in working directory
         std::string MODELS_PATH = "res/models"; // Must be in working directory
         std::string targetCubemapFile = "Skybox2"; // Must be in CUBEMAPS_PATH, must match exact file name
-        std::string targetGLTFfile = "mig-21smt_fishbed-k.glb"; // Must be in MODELS_PATH, must match exact file name, only .glb or .gltf (only embedded .gltf files allowed) files allowed
-        
-        std::vector<CubeMap*> cubemaps;
-        CubeMap* targetCubemap;
+        std::string targetGLTFfile = "mount_fuji_volcano_wide_area_model_-_japan_4k.glb"; // Must be in MODELS_PATH, must match exact file name, only .glb or .gltf (only embedded .gltf files allowed) files allowed
+
+        std::vector<std::filesystem::path> allCubemapPaths;
+        std::filesystem::path targetCubemapPath;
+        CubeMap targetCubemap;
 
         std::vector<std::filesystem::path> allGLTFpaths;
         std::filesystem::path targetGLTFpath;
@@ -112,7 +128,9 @@ namespace renderer
         const float FOV = (float)M_PI_2;
         const int LOGIC_FREQ_HZ = 0; // Set to 0 for 60Hz, not for capping FPS
 
-        // Model specific shader related variables
+        /* 
+            MODEL SPECIFIC SHADER RELATED VARIABLES
+         */
         GLint modelViewProjMatrixLoc, modelViewMatrixLoc, normalMatrixLoc, lightDirectionLoc, lightIntensityLoc,
             baseColorTextureLoc, baseColorFactorLoc, metallicRoughnessTextureLoc, metallicFactorLoc, roughnessFactorLoc,
             emissiveTextureLoc, emissiveFactorLoc, occlusionTextureLoc, occlusionStrengthLoc, applyOcclusionLoc;  
@@ -120,11 +138,16 @@ namespace renderer
         std::vector<GLuint> modelTextureIDs, VAOs, VBOs;
         std::vector<utilgltf::VAOrange> meshToVertexArrays;
         glm::mat4 projMatrix, viewMatrix;
-        float sceneDiagonalDistance; // The diagonal distance of the bounding box produced by the model
-        float scaleFactor = 1.0f, luminanceFactor = 2.0f,
-            lightAziumth = (float)M_PI_4, lightIncline = (float)M_PI_4; // Azimuth and incline rotation of the light source in radians
+        // The diagonal distance of the bounding box produced by the model
+        float sceneDiagonalDistance;
+        float scaleFactor = 1.0f, luminanceFactor = 5.0f;
+        // Azimuth and incline rotation of the light source in radians,
+        // only applies if lightFromCamera (in drawModel) is set to false
+        float lightAzimuth = (float)M_PI_4, lightIncline = (float)M_PI_4;
 
-        // Skybox specific shader related variables
+        /* 
+            SKYBOX SPECIFIC SHADER RELATED VARIABLES
+         */
         GLint viewSkyboxLoc, projectionSkyboxLoc;
         GLuint shaderProgramSkybox, skyboxVAO, skyboxVBO, skyboxEBO;
     };

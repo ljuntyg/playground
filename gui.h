@@ -171,11 +171,24 @@ namespace gui
 
         bool handleInput(const SDL_Event* event, InputState* inputState) override;
 
-        // These are functions that can be passed to the constructor (onClick)
+        // These are functions that can be passed to the constructor (onClick),
+        // must have return type void and take only a GUIButton* as parameter
         static void randomColor(GUIButton* button);
         static void quitApplication(GUIButton* button);
         // Publishes a NextModelEvent which can be handled by the renderer
         static void nextModel(GUIButton* button);
+        static void nextCubemap(GUIButton* button);
+
+        static void lightAzimuthUp(GUIButton* button);
+        static void lightAzimuthDown(GUIButton* button);
+        static void lightInclineUp(GUIButton* button);
+        static void lightInclineDown(GUIButton* button);
+        static void luminanceUp(GUIButton* button);
+        static void luminanceDown(GUIButton* button);
+        static void scaleUp(GUIButton* button);
+        static void scaleDown(GUIButton* button);
+        static void cameraSpeedUp(GUIButton* button);
+        static void cameraSpeedDown(GUIButton* button);
 
     protected:
         // Only constructed through GUIElementBuilder, which defines default values for all parameters

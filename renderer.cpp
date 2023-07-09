@@ -9,7 +9,6 @@
 #include "renderer.h"
 #include "text.h"
 #include "shaders.h"
-#include "gui.h"
 #include "texture_loader.h"
 #define TINYGLTF_IMPLEMENTATION
 #include "tiny_gltf.h"
@@ -27,7 +26,8 @@ namespace renderer
         if (SDL_GLAD_init(&window, &context)
             && initializeModel()
             && initializeShaders()
-            && initializeCubemaps())
+            && initializeCubemaps()
+            && initializeGUI())
         {
             RENDERER_STATE = RENDERER_CREATED;
         } 
@@ -42,6 +42,9 @@ namespace renderer
 
     Renderer::~Renderer() 
     {   
+        // This will also delete any GUIElement objects using the guiHandler
+        delete guiHandler;
+
         // Delete defaultFont created using new in getDefaultFont (or delete nullptr if it wasn't created)
         delete text::Font::defaultFont;
 
@@ -65,13 +68,6 @@ namespace renderer
         glDeleteVertexArrays(1, &skyboxVAO);
         glDeleteBuffers(1, &skyboxVBO);
 
-        // Clean up cubemaps
-        for (auto& cubemap : cubemaps)
-        {
-            glDeleteTextures(1, &(cubemap->textureID));
-            delete cubemap;
-        }
-
         // SDL clean up
         SDL_GL_DeleteContext(context);
         SDL_DestroyWindow(window);
@@ -87,6 +83,30 @@ namespace renderer
         else if (const event::NextModelEvent* nextModelEvent = dynamic_cast<const event::NextModelEvent*>(event))
         {
             nextTargetGLTFmodel();
+        }
+        else if (const event::NextCubemapEvent* nextCubemapEvent = dynamic_cast<const event::NextCubemapEvent*>(event))
+        {
+            nextTargetCubemap();
+        }
+        else if (const event::LightAzimuthChangeEvent *lightAzimuthChangeEvent = dynamic_cast<const event::LightAzimuthChangeEvent*>(event))
+        {
+            lightAzimuth += lightAzimuthChangeEvent->delta;
+        }
+        else if (const event::LightInclineChangeEvent *lightInclineChangeEvent = dynamic_cast<const event::LightInclineChangeEvent*>(event))
+        {
+            lightIncline += lightInclineChangeEvent->delta;
+        }
+        else if (const event::LuminanceChangeEvent* luminanceChangeEvent = dynamic_cast<const event::LuminanceChangeEvent*>(event))
+        {
+            luminanceFactor += luminanceChangeEvent->delta;
+        }
+        else if (const event::ScaleChangeEvent *scaleChangeEvent = dynamic_cast<const event::ScaleChangeEvent*>(event))
+        {
+            scaleFactor += scaleChangeEvent->delta;
+        }
+        else if (const event::CameraSpeedChangeEvent *cameraSpeedChangeEvent = dynamic_cast<const event::CameraSpeedChangeEvent*>(event))
+        {
+            camera.cameraSpeed *= cameraSpeedChangeEvent->factor;
         }
     }
 
@@ -142,6 +162,7 @@ namespace renderer
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
+        std::cout << "Successfully initialized SDL and GLAD" << std::endl;
         return true;
     }
 
@@ -154,7 +175,8 @@ namespace renderer
             return false;
         }
 
-        // If targetGLTFfile has not been initialized, find targetGLTFfile in allGLTFpaths
+        // If targetGLTFpath has not been initialized, find targetGLTFfile in allGLTFpaths
+        // TODO: Use find_if instead of for loop
         if (targetGLTFpath.empty())
         {
             // Create white texture for object with no base color texture on first initialization
@@ -185,6 +207,7 @@ namespace renderer
             }
         }
 
+        targetGLTFmodel = tinygltf::Model(); // The model needs to be reset in case this is not the first initialization
         if (!utilgltf::loadGLTFfile(targetGLTFpath, targetGLTFmodel))
         {
             std::cerr << "Failed to load gltf file, object initialization failed" << std::endl;
@@ -260,23 +283,38 @@ namespace renderer
             return false;
         }
 
+        allCubemapPaths = getCubemapPaths(CUBEMAPS_PATH);
+        if (allCubemapPaths.size() == 0)
+        {
+            std::cerr << "No cubemap files found, cubemap initialization failed" << std::endl;
+            return false;
+        }
+
+        // If targetCubemapPath has not been initialized, find targetCubemapFile in allCubemapPaths
+        if (targetCubemapPath.empty())
+        {
+            auto it = std::find_if(allCubemapPaths.begin(), allCubemapPaths.end(), [this](const std::filesystem::path& path) 
+            {
+                return path.filename().string() == targetCubemapFile; 
+            });
+
+            if (it != allCubemapPaths.end())
+            {
+                targetCubemapPath = *it;
+            }
+            else
+            {
+                std::cerr << "Target cubemap file not found, cubemap initialization failed" << std::endl;
+                return false;
+            }
+        }
+
         viewSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "view");
         projectionSkyboxLoc = glGetUniformLocation(shaderProgramSkybox, "projection");
 
-        // Load paths to cubemaps
-        std::vector<std::filesystem::path> cubemapPaths = getCubemapPaths(CUBEMAPS_PATH);
-        if (cubemapPaths.size() == 0)
-        {
-            std::cerr << "No cubemap files found, no further initialization, but returning true" << std::endl;
-            return true;
-        }
-        else for (const auto& path : cubemapPaths)
-        {
-            CubeMap* cubemap = new CubeMap();
-            cubemap->path = path;
-            cubemap->textureID = 0;
-            cubemaps.push_back(cubemap);
-        }
+        // Create targetCubemap from targetCubemapPath
+        targetCubemap = CubeMap();
+        targetCubemap.path = targetCubemapPath;
 
         float skyboxVertices[] =
         {
@@ -328,34 +366,19 @@ namespace renderer
         glBindVertexArray(0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-        // Find target cubemap in cubemapPaths
-        for (const auto& cm : cubemaps)
-        {
-            if (cm->path.filename().string() == targetCubemapFile)
-            {
-                targetCubemap = cm;
-                break;
-            }            
-        }
-        if (targetCubemap == nullptr)
-        {
-            std::cerr << "Target cubemap file not found, initialization failed" << std::endl;
-            return false;
-        }
-
         // Load cubemap textures
         std::filesystem::path facesCubemap[6] =
         {
-            targetCubemap->path / "right.png",
-            targetCubemap->path / "left.png",
-            targetCubemap->path / "top.png",
-            targetCubemap->path / "bottom.png",
-            targetCubemap->path / "front.png",
-            targetCubemap->path / "back.png"
+            targetCubemap.path / "right.png",
+            targetCubemap.path / "left.png",
+            targetCubemap.path / "top.png",
+            targetCubemap.path / "bottom.png",
+            targetCubemap.path / "front.png",
+            targetCubemap.path / "back.png"
         };
 
-        glGenTextures(1, &targetCubemap->textureID);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
+        glGenTextures(1, &targetCubemap.textureID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap.textureID);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         // These are very important to prevent seams
@@ -365,7 +388,7 @@ namespace renderer
         // This might help with seams on some systems
         //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-        if (!texturel::loadCubemapTextures(targetCubemap->textureID, facesCubemap))
+        if (!texturel::loadCubemapTextures(targetCubemap.textureID, facesCubemap))
         {
             std::cerr << "Failed to load cubemap textures, initialization failed" << std::endl;
             return false;
@@ -375,54 +398,113 @@ namespace renderer
         return true;
     }
 
-    void Renderer::run()
+    // TODO: Delete fonts? font1 being loaded multiple times
+    bool Renderer::initializeGUI()
     {
-        auto testFont = new text::Font("Coiny", "res/fonts/Coiny");
-        auto testFont2 = new text::Font("Diplomata", "res/fonts/Diplomata");
-        auto testFont3 = new text::Font("Geo", "res/fonts/Geo");
-        auto testFont4 = new text::Font("Nabla", "res/fonts/Nabla");
-        auto testHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
+        guiHandler = new gui::GUIHandler(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // Pub-sub
-        testHandler->subscribe(this);
-        this->subscribe(testHandler);
+        guiHandler->subscribe(this);
+        this->subscribe(guiHandler);
 
-        auto testElement = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 30).setSize(55, 55).setColor(gui::colorMap.at("BLUE")).buildElement();
-        auto testChild = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("RED")).buildElement();
-        auto testChild2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(10, 10).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("YELLOW")).buildElement();
-        auto testChild2GUIText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(55, 55).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND").setFont(testFont).buildEditText();
+        auto font1 = new text::Font("NotoSans", "res/fonts/NotoSans");
+        auto font2 = new text::Font("Coiny", "res/fonts/Coiny");
 
-        auto testButton = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 120).setSize(30, 30).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
-        auto testButtonQuit = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 160).setSize(30, 30).setColor(gui::colorMap.at("RED")).setOnClick(&gui::GUIButton::quitApplication).buildButton();
-        auto testButtonQuitText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Quit").setFont(testFont).buildText();
-        auto testButton2Base = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 200).setSize(30, 30).buildElement();
-        auto testButton2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(5, 5).setSize(20, 20).setFlags(false, false, true, true).setColor(gui::colorMap.at("GREEN")).setOnClick(&gui::GUIButton::randomColor).buildButton();
-        auto testButton3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(30, 240).setSize(30, 30).setColor(gui::colorMap.at("BLUE")).setOnClick(&gui::GUIButton::nextModel).buildButton();
-        auto testButton3Text = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(30, 30).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Next\nModel").setFont(testFont).buildText();
+        auto lightInclBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 30).setSize(200, 50).setFlags(true, false, true, true).buildElement();
+        auto lightInclText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nHEIGHT").setFont(font1).buildText();
+        auto lightInclDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightInclineDown).buildButton();
+        auto lightInclUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightInclineUp).buildButton();
+        auto lightInclDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
+        auto lightInclUpButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(1, 1).setSize(40, 60).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"+").setFont(font1).setAutoScaleText(false).buildText();
 
-        auto testGUIEditTextBase = gui::GUIElementBuilder().setHandler(testHandler).setPosition(130, 30).setSize(75, 75).buildElement();
-        auto testGUIEditText = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont2).buildEditText();
+        lightInclBase->addChild(lightInclText);
+        lightInclBase->addChild(lightInclUpButton);
+        lightInclBase->addChild(lightInclDownButton);
+        lightInclUpButton->addChild(lightInclUpButtonText);
+        lightInclDownButton->addChild(lightInclDownButtonText);
 
-        auto testGUIEditTextBase2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(230, 30).setSize(75, 75).buildElement();
-        auto testGUIEditText2 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont3).buildEditText();
+        auto lightAzimBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 90).setSize(200, 50).setFlags(true, false, true, true).buildElement();
+        auto lightAzimText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nROTATION").setFont(font1).buildText();
+        auto lightAzimDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightAzimuthDown).buildButton();
+        auto lightAzimUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightAzimuthUp).buildButton();
+        auto lightAzimDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
+        auto lightAzimUpButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(1, 1).setSize(40, 60).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"+").setFont(font1).setAutoScaleText(false).buildText();
 
-        auto testGUIEditTextBase3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(330, 30).setSize(75, 75).buildElement();
-        auto testGUIEditText3 = gui::GUIElementBuilder().setHandler(testHandler).setPosition(0, 0).setSize(75, 75).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"Text!").setPadding(10).setFont(testFont4).buildEditText();
+        lightAzimBase->addChild(lightAzimText);
+        lightAzimBase->addChild(lightAzimUpButton);
+        lightAzimBase->addChild(lightAzimDownButton);
+        lightAzimUpButton->addChild(lightAzimUpButtonText);
+        lightAzimDownButton->addChild(lightAzimDownButtonText);
 
-        testElement->addChild(testChild);
-        testChild->addChild(testChild2);
-        testChild2->addChild(testChild2GUIText);
+        auto luminanceBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 150).setSize(200, 50).setFlags(true, false, true, true).buildElement();
+        auto luminanceText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"BRIGHTNESS").setFont(font1).buildText();
+        auto luminanceDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::luminanceDown).buildButton();
+        auto luminanceUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::luminanceUp).buildButton();
+        auto luminanceDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
+        auto luminanceUpButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(1, 1).setSize(40, 60).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"+").setFont(font1).setAutoScaleText(false).buildText();
 
-        testButtonQuit->addChild(testButtonQuitText);
-        testButton2Base->addChild(testButton2);
-        testButton3->addChild(testButton3Text);
+        luminanceBase->addChild(luminanceText);
+        luminanceBase->addChild(luminanceUpButton);
+        luminanceBase->addChild(luminanceDownButton);
+        luminanceUpButton->addChild(luminanceUpButtonText);
+        luminanceDownButton->addChild(luminanceDownButtonText);
 
-        testGUIEditTextBase->addChild(testGUIEditText);
-        testGUIEditTextBase2->addChild(testGUIEditText2);
-        testGUIEditTextBase3->addChild(testGUIEditText3);
+        auto scaleBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 210).setSize(200, 50).setFlags(true, false, true, true).buildElement();
+        auto scaleText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"SCALE").setFont(font1).buildText();
+        auto scaleDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::scaleDown).buildButton();
+        auto scaleUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::scaleUp).buildButton();
+        auto scaleDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
+        auto scaleUpButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(1, 1).setSize(40, 60).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"+").setFont(font1).setAutoScaleText(false).buildText();
 
-        InputState inputState;
+        scaleBase->addChild(scaleText);
+        scaleBase->addChild(scaleUpButton);
+        scaleBase->addChild(scaleDownButton);
+        scaleUpButton->addChild(scaleUpButtonText);
+        scaleDownButton->addChild(scaleDownButtonText);
 
+        auto cameraSpeedBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 270).setSize(200, 50).setFlags(true, false, true, true).buildElement();
+        auto cameraSpeedText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"CAMERA\nSPEED").setFont(font1).buildText();
+        auto cameraSpeedDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::cameraSpeedDown).buildButton();
+        auto cameraSpeedUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::cameraSpeedUp).buildButton();
+        auto cameraSpeedDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
+        auto cameraSpeedUpButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(1, 1).setSize(40, 60).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"+").setFont(font1).setAutoScaleText(false).buildText();
+
+        cameraSpeedBase->addChild(cameraSpeedText);
+        cameraSpeedBase->addChild(cameraSpeedUpButton);
+        cameraSpeedBase->addChild(cameraSpeedDownButton);
+        cameraSpeedUpButton->addChild(cameraSpeedUpButtonText);
+        cameraSpeedDownButton->addChild(cameraSpeedDownButtonText);
+
+        auto nextModelButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 330).setSize(200, 50).setFlags(true, false, true, true).setOnClick(&gui::GUIButton::nextModel).buildButton();
+        auto nextModelText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT MODEL").setFont(font1).setPadding(10).buildText();
+
+        nextModelButton->addChild(nextModelText);
+
+        auto nextCubemapButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 390).setSize(200, 50).setFlags(true, false, true, true).setOnClick(&gui::GUIButton::nextCubemap).buildButton();
+        auto nextCubemapText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT CUBEMAP").setFont(font1).setPadding(10).buildText();
+
+        nextCubemapButton->addChild(nextCubemapText);
+
+        auto playgroundBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(240, 30).setSize(155, 35).setColor(gui::colorMap.at("BLUE")).buildElement();
+        auto playgroundChild = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(10, 10).setSize(155, 35).setFlags(false, false, true, false).setColor(gui::colorMap.at("RED")).buildElement();
+        auto playgroundChild2 = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(10, 10).setSize(155, 35).setFlags(false, false, true, false).setColor(gui::colorMap.at("YELLOW")).buildElement();
+        auto playgroundChild2GUIEditText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(155, 35).setFlags(false, false, true, false).setColor(gui::colorMap.at("BLACK")).setText(L"PLAYGROUND").setFont(font2).buildEditText();
+
+        playgroundBase->addChild(playgroundChild);
+        playgroundChild->addChild(playgroundChild2);
+        playgroundChild2->addChild(playgroundChild2GUIEditText);
+
+        if (guiHandler->getZIndexRootElementMap().size() == 0)
+        {
+            std::cout << "Warning: guiHandler has no elements" << std::endl;
+        }
+
+        std::cout << "Successfully initialized GUI" << std::endl;
+        return true;
+    }
+
+    void Renderer::run()
+    {
         const float MS_PER_UPDATE = (LOGIC_FREQ_HZ != 0 ? 
                                     1000.0f / LOGIC_FREQ_HZ 
                                     : 1000.0f / 60);
@@ -440,7 +522,7 @@ namespace renderer
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {   
-                testHandler->receiveInputAllElements(&event, &inputState);
+                guiHandler->receiveInputAllElements(&event, &inputState);
 
                 if (event.type == SDL_QUIT) 
                 {
@@ -465,6 +547,7 @@ namespace renderer
                         int newHeight = event.window.data2;
                         glViewport(0, 0, newWidth, newHeight);
                         this->publish(new event::WindowResizeEvent(newWidth, newHeight));
+                        WINDOW_WIDTH = (float)newWidth, WINDOW_HEIGHT = (float)newHeight;
                     }
                 }
             }
@@ -486,7 +569,7 @@ namespace renderer
 
             drawModel();
 
-            testHandler->renderAllElements();
+            guiHandler->renderAllElements();
 
             SDL_GL_SwapWindow(window);
         }
@@ -579,9 +662,9 @@ namespace renderer
         glUseProgram(shaderProgram);
 
         // Init light parameters
-        glm::vec3 lightDirection = glm::vec3(std::sin(lightIncline) * std::cos(lightAziumth), std::sin(lightIncline) * std::sin(lightAziumth), std::cos(lightIncline));
+        glm::vec3 lightDirection = glm::vec3(std::sin(lightIncline) * std::cos(lightAzimuth), std::sin(lightIncline) * std::sin(lightAzimuth), std::cos(lightIncline));
         glm::vec3 lightIntensity = glm::vec3(1, 1, 1) * luminanceFactor;
-        bool lightFromCamera = true;
+        bool lightFromCamera = false;
         bool applyOcclusion = true;
 
         if (lightDirectionLoc >= 0) 
@@ -612,16 +695,20 @@ namespace renderer
         {
             for (const auto nodeIdx : targetGLTFmodel.scenes[targetGLTFmodel.defaultScene].nodes) 
             {
-                drawNode(nodeIdx, glm::mat4(1));
+                drawNode(nodeIdx, glm::mat4(1), true);
             }
         }
     }
 
-    void Renderer::drawNode(int nodeIdx, const glm::mat4 parentMatrix)
+    void Renderer::drawNode(int nodeIdx, const glm::mat4 parentMatrix, bool isRoot)
     {
         const auto& node = targetGLTFmodel.nodes[nodeIdx];
         glm::mat4 modelMatrix = utilgltf::getLocalToWorldMatrix(node, parentMatrix);
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(scaleFactor)); // Apply scale factor to the model
+
+        if (isRoot) // Apply scale factor to the model at the root level only
+        {
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(scaleFactor));
+        }
 
         // If the node references a mesh (a node can also reference a
         // camera, or a light)
@@ -823,9 +910,8 @@ namespace renderer
 
     void Renderer::drawSkybox() 
     {
-        if (cubemaps.empty())
+        if (targetCubemapPath.empty()) 
         {
-            std::cerr << "No cubemaps found, not drawing skybox" << std::endl;
             return;
         }
 
@@ -839,7 +925,7 @@ namespace renderer
 
         glBindVertexArray(skyboxVAO);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap->textureID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, targetCubemap.textureID);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         // Check for OpenGL errors
@@ -882,7 +968,7 @@ namespace renderer
             {
                 if (entry.is_directory()) 
                 {
-                    cubemapDirs.push_back(entry.path());
+                    cubemapDirs.push_back(std::filesystem::absolute(entry.path()));
                 }
             }
         } 
@@ -894,7 +980,60 @@ namespace renderer
         return cubemapDirs;
     }
 
-    void Renderer::nextTargetCubemap() {}
+    void Renderer::nextTargetCubemap()
+    {
+        auto it = std::find(allCubemapPaths.begin(), allCubemapPaths.end(), targetCubemapPath);
+        if(it != allCubemapPaths.end())
+        {
+            ++it;
+            // Once on last cubemap, go to no cubemap, then next time go to first cubemap
+            if(it == allCubemapPaths.end())
+            {
+                if (skyboxVAO)
+                {
+                    glDeleteVertexArrays(1, &skyboxVAO);
+                    skyboxVAO = 0;
+                }
+                if (skyboxVBO)
+                {
+                    glDeleteBuffers(1, &skyboxVBO);
+                    skyboxVBO = 0;
+                }
+                if (skyboxEBO)
+                {
+                    glDeleteBuffers(1, &skyboxEBO);
+                    skyboxEBO = 0;
+                }
+
+                targetCubemapPath = std::filesystem::path();
+                return;
+            }
+        }
+        else // Cubemap not found means we're on no cubemap, so go to first cubemap
+        {
+            it = allCubemapPaths.begin();
+        }
+
+        targetCubemapPath = *it;
+
+        if (skyboxVAO)
+        {
+            glDeleteVertexArrays(1, &skyboxVAO);
+            skyboxVAO = 0;
+        }
+        if (skyboxVBO)
+        {
+            glDeleteBuffers(1, &skyboxVBO);
+            skyboxVBO = 0;
+        }
+        if (skyboxEBO)
+        {
+            glDeleteBuffers(1, &skyboxEBO);
+            skyboxEBO = 0;
+        }
+
+        initializeCubemaps();
+    }
 
     std::vector<std::filesystem::path> Renderer::getGLTFfilePaths(std::string folderName) 
     {
@@ -924,7 +1063,7 @@ namespace renderer
                 if (entry.is_regular_file()
                     && (entry.path().extension() == ".glb" || entry.path().extension() == ".gltf")) 
                 {
-                    gltfFiles.push_back(entry.path());
+                    gltfFiles.push_back(std::filesystem::absolute(entry.path()));
                 }
             }
         } 
@@ -936,7 +1075,6 @@ namespace renderer
         return gltfFiles;
     }
 
-    // TODO: Fix
     void Renderer::nextTargetGLTFmodel()
     {
         auto it = std::find(allGLTFpaths.begin(), allGLTFpaths.end(), targetGLTFpath);
@@ -950,25 +1088,35 @@ namespace renderer
         }
         else
         {
-            std::cout << "Warning: targetGLTFpath not found in allGLTFpaths, setting it to the first element in allGLTFpaths" << std::endl;
+            std::cout << "Warning: Current targetGLTFpath not found, this isn't intended behavior, set targetGLTFpath to first in allGLTFpaths" << std::endl;
             it = allGLTFpaths.begin();
         }
 
         targetGLTFpath = *it;
 
-        for (const auto& texture : modelTextureIDs)
+        if (!modelTextureIDs.empty()) 
         {
-            glDeleteTextures(1, &texture);
+            glDeleteTextures(GLsizei(modelTextureIDs.size()), modelTextureIDs.data());
+            modelTextureIDs.clear();
         }
-        for (const auto& VAO : VAOs)
+        if (!VBOs.empty()) 
         {
-            glDeleteVertexArrays(1, &VAO);
+            glDeleteBuffers(GLsizei(VBOs.size()), VBOs.data());
+            VBOs.clear();
         }
-        for (const auto& VBO : VBOs)
+        if (!VAOs.empty()) 
         {
-            glDeleteBuffers(1, &VBO);
+            glDeleteVertexArrays(GLsizei(VAOs.size()), VAOs.data());
+            VAOs.clear();
+        }
+        if (!meshToVertexArrays.empty()) 
+        {
+            meshToVertexArrays.clear();
         }
 
         initializeModel();
+
+        camera.cameraPos = glm::vec3(0, 0, 5);
+        camera.targetPos = glm::vec3(0, 0, 0);
     }
 }
