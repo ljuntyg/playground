@@ -198,6 +198,8 @@ namespace gui
         std::function<void(GUIButton*)> onClick;
     };
 
+    // TODO: Different GUIText objects using the same Font will each 
+    // reload the font texture, should be able to reuse the same texture
     class GUIText : public GUIElement
     {
         friend class GUIElementBuilder;

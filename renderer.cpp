@@ -409,9 +409,10 @@ namespace renderer
 
         auto font1 = new text::Font("NotoSans", "res/fonts/NotoSans");
         auto font2 = new text::Font("Coiny", "res/fonts/Coiny");
+        auto font3 = new text::Font("Silkscreen", "res/fonts/Silkscreen");
 
         auto lightInclBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 30).setSize(200, 50).setFlags(true, false, true, true).buildElement();
-        auto lightInclText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nHEIGHT").setFont(font1).buildText();
+        auto lightInclText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nHEIGHT").setFont(font3).buildText();
         auto lightInclDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightInclineDown).buildButton();
         auto lightInclUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightInclineUp).buildButton();
         auto lightInclDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
@@ -424,7 +425,7 @@ namespace renderer
         lightInclDownButton->addChild(lightInclDownButtonText);
 
         auto lightAzimBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 90).setSize(200, 50).setFlags(true, false, true, true).buildElement();
-        auto lightAzimText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nROTATION").setFont(font1).buildText();
+        auto lightAzimText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"LIGHT\nROTATION").setFont(font3).buildText();
         auto lightAzimDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightAzimuthDown).buildButton();
         auto lightAzimUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::lightAzimuthUp).buildButton();
         auto lightAzimDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
@@ -437,7 +438,7 @@ namespace renderer
         lightAzimDownButton->addChild(lightAzimDownButtonText);
 
         auto luminanceBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 150).setSize(200, 50).setFlags(true, false, true, true).buildElement();
-        auto luminanceText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"BRIGHTNESS").setFont(font1).buildText();
+        auto luminanceText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, -10).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"BRIGHTNESS").setFont(font3).buildText();
         auto luminanceDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::luminanceDown).buildButton();
         auto luminanceUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::luminanceUp).buildButton();
         auto luminanceDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
@@ -450,7 +451,7 @@ namespace renderer
         luminanceDownButton->addChild(luminanceDownButtonText);
 
         auto scaleBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 210).setSize(200, 50).setFlags(true, false, true, true).buildElement();
-        auto scaleText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"SCALE").setFont(font1).buildText();
+        auto scaleText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"SCALE").setFont(font3).buildText();
         auto scaleDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::scaleDown).buildButton();
         auto scaleUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::scaleUp).buildButton();
         auto scaleDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
@@ -463,7 +464,7 @@ namespace renderer
         scaleDownButton->addChild(scaleDownButtonText);
 
         auto cameraSpeedBase = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 270).setSize(200, 50).setFlags(true, false, true, true).buildElement();
-        auto cameraSpeedText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"CAMERA\nSPEED").setFont(font1).buildText();
+        auto cameraSpeedText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(45, 0).setSize(110, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"CAMERA\nSPEED").setFont(font3).buildText();
         auto cameraSpeedDownButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(5, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::cameraSpeedDown).buildButton();
         auto cameraSpeedUpButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(155, 5).setSize(40, 40).setFlags(false, false, true, true).setColor(gui::colorMap.at("GRAY")).setOnClick(&gui::GUIButton::cameraSpeedUp).buildButton();
         auto cameraSpeedDownButtonText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(2, 5).setSize(40, 80).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"-").setFont(font1).setAutoScaleText(false).setTextScale(1.5f).buildText();
@@ -476,12 +477,12 @@ namespace renderer
         cameraSpeedDownButton->addChild(cameraSpeedDownButtonText);
 
         auto nextModelButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 330).setSize(200, 50).setFlags(true, false, true, true).setOnClick(&gui::GUIButton::nextModel).buildButton();
-        auto nextModelText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT MODEL").setFont(font1).setPadding(10).buildText();
+        auto nextModelText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT MODEL").setFont(font3).setPadding(10).buildText();
 
         nextModelButton->addChild(nextModelText);
 
         auto nextCubemapButton = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(30, 390).setSize(200, 50).setFlags(true, false, true, true).setOnClick(&gui::GUIButton::nextCubemap).buildButton();
-        auto nextCubemapText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT CUBEMAP").setFont(font1).setPadding(10).buildText();
+        auto nextCubemapText = gui::GUIElementBuilder().setHandler(guiHandler).setPosition(0, 0).setSize(200, 50).setFlags(false, false, true, false).setColor(gui::colorMap.at("WHITE")).setText(L"NEXT CUBEMAP").setFont(font3).setPadding(10).buildText();
 
         nextCubemapButton->addChild(nextCubemapText);
 

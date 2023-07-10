@@ -106,7 +106,7 @@ namespace renderer
 
         std::string CUBEMAPS_PATH = "res/cubemaps"; // Must be in working directory
         std::string MODELS_PATH = "res/models"; // Must be in working directory
-        std::string targetCubemapFile = "Skybox2"; // Must be in CUBEMAPS_PATH, must match exact file name
+        std::string targetCubemapFile = "DikhololoNight"; // Must be in CUBEMAPS_PATH, must match exact cubemap folder name
         std::string targetGLTFfile = "mount_fuji_volcano_wide_area_model_-_japan_4k.glb"; // Must be in MODELS_PATH, must match exact file name, only .glb or .gltf (only embedded .gltf files allowed) files allowed
 
         std::vector<std::filesystem::path> allCubemapPaths;
