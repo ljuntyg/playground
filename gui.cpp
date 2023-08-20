@@ -1308,7 +1308,7 @@ namespace gui
                     else
                     {
                         stopTextInput(inputState);
-                        return true;  // Event consumed
+                        return false;  // Event not consumed since click not on text
                     }
                 }
                 break;
